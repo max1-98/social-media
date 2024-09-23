@@ -1,0 +1,33 @@
+/* Basic Styling */
+nav {
+    background-color: #f0f0f0; /* Light gray background */
+    padding: 10px 0;          /* Padding for top and bottom */
+    display: flex;             /* Enable flexbox layout */
+    justify-content: space-between; /* Even spacing for links and logo */
+    align-items: center;        /* Align items vertically */
+  }
+  
+  nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;              /* Make the list items horizontal */
+  }
+  
+  nav li {
+    margin: 0 15px;          /* Spacing between list items */
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #333;             /* Dark gray text */
+    font-weight: bold;
+    font-size: 16px;          /* Adjust font size as needed */
+  }
+  
+  /* Logo Styling */
+  nav .logo {
+    font-size: 20px;            /* Larger font for the logo */
+    font-weight: bold;
+    color: #007bff;             /* Blue color for the logo */
+  }
