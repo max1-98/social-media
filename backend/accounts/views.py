@@ -1,5 +1,6 @@
 # django imports
 from django.contrib.auth import login
+from django.http import JsonResponse
 
 # rest_framework imports
 from rest_framework import generics, authentication, permissions, status
@@ -7,18 +8,24 @@ from rest_framework.settings import api_settings
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 
 # knox imports
 from knox.views import LoginView as KnoxLoginView
 from knox.auth import TokenAuthentication
 from knox.models import AuthToken
-from knox.auth import TokenAuthentication
 
 # local apps import
 from .serializers import CustomUserSerializer, AuthSerializer
 
-from rest_framework.authentication import SessionAuthentication
-
+@api_view(['POST'])
+def verify_token(request):
+    try:
+        TokenAuthentication().authenticate(request)  # Attempt to authenticate
+        return JsonResponse({'valid': True})
+    except:
+        return JsonResponse({'valid': False}, status=401)
+    
 class UserDetailView(generics.RetrieveAPIView):
     serializer_class = CustomUserSerializer
     permission_classes = (permissions.IsAuthenticated,)

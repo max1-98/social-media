@@ -1,13 +1,24 @@
+# django imports
+from django.http import Http404
+
+# rest_framework imports
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,  permissions
+from rest_framework.exceptions import PermissionDenied
+
+# knox imports
+from knox.auth import TokenAuthentication
+
+# local apps import
 from .models import ClubModel
 from .serializers import ClubSerializer
-from django.http import Http404
 from accounts.models import CustomUser
 
-class SimpleView(APIView):
 
+
+class SimpleView(APIView):
+    
     def get(self, request, format=None):
         clubs = ClubModel.objects.all()
         serializer = ClubSerializer(clubs, many=True)
@@ -30,13 +41,24 @@ class SimpleDetail(APIView):
     """
     Retrieve, update or delete a snippet instance.
     """
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+    
     def get_object(self, pk):
         try:
-            return ClubModel.objects.get(pk=pk)
+            club = ClubModel.objects.get(pk=pk)
+            # Check if the user is the club president
+            if club.president.id == self.request.user.id:
+                return club  # Return the club object if authorized
+            else:
+                raise PermissionDenied("You are not authorized to access this club.")
         except ClubModel.DoesNotExist:
             raise Http404
+        except PermissionDenied as e:
+            raise e
 
     def get(self, request, pk, format=None):
+        
         club = self.get_object(pk)
         serializer = ClubSerializer(club)
         return Response(serializer.data)
@@ -52,7 +74,7 @@ class SimpleDetail(APIView):
     def delete(self, request, pk, format=None):
         User = request.user
         club = self.get_object(pk)
-
+        print(User)
         if club.president.id == User.id:
             club.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)

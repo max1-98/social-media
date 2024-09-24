@@ -2,7 +2,7 @@ from django.urls import path
 
 from knox import views as knox_views
 
-from .views import CreateUserView, LoginView, ManageUserView, LogoutView, UserDetailView
+from .views import CreateUserView, LoginView, ManageUserView, LogoutView, UserDetailView, verify_token
 
 app_name = 'accounts'
 
@@ -12,4 +12,5 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='knox_login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('logoutall/', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
+    path('verify-token/', verify_token), 
 ]

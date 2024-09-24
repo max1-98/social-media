@@ -34,9 +34,7 @@ function CreateClub() {
                     Authorization: `Token ${localStorage.getItem('token')}` // Include the token in the header
                 }
             });
-
-            console.log('Club created:', response.data);
-            console.log(response.data.id);
+            
             navigate('/club/'+response.data.id);
             
         } catch (error) {
