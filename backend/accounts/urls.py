@@ -1,16 +1,16 @@
 from django.urls import path
 
-from knox import views as knox_views
 
-from .views import CreateUserView, LoginView, ManageUserView, LogoutView, UserDetailView, verify_token
+
+from .views import CreateUserView, ManageUserView, LogoutView, UserDetailView, SimpleProfileView
 
 app_name = 'accounts'
 
 urlpatterns = [
     path('register/', CreateUserView.as_view(), name="create"),
     path('profile/', UserDetailView.as_view(), name='profile'),
-    path('login/', LoginView.as_view(), name='knox_login'),
+    
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('logoutall/', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
-    path('verify-token/', verify_token), 
+    
+    path('profile/<int:pk>/', SimpleProfileView.as_view(), name='user-profile'),
 ]

@@ -26,7 +26,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         instance.biological_gender = validated_data.get('biological_gender', instance.biological_gender)
         instance.save()
         return instance
-    
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username')
 
 class AuthSerializer(serializers.Serializer):
     '''serializer for the user authentication object'''

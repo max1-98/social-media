@@ -7,11 +7,13 @@ function UserProfile() {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const token = localStorage.getItem('token'); 
+                const token = localStorage.getItem('access_token'); 
                 if (token) {
-                    const response = await axios.get('http://127.0.0.1:8000/account/profile/', { // Replace with your API URL
+                    const response = await axios.get('http://127.0.0.1:8000/account/profile/', {
                         headers: {
-                            Authorization: `Token ${token}`
+                            Authorization: 'Bearer ' + token,
+                            'Content-Type': 'application/json',
+                            accept: 'application/json',
                         }
                     });
                     setUserData(response.data);

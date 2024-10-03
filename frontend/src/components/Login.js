@@ -13,13 +13,20 @@ function Login(props) {
         event.preventDefault();
 
         try {
-            const response = await axios.post('http://127.0.0.1:8000/account/login/', {
-                username,
-                password,
-            });
+            console.log(password)
+            const response = await axios.post('http://127.0.0.1:8000/auth/token/', {
+                client_id: 'ai21cVtLBNXSaGQ3QwklqOfxmdH3DOEB21iP2VwO',
+                client_secret: 'cn5upUUXY7gGPEkIccB1AZEIhCUR4h0V9MGY9jD7630HVqyY2kyN7NjoVjkx0EMxDwUVqKNugTdeUa5nD8fsXbewAopFjG9BCFNt5KSyYSYj1wf9CVrAlFxQsQq9GF5S',
+                grant_type: 'password',
+                username: username,
+                password: password,
+                
+            }
+            );
 
             // Store tokens in local storage
-            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('access_token', response.data.access_token);
+            localStorage.setItem('refresh_token', response.data.refresh_token);
             props.setIsAuthenticated(true);
             navigate("/")
             console.log('Login successful!'); 

@@ -8,7 +8,13 @@ function ClubDetail() { // Remove the props argument
   useEffect(() => {
     const fetchClubs = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/clubs/`); 
+        const response = await axios.get(`http://127.0.0.1:8000/clubs/`, {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem('access_token'),
+            'Content-Type': 'application/json',
+            accept: 'application/json',
+        }
+        }); 
         console.log('Response Data:', response.data);
         setClubs(response.data); // Update the state with all clubs
       } catch (error) {

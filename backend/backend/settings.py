@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,9 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'accounts',
-    'knox',
     'clubs',
     'corsheaders',
+    'oauth2_provider',
+    'social_django',
+    'drf_social_oauth2',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -69,6 +71,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -133,16 +137,27 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'drf_social_oauth2.authentication.SocialAuthentication',
+    ]
 }
-
-
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', 
 ]
 
+AUTHENTICATION_BACKENDS = (
+   'drf_social_oauth2.backends.DjangoOAuth2',
+   'django.contrib.auth.backends.ModelBackend',
+)
 
-REST_KNOX = {
-    'USER_SERIALISER' : 'accounts.serializer.CustomUserSerializer',
-    'TOKEN_TTL' : timedelta(hours=48)
+OAUTH2_PROVIDER = {
+    # ... other settings ...
+    'SCOPES': {
+        'read': 'Read scope',
+        'write': 'Write scope',
+        'groups': 'Access to your groups',
+    },
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,  # Token expiry (e.g., 1 hour)
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 2592000,  # Refresh token expiry (e.g., 30 days)
 }

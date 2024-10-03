@@ -27,13 +27,17 @@ function CreateClub() {
             if (logo) {
                 formData.append('logo', logo);
             }
-
-            const response = await axios.post('http://127.0.0.1:8000/clubs/', formData, { // Replace with your API URL
-                headers: {
-                    'Content-Type': 'multipart/form-data', // Set the correct header for FormData
-                    Authorization: `Token ${localStorage.getItem('token')}` // Include the token in the header
-                }
-            });
+            const token = localStorage.getItem('access_token')
+            const headers = {
+                Authorization: 'Bearer ' + token,
+                'Content-Type': 'multipart/form-data',
+                accept: 'application/json',
+              }
+            const response = await axios.post('http://127.0.0.1:8000/createclub/', 
+                formData,
+                {headers: headers}
+            
+            );
             
             navigate('/club/'+response.data.id);
             

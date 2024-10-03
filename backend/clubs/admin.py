@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import ClubModel
+from .models import ClubModel, MemberRequest, Member, ClubAdmin
+
+admin.site.register(MemberRequest)
+admin.site.register(Member)
+admin.site.register(ClubAdmin)
 
 @admin.register(ClubModel)
 class ClubModelAdmin(admin.ModelAdmin):
