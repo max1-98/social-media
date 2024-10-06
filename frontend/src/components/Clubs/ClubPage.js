@@ -7,47 +7,63 @@ function ClubPage() {
   const { clubId } = useParams(); // Get clubId from the URL
   const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchClub = async () => {
-        try {
-            const token = localStorage.getItem('access_token');
-            const response = await axios.get(`http://127.0.0.1:8000/club/${clubId}/`, {
-                headers: {
-                  Authorization: 'Bearer ' + token,
-                  'Content-Type': 'application/json',
-                  accept: 'application/json',
-              }
-            });
-            setClub(response.data);
-        } catch (error) {
-            console.error('Error fetching club:', error);
-        }
-        };
+  const fetchClub = async (club_id) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`http://127.0.0.1:8000/club/${club_id}/`, {
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+      }
+    });
+    setClub(response.data);
+  } catch (error) {
+    console.error('Error fetching club:', error);
+  }
+  };
 
-        if (clubId) {
-        fetchClub();
-        }
-    }, [clubId]);
+  useEffect(() => {
+    if (clubId) {
+      fetchClub(clubId);
+    }
+  }, []);
 
 
-    const createMemberRequest = async (clubId) => {
-        try {
-          const token = localStorage.getItem('access_token');
-          const response = await axios.post('http://127.0.0.1:8000/club/request/', { club: clubId }, {
-            headers: {
-              Authorization: 'Bearer ' + token,
-              'Content-Type': 'application/json',
-              accept: 'application/json',
-            }
-          });
+  const createMemberRequest = async (clubId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.post('http://127.0.0.1:8000/club/request/create/', { club: clubId }, {
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+      }
+      });
       
-          // Handle the response (e.g., show a success message)
-          console.log('Member request sent successfully');
-        } catch (error) {
-          console.error('Error creating member request:', error);
-          // Handle errors appropriately
-        }
-      };
+      // Handle the response (e.g., show a success message)
+      console.log('Member request sent successfully');
+      fetchClub(clubId);
+      } catch (error) {
+        console.error('Error creating member request:', error);
+        // Handle errors appropriately
+      }
+    };
+
+    const cancelMemberRequest = async (clubId) => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.post('http://127.0.0.1:8000/club/request/cancel/', { club: clubId }, {
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          accept: 'application/json',
+        }})
+        fetchClub(clubId);
+      } catch (error) {
+        console.error('Error deleting member request:', error);
+      }
+    };
 
     if (!club) {
         return <div>Loading...</div>;
@@ -105,21 +121,22 @@ function ClubPage() {
         )}
 
         {/* Non-Admin Actions */}
-        {!club.is_club_admin && !club.is_club_president && (
-          <>
-            {club.membership_status === 0 && (
-              <button onClick={() => createMemberRequest(clubId)}>Request to join</button>
-            )}
-
-            {club.membership_status === 1 && (
-              <button>Cancel request</button>
-            )}
-
-            {club.membership_status === 2 && (
+        
+        <>
+          {club.membership_status === 0 && (
+            <button onClick={() => createMemberRequest(clubId)}>Request to join</button>
+          )}
+          {club.membership_status === 1 && (
+            <button onClick={()=> cancelMemberRequest(clubId)}>Cancel request</button>
+          )}
+          {club.membership_status === 2 && (
+            <>
               <button>Deactivate membership</button>
-            )}
-          </>
-        )}
+              <button onClick={()=> navigate(`/club/events/${clubId}`)}>Events</button>
+            </>
+          )}
+        </>
+
       </div>
     </>
   );

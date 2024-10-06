@@ -13,7 +13,6 @@ function Login(props) {
         event.preventDefault();
 
         try {
-            console.log(password)
             const response = await axios.post('http://127.0.0.1:8000/auth/token/', {
                 client_id: 'ai21cVtLBNXSaGQ3QwklqOfxmdH3DOEB21iP2VwO',
                 client_secret: 'cn5upUUXY7gGPEkIccB1AZEIhCUR4h0V9MGY9jD7630HVqyY2kyN7NjoVjkx0EMxDwUVqKNugTdeUa5nD8fsXbewAopFjG9BCFNt5KSyYSYj1wf9CVrAlFxQsQq9GF5S',

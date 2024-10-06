@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import ClubDetail from './components/Clubs';
-import ClubPage from './components/ClubPage';
+import ClubDetail from './components/Clubs/Clubs';
+import ClubPage from './components/Clubs/ClubPage';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CreateClub from './components/CreateClub';
-//import Navbar from './components/NavBar';
-import Login from './components/Login';
-import Logout from './components/Logout';
-import UserProfile from './components/UserProfile';
-import Register from './components/Register';
-import axios from 'axios';
-import EditClub from './components/EditClub';
-import ClubRequests from './components/ClubRequests';
+import CreateClub from './components/Clubs/CreateClub';
+
+import Login from './components/Account/Login';
+import Logout from './components/Account/Logout';
+import UserProfile from './components/Account/UserProfile';
+import Register from './components/Account/Register';
+import EditClub from './components/Clubs/EditClub';
+import ClubRequests from './components/Clubs/ClubRequests';
 import Navbar from './components/Navbar/Navbar'
 import { Container } from '@mui/material';
-import MemberDetail from './components/Members';
-
+import MemberDetail from './components/Clubs/Members';
+import EventsDetail from './components/Events/Events';
+import CreateEvent from './components/Events/CreateEvent';
+import EventPage from './components/Events/EventView';
 
 
 function App() {
@@ -92,7 +93,10 @@ function App() {
             <Route path="/account/profile" element={isAuthenticated ? <UserProfile /> : <Navigate to="/account/login" />} />
             <Route path="/account/logout" element={isAuthenticated ? <Logout setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/account/login" />} /> 
             <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests/> : <Navigate to="/account/login" />} />
-            <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail/> : <Navigate to="/account/login" />} /> 
+            <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail/> : <Navigate to="/account/login" />} />
+            <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail/> : <Navigate to="/account/login" />} />
+            <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent/> : <Navigate to="/account/login" />} />
+            <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage/> : <Navigate to="/account/login" />} />  
           </Routes>
         </Container>
 

@@ -46,26 +46,6 @@ class Member(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
     #nights_attended = models.ManyToManyField('Event')
 
-"""
-class Event(models.Model):
-    sport = models.CharField(max_length=10, choices=SPORT_CHOICES)
-    games = models.ManyToManyField('Game')
-    date = models.DateField()
-    start_time = models.TimeField()
-    finish_time = models.TimeField()
-    number_of_courts = models.PositiveIntegerField()
-    club = models.ForeignKey(Club, on_delete=models.CASCADE)
-    sbmm = models.BooleanField(default=False)
-    guests_allowed = models.BooleanField(default=False)
-    over_18_under_18_mixed = models.CharField(max_length=10, choices=(
-        ('over_18', 'Over 18'),
-        ('under_18', 'Under 18'),
-        ('mixed', 'Mixed'),
-    ))
-    active_members = models.ManyToManyField(Member, related_name='active_events')
-    paused_inactive_members = models.ManyToManyField(Member, related_name='paused_inactive_events')
-    played_one_match = models.ManyToManyField(Member, related_name='played_matches')
-
 # Game Type Choices
 GAME_TYPE_CHOICES = (
     ('badminton_singles', 'Badminton Singles'),
@@ -76,9 +56,28 @@ GAME_TYPE_CHOICES = (
     ('paddle_doubles', 'Paddle Doubles'),
 )
 
+class Event(models.Model):
+    sport = models.CharField(max_length=50, choices=GAME_TYPE_CHOICES)
+    games = models.ManyToManyField('Game', blank=True)
+    date = models.DateField()
+    start_time = models.TimeField()
+    finish_time = models.TimeField()
+    number_of_courts = models.PositiveIntegerField()
+    club = models.ForeignKey(ClubModel, on_delete=models.CASCADE)
+    sbmm = models.BooleanField(default=False)
+    guests_allowed = models.BooleanField(default=False)
+    over_18_under_18_mixed = models.CharField(max_length=10, choices=(
+        ('over_18', 'Over 18'),
+        ('under_18', 'Under 18'),
+        ('all ages', 'All ages'),
+    ))
+    active_members = models.ManyToManyField(Member, related_name='active_events', blank=True)
+    played_one_match = models.ManyToManyField(Member, related_name='played_matches', blank=True)
+    event_active = models.BooleanField(default=False)
+    event_complete = models.BooleanField(default=False)
+
+
 class Game(models.Model):
     game_type = models.CharField(max_length=20, choices=GAME_TYPE_CHOICES)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE)
     players = models.ManyToManyField(Member)
     score = models.CharField(max_length=50, blank=True, null=True) # Score can vary
-"""

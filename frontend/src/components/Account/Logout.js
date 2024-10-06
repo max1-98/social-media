@@ -22,9 +22,8 @@ function Logout(props) {
         {headers}
       );
 
-
       // Clear the token from local storage
-      localStorage.removeItem('access_token'); 
+      localStorage.removeItem('access_token');
 
       // Redirect to the login page
       console.log('Logout successful!'); 
@@ -32,9 +31,14 @@ function Logout(props) {
       navigate('/account/login'); // Redirect to the login page
 
     } catch (error) {
+      
       console.error('Logout error:', error);
+
       // Handle errors if the logout fails 
+      localStorage.removeItem('access_token');
+      navigate('/account/login'); // Redirect to the login page
     }
+    
   };
 
   return (

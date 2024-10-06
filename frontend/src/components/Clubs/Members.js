@@ -46,8 +46,6 @@ function MemberDetail() { // Remove the props argument
       }
   }
 
-    
-
   if (members.length === 0) { // Check if there are any clubs
     return <div>Loading...</div>; 
   }

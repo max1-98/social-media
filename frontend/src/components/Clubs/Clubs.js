@@ -16,6 +16,7 @@ function ClubDetail() { // Remove the props argument
         }
         }); 
         console.log('Response Data:', response.data);
+        console.log(clubs)
         setClubs(response.data); // Update the state with all clubs
       } catch (error) {
         console.error('Error fetching clubs:', error);
