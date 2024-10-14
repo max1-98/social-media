@@ -18,17 +18,6 @@ function CreateEvent() {
         event.preventDefault(); 
 
         try {
-            /*
-            const formData = new FormData();
-            formData.append('sport', sport);
-            formData.append('date', date);
-            formData.append('start_time', start_time);
-            formData.append('finish_time', finish_time);
-            formData.append('number_of_courts', number_of_courts);
-            formData.append('sbmm', sbmm)
-            formData.append('guests_allowed', guests_allowed);
-            formData.append('over_18_under_18_mixed', over_18_under_18_mixed);
-            */
 
             const data = {
                 sport: sport,
@@ -53,8 +42,8 @@ function CreateEvent() {
                 data,
                 {headers: headers}
             );
-            
-            navigate('/club/'+response.data.id);
+            console.log(response.data)
+            navigate(`/club/event/${clubId}/${response.data.id}`);
             
         } catch (error) {
             console.error('Error creating club:', error);

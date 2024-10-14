@@ -1,48 +1,50 @@
 import React from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Button, Typography } from '@mui/material';
 
 function Logout(props) {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+
   const handleLogout = async () => {
     try {
-
-      // Make a POST request to your Django API logout endpoint
-      const headers =  {
-        Authorization: 'Bearer ' + localStorage.getItem('access_token'),
+      const token = localStorage.getItem('access_token');
+      const headers = {
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
         accept: 'application/json',
-      }
-      const response = await axios.post('http://127.0.0.1:8000/auth/revoke-token/', {
-        client_id: 'ai21cVtLBNXSaGQ3QwklqOfxmdH3DOEB21iP2VwO',
-        client_secret: 'cn5upUUXY7gGPEkIccB1AZEIhCUR4h0V9MGY9jD7630HVqyY2kyN7NjoVjkx0EMxDwUVqKNugTdeUa5nD8fsXbewAopFjG9BCFNt5KSyYSYj1wf9CVrAlFxQsQq9GF5S',
-        token: 'oDCd4EMPqZzypMrIvgsKu1CqU2U79z',
+      };
+      await axios.post(
+        'http://127.0.0.1:8000/auth/revoke-token/',
+        {
+          client_id: 'ai21cVtLBNXSaGQ3QwklqOfxmdH3DOEB21iP2VwO',
+          client_secret:
+            'cn5upUUXY7gGPEkIccB1AZEIhCUR4h0V9MGY9jD7630HVqyY2kyN7NjoVjkx0EMxDwUVqKNugTdeUa5nD8fsXbewAopFjG9BCFNt5KSyYSYj1wf9CVrAlFxQsQq9GF5S',
+          token,
         },
-        
-        {headers}
+        { headers }
       );
 
-      // Clear the token from local storage
       localStorage.removeItem('access_token');
-
-      // Redirect to the login page
-      console.log('Logout successful!'); 
       props.setIsAuthenticated(false);
-      navigate('/account/login'); // Redirect to the login page
-
+      navigate('/account/login');
+      console.log('Logout successful!');
     } catch (error) {
-      
       console.error('Logout error:', error);
-
-      // Handle errors if the logout fails 
       localStorage.removeItem('access_token');
-      navigate('/account/login'); // Redirect to the login page
+      navigate('/account/login');
     }
-    
   };
 
   return (
-    <button onClick={handleLogout}>Logout</button> 
+    <div>
+      <Typography variant="h6" gutterBottom>
+        Are you sure you want to log out?
+      </Typography>
+      <Button variant="contained" color="error" onClick={handleLogout}>
+        Logout
+      </Button>
+    </div>
   );
 }
 

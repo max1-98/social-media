@@ -12,12 +12,11 @@ import Register from './components/Account/Register';
 import EditClub from './components/Clubs/EditClub';
 import ClubRequests from './components/Clubs/ClubRequests';
 import Navbar from './components/Navbar/Navbar'
-import { Container } from '@mui/material';
+import { Container, Paper } from '@mui/material';
 import MemberDetail from './components/Clubs/Members';
 import EventsDetail from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvent';
 import EventPage from './components/Events/EventView';
-
 
 function App() {
   
@@ -97,14 +96,14 @@ function App() {
             <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail/> : <Navigate to="/account/login" />} />
             <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent/> : <Navigate to="/account/login" />} />
             <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage/> : <Navigate to="/account/login" />} />  
+            <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
+            <Route path="/account/register" element={!isAuthenticated ? <Register /> : <Navigate to="/"/>} /> 
           </Routes>
         </Container>
 
-        <Routes>
-          {/* Login and Registration Route */}
-          <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
-          <Route path="/account/register" element={!isAuthenticated ? <Register /> : <Navigate to="/"/>} /> 
-        </Routes>
+        
+        
+          
       </Router>
     </div>
   );

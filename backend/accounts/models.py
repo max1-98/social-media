@@ -19,6 +19,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     followers = models.ManyToManyField('self', symmetrical=False, related_name='followed_by')
     following = models.ManyToManyField('self', symmetrical=False, related_name='following_user') 
     biological_gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female')], default='male')
+    elos = models.ManyToManyField('elo.Elo', related_name="elo_s")
 
     groups = models.ManyToManyField(
         Group,
@@ -49,3 +50,5 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @property
     def following_count(self):
         return self.following.count()
+    
+from elo.models import Elo

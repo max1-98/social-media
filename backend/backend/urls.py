@@ -15,10 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
+from elo.views import EloListView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',include('clubs.urls')),
+    path('', include('clubs.urls')),
+    path('', include('events.urls')),
+    path('game/', include('games.urls')),
     path('account/', include('accounts.urls')),
+    path('elo/', include('elo.urls')),
     re_path('auth/', include('drf_social_oauth2.urls', namespace='drf'))
 ]

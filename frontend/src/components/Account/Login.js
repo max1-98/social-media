@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+    TextField,
+    Button,
+    Typography,
+    Grid,
+    Box,
+    Alert,
+  } from '@mui/material';
 
 
 function Login(props) {
@@ -38,34 +46,61 @@ function Login(props) {
     };
 
     return (
-        <div>
-            <h1>Welcome to [website name]!</h1>
-            <p>In order to use the functionality of this website you need to login.</p>
-            <h2>Login</h2>
-            {error && <p className="error">{error}</p>} {/* Display error if there is one */}
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="username">Username:</label>
-                    <input
-                        type="text"
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+        <Grid container justifyContent="center" alignItems="center" height="100vh">
+            <Grid item xs={12} md={4}>
+                <Box
+                sx={{
+                    padding: 4,
+                    borderRadius: 2,
+                    boxShadow: 3,
+                }}
+                >
+                <Typography variant="h4" gutterBottom align="center">
+                    Welcome to [website name]!
+                </Typography>
+                <Typography variant="body1" gutterBottom align="center">
+                    In order to use the functionality of this website, you need to
+                    login.
+                </Typography>
+
+                <Typography variant="h5" gutterBottom align="center">
+                    Login
+                </Typography>
+
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                    </Alert>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                    label="Username"
+                    fullWidth
+                    margin="normal"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     />
-                </div>
-                <div>
-                    <label htmlFor="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                    <TextField
+                    label="Password"
+                    fullWidth
+                    margin="normal"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     />
-                </div>
-                <button type="submit">Login</button>
-            </form>
-            <p>Don't have an account? Click <Link to="/account/register/">here</Link> to register.</p>
-        </div>
+                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                    Login
+                    </Button>
+                </form>
+
+                <Typography variant="body2" align="center" mt={2}>
+                    Don't have an account? Click{' '}
+                    <Link to="/account/register/">here</Link> to register.
+                </Typography>
+                </Box>
+            </Grid>
+        </Grid>
     );
 }
 

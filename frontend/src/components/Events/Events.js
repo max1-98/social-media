@@ -61,9 +61,6 @@ function EventsDetail() { // Remove the props argument
     fetchEvents(clubId); // Fetch clubs on component mount
   }, [clubId]); // Empty dependency array to only fetch once
 
-  if (rows.length === 0) { // Check if there are any clubs
-    return <div>Loading...</div>; 
-  }
   return (
     <>
       <div>
