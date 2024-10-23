@@ -8,7 +8,7 @@ from .views import EventCreateView, EventsListView, EventView, ActivateMemberVie
 urlpatterns = [
     # Club Event views
     path('club/events/<int:pk>/', EventsListView.as_view()),
-    path('club/event/<int:pk>/', EventView.as_view()),
+    path('club/event/<int:pk1>/', EventView.as_view()),
     path('club/event/create/<int:pk>/', EventCreateView.as_view()),
     path('club/event/activate-member/', ActivateMemberView.as_view(), name='activate-member'),
     path('club/event/deactivate-member/', DectivateMemberView.as_view(), name='deactivate-member'),

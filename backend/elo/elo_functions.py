@@ -3,26 +3,41 @@ from .models import Elo
 from math import cos, exp, pi, sin
 from django.utils import timezone
 
-
 # Calculates the probability of the user with elo1 of winning (using sigmoid function)
 def prob_win(elo1,elo2):
-    b = 0.01
+
+    # Calculates the probability that player with elo1 wins
+
+    b = 1/300
     return 1/(1+exp(b*(elo2-elo1)))
+
+def g(x):
+    if x>8:
+        return 1
+    elif x>4: 
+        return 0.8
+    elif x>1:
+        return 0.650
+    elif x>-5:
+        return 0.350
+    elif x>-9:
+        return 0.200
+    else:
+        return 0
 
 # Calculates the value of the elo-change outcome given a probability of the team winning
 def result(score_difference,p, game_type):
 
-    if game_type == "badminton_doubles" or game_type == "badminton_singles":
-        A = 42*p-21
-        k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
+    if game_type[:9] == "badminton":
+        
+        return g(score_difference)-p
+    elif game_type[:6] == "tennis":
+        """
+        Need to find the way clubs score points and hence construct a proper way with dealing it.
+        """
 
-        return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
-    
-    A = 42*p-21
-    
-    k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
-    
-    return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
+        return g(score_difference)-p
+
 
 def team1Win(score, game_type):
     """
@@ -42,6 +57,7 @@ def team1Win(score, game_type):
     return team1_score > team2_score
 
 def scoreDifference(score, game_type):
+
     if game_type == "badminton_doubles" or game_type == "badminton_singles":
         team1_score, team2_score = map(int, score.split(","))
         return abs(team1_score-team2_score)
@@ -51,7 +67,7 @@ def scoreDifference(score, game_type):
 
 def update_elo(score, game):
 
-    k = 100
+    k = 40
     game_type = game.game_type
     
     teamw = []
@@ -94,7 +110,7 @@ def update_elo(score, game):
 
 
     # probability winning team wins
-    pw = prob_win(elow_average,elol_average)
+    pw = prob_win(elow_average, elol_average)
     change_in_elo = result(score_difference, pw, game_type)
     for elo in teamw:
 
@@ -126,4 +142,17 @@ def update_elo(score, game):
         
 
 
+""" Old Elo update method:
+if game_type == "badminton_doubles" or game_type == "badminton_singles":
+        A = 42*p-21
+        k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
 
+        return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
+    
+    A = 42*p-21
+    
+    k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
+    
+    return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
+
+"""

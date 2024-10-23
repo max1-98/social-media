@@ -28,3 +28,11 @@ class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ('id','team1','team2')
+
+class CompleteGameSerializer(serializers.ModelSerializer):
+    team1 = MemberSerializer(many=True)
+    team2 = MemberSerializer(many=True)
+
+    class Meta:
+        model = Game
+        fields = ('id', 'team1', 'team2', 'game_type', 'score', 'start_time')

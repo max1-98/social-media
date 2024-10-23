@@ -16,7 +16,6 @@ class EloListView(generics.ListAPIView):
     """
     List all Elo entries for a specific user.
     """
-
     permission_classes = [IsAuthenticated]
     serializer_class = EloSerializer
 

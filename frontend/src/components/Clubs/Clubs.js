@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // Import Link
+import { Link } from 'react-router-dom';
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Typography,
+  Grid2,
+  Box,
+  Button,
+} from '@mui/material';
 
-function ClubDetail() { // Remove the props argument
-  const [clubs, setClubs] = useState([]); // Use an array to store all clubs
+function ClubDetail() {
+  const [clubs, setClubs] = useState([]);
 
   useEffect(() => {
     const fetchClubs = async () => {
@@ -13,39 +23,53 @@ function ClubDetail() { // Remove the props argument
             Authorization: 'Bearer ' + localStorage.getItem('access_token'),
             'Content-Type': 'application/json',
             accept: 'application/json',
-        }
-        }); 
-        setClubs(response.data); // Update the state with all clubs
+          },
+        });
+        setClubs(response.data);
       } catch (error) {
         console.error('Error fetching clubs:', error);
       }
     };
 
-    fetchClubs(); // Fetch clubs on component mount
-  }, []); // Empty dependency array to only fetch once
+    fetchClubs();
+  }, []);
 
-  if (clubs.length === 0) { // Check if there are any clubs
-    return <div>Loading...</div>; 
+  if (clubs.length === 0) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div>
-      <h2>All Clubs</h2>
-      <ul>
-        {clubs.map((club, index) => (
-          <li key={index}> 
-            <Link to={`/club/${club.id}`}> {/* Link to the club detail page */}
-              <h3>{club.name}</h3>
-            </Link>
-            <p>Sport: {club.sport}</p>
-          </li>
-        ))}
-      </ul>
-      <h3>
-        Click <Link to="/club/create">here</Link> to create a club.
-      </h3>
-    </div>
+    <Grid2 container justifyContent="flex-start" alignItems="flex-start" height="100vh">
+      
+      <Grid2 item xs={12} md={12} sx={{ width: '100%' }}>
+        <Box sx={{ padding: 4 }}>
+          <Typography variant="h4" gutterBottom align="center">
+            All Clubs
+          </Typography>
+          <List sx={{ mt: 2, width: '100%' }}> 
 
+            {clubs.map((club, index) => (
+              <ListItem key={index}>
+                <ListItemButton
+                  component={Link}
+                  to={`/club/${club.id}`}
+                >
+                  <ListItemText primary={club.name} />
+                  <Typography variant="body2" color="textSecondary">
+                    Sport: {club.sport}
+                  </Typography>
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+          <Box mt={2} sx={{ml: "20px"}} textAlign="left">
+            <Button component={Link} to="/club/create" variant="contained">
+              Create Club
+            </Button>
+          </Box>
+        </Box>
+      </Grid2>
+    </Grid2>
   );
 }
 

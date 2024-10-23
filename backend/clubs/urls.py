@@ -6,20 +6,26 @@ from django.urls import path
 from .views import AllClubView, ClubDetailView, ClubUpdateView, ClubCreateView
 
 # Member views
-from .views import MembersView, MemberAcceptView, MemberDeleteView, MemberRequestCreateView, MemberRequestDeleteView, MemberRequestListView
-
+from .views import MembersListEventView, MemberAcceptView, MemberDeleteView, MemberRequestCreateView, MemberRequestDeleteView, MemberRequestListView
+from .views import MemberAttendanceListView, CreateDummyUserView, MembersListView, MyClubsListView, MakeMemberAdminView
 urlpatterns = [
     # Club views
     path('clubs/', AllClubView.as_view()),
     path('createclub/', ClubCreateView.as_view()),
     path('club/<int:pk>/', ClubDetailView.as_view()),
     path('club/edit/<int:pk>/', ClubUpdateView.as_view()),
+    path('club/my-clubs/', MyClubsListView.as_view()),
 
     # Club Member views
     path('club/request/create/', MemberRequestCreateView.as_view()),
     path('club/request/cancel/', MemberRequestDeleteView.as_view()),
     path('club/requests/<int:pk>/', MemberRequestListView.as_view()),
-    path('club/members/<int:pk>/', MembersView.as_view()),
-    path('club/request-accept/<int:pk>/', MemberAcceptView.as_view()),
-    path('club/member/<int:pk>/', MemberDeleteView.as_view()),
+    path('club/members/<int:pk>/', MembersListView.as_view()),
+    path('club/members/event/<int:pk1>/', MembersListEventView.as_view()),
+    path('club/request-accept/<int:pk2>/<int:pk>/', MemberAcceptView.as_view()),
+    path('club/member/<int:pk2>/<int:pk>/', MemberDeleteView.as_view()), # Deleteing a particular member
+    path('club/member/<int:pk>/', MemberDeleteView.as_view()), # Deleting yourself (ie. leaving)
+    path('clubs/member-attendance/', MemberAttendanceListView.as_view()),
+    path('club/dummy-user/create/<int:pk>/', CreateDummyUserView.as_view()),
+    path('club/make-admin/<int:pk2>/<int:pk>/', MakeMemberAdminView.as_view()),
 ]

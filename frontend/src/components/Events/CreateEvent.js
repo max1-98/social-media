@@ -31,7 +31,7 @@ function CreateEvent() {
             };
 
         
-
+            console.log(data)
             const token = localStorage.getItem('access_token')
             const headers = {
                 Authorization: 'Bearer ' + token,
@@ -42,7 +42,7 @@ function CreateEvent() {
                 data,
                 {headers: headers}
             );
-            console.log(response.data)
+            
             navigate(`/club/event/${clubId}/${response.data.id}`);
             
         } catch (error) {

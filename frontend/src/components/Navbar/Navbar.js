@@ -10,7 +10,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { mainNavbarItems } from '../consts/NavbarListItems';
 import { navbarStyles } from '../consts/styles';
 import { Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
 
@@ -26,21 +26,21 @@ const Navbar = () => {
         <Typography sx={navbarStyles.title}>My website</Typography>
         <Divider />
         <List>
-          {mainNavbarItems.map((text, index) => (
-            <ListItem 
-                button
-                key={text.id}
-                onClick={() => navigate(text.route)}
-                disablePadding>
-              <ListItemButton>
-                <ListItemIcon sx = {navbarStyles.icons}>
-                  {text.icon}
-                </ListItemIcon>
-                <ListItemText sx = {navbarStyles.text} primary={text.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+        {mainNavbarItems.map((text, index) => (
+          <ListItem button key={text.id} disablePadding>
+            <ListItemButton component={Link} to={text.route}
+              sx={{
+                display: 'flex', // This is for better visual appearance 
+                alignItems: 'center'
+              }}>
+              <ListItemIcon sx={navbarStyles.icons}>
+                {text.icon}
+              </ListItemIcon>
+              <ListItemText sx={navbarStyles.text} primary={text.label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
       </Drawer>
     )
 }

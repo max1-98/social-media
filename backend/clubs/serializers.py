@@ -4,11 +4,8 @@ from django.contrib.auth import get_user_model
 # rest_framework imports
 from rest_framework import serializers
 
-
 # local app imports
-from .models import ClubModel, ClubAdmin, MemberRequest, Member
-
-
+from .models import ClubModel, ClubAdmin, MemberRequest, Member, DummyUser
 
 User = get_user_model()
     
@@ -55,6 +52,11 @@ class ClubSerializer(serializers.ModelSerializer):
         else:
             return 0  # No user
 
+class CreateDummyUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DummyUser
+        fields = ['first_name', 'surname', 'biological_gender']
+
 class MemberRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberRequest
@@ -67,12 +69,47 @@ class MemberRequestDetailSerializer(serializers.ModelSerializer):
         model = MemberRequest
         fields = ('id', 'club', 'user', 'username', 'date_requested')
 
-class MemberSerializer(serializers.ModelSerializer):
-
-    username = serializers.CharField(source='user.username', read_only=True)
+class MemberEventSerializer(serializers.ModelSerializer):
+    elo = serializers.SerializerMethodField()
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     surname = serializers.CharField(source='user.surname', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = Member
-        fields = ('id', 'username', 'first_name', 'surname', 'date_joined')  # Include any other fields 
+        fields = ['id','first_name', 'surname','username', 'elo']
+
+    def get_elo(self, obj):
+        # Get the game_type from the context (passed in from the view)
+        game_type = self.context.get('game_type') 
+        if game_type:
+            elo_entry = obj.user.elos.filter(game_type=game_type).first()
+            return elo_entry.elo if elo_entry else None
+        return None 
+    
+class MemberBasicSerializer(serializers.ModelSerializer):
+
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    surname = serializers.CharField(source='user.surname', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+    is_club_admin = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Member
+        fields = ['id', 'first_name', 'surname','username', 'is_club_admin']
+
+    def get_is_club_admin(self, obj):
+        """Checks if the given user is an admin for the club."""
+        if obj.user:
+            return ClubAdmin.objects.filter(club=obj.club, admin=obj.user).exists()
+        return False
+
+class MemberAttendanceSerializer(serializers.ModelSerializer):
+    attendance_count = serializers.IntegerField(read_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.surname', read_only=True)
+
+    class Meta:
+        model = Member
+        fields = ['first_name', 'last_name', 'attendance_count']
+

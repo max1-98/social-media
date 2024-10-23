@@ -19,6 +19,7 @@ class Game(models.Model):
 
     # Games will be ran differently depending on the game type
     game_type = models.CharField(max_length=20, choices=GAME_TYPE_CHOICES)
+    start_time = models.DateTimeField(default=timezone.now)
     
     """
 
@@ -35,7 +36,11 @@ class Game(models.Model):
     """
     team1 = models.ManyToManyField(Member, related_name='team1_games')
     team2 = models.ManyToManyField(Member, related_name='team2_games')
+
+    ### Change this to a JSONField. Make it Elo at the start. So we can track Elo
     all_users = models.ManyToManyField(Member, related_name='all_user_games')
+
+    ### Add a SBMM field, to check in the future whether the game was ranked or not
 
     """
     Score will be stored as a string and then converted when doing elo-calculations. 

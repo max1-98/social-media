@@ -35,7 +35,9 @@ function ClubRequests() { // Remove the props argument
             };
 
             // Send a GET request to the backend to remove the member request
-            await axios.get(`http://127.0.0.1:8000/club/request-accept/${requestId}/`, { headers });
+            await axios.get(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`, 
+                { headers }
+            );
 
 
             // Update the memberRequests state (you'll need to refetch from the backend)
@@ -54,7 +56,7 @@ function ClubRequests() { // Remove the props argument
             };
 
             // Send a GET request to the backend to remove the member request
-            await axios.delete(`http://127.0.0.1:8000/club/request-accept/${requestId}/`, { headers });
+            await axios.delete(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`, { headers });
 
             // Update the memberRequests state (you'll need to refetch from the backend)
             fetchMemberRequests(clubId);

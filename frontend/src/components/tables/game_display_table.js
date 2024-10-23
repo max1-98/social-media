@@ -8,25 +8,17 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 
-function Member_table(  columns,
-                        title, 
-                        button_label, 
-                        members, 
-                        handleButtonClick,
+function Game_table(  columns,
+                        games, 
                         page,
                         rowsPerPage,
                         handleChangePage,
                         handleChangeRowsPerPage,
-                        setMembers, 
-                        setEvent, 
-                        setAMembers, 
-                        setInGameMembers,
-                        event_id,
                     ) 
     {
 return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Typography variant="h5" sx={{ marginLeft: '10px', mt: '4px'}}>{title}</Typography>
+        <Typography variant="h5" sx={{ marginLeft: '10px', mt: '4px'}}>Games</Typography>
         <TableContainer sx={{ maxHeight: 220 }}>
             <Table stickyHeader aria-label="sticky table">
                 <TableHead>
@@ -43,25 +35,32 @@ return (
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {members
+                    {games
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((member) => (
-                        <TableRow hover role="checkbox" tabIndex={-1} key={member.id}> 
-                            <>
-                                <TableCell key={`name-${member.id}`}>
-                                    {member.first_name} {member.surname}
+                        .map((game) => (
+                        <TableRow hover role="checkbox" tabIndex={-1} key={game.id}> 
+                            <>  
+                                <TableCell key={`start_time-${game.id}`}>
+                                    {new Date(game.start_time).getHours() + ':' + new Date(game.start_time).getMinutes()}
                                 </TableCell>
-                                <TableCell key={`username-${member.id}`}>
-                                    {member.username}
+                                <TableCell key={`team1-${game.id}`}>
+                                    {game.team1.map((player) => (
+                                        <>
+                                        {player.first_name} {player.surname}
+                                        </>
+                                    ))}
                                 </TableCell>
-                                <TableCell key={`elo-${member.id}`}>
-                                    {member.elo ? member.elo : 'Unranked'}
+                                <TableCell key={`team2-${game.id}`}>
+                                    {game.team2.map((player) => (
+                                        <>
+                                        {player.first_name} {player.surname}
+                                        </>
+                                    ))}
+                                </TableCell>
+                                <TableCell key={`score-${game.id}`}>
+                                    {game.score}
                                 </TableCell>
                             </>
-                            <TableCell key="link" align="center"> 
-                            
-                                <Button variant="outlined" color="error" onClick={() => handleButtonClick(member.id, event_id, setMembers, setEvent, setAMembers, setInGameMembers)}>{button_label}</Button>
-                            </TableCell> 
                         </TableRow>
                     ))}
                 </TableBody>
@@ -70,7 +69,7 @@ return (
         <TablePagination
             rowsPerPageOptions={[10, 25, 100]}
             component="div"
-            count={members.length} // Update count for active members
+            count={games.length} // Update count for active members
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -79,4 +78,4 @@ return (
     </Paper>
 )};
 
-export default Member_table;
+export default Game_table;

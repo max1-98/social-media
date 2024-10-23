@@ -23,6 +23,13 @@ export const mainNavbarItems = [
     {
         id: 3,
         icon: "",
+        label: "My Clubs",
+        route: '/club/myClubs',
+    }
+    ,
+    {
+        id: 4,
+        icon: "",
         label: 'Logout',
         route: '/account/logout',
     }

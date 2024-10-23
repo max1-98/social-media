@@ -13,10 +13,15 @@ from rest_framework import status, generics
 from .serializers import ActivateMemberSerializer, DeactivateMemberSerializer, CompleteEventSerializer, StartEventSerializer
 from .serializers import EventSerializer, EventDetailSerializer
 from .models import Event
+from clubs.permissions import IsClubAdmin, IsClubMember
 from clubs.models import ClubModel 
 
 class ActivateMemberView(APIView):
-    permission_classes = [IsAuthenticated]
+
+    """
+    Update this so that people can activate/deactive themselves
+    """
+    permission_classes = [IsAuthenticated, IsClubAdmin]
 
     def post(self, request):
         serializer = ActivateMemberSerializer(data=request.data)
@@ -25,7 +30,10 @@ class ActivateMemberView(APIView):
         return Response(result, status=status.HTTP_200_OK)
     
 class DectivateMemberView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    Update this so that people can activate/deactive themselves
+    """
+    permission_classes = [IsAuthenticated, IsClubAdmin]
 
     def post(self, request):
         serializer = DeactivateMemberSerializer(data=request.data)
@@ -34,7 +42,8 @@ class DectivateMemberView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 class CompleteEventView(APIView):
-    permission_classes = [IsAuthenticated]
+    
+    permission_classes = [IsAuthenticated, IsClubAdmin]
 
     def post(self, request):
         serializer = CompleteEventSerializer(data=request.data)
@@ -43,7 +52,7 @@ class CompleteEventView(APIView):
         return Response(result, status=status.HTTP_200_OK)
 
 class StartEventView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClubAdmin]
 
     def post(self, request):
         serializer = StartEventSerializer(data=request.data)
@@ -52,16 +61,17 @@ class StartEventView(APIView):
         return Response(result, status=status.HTTP_200_OK)
     
 class EventView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClubMember]
 
-    def get_object(self, pk):
+    def get_object(self, pk1):
         try:
-            return Event.objects.get(pk=pk)
+
+            return Event.objects.get(pk=pk1)
         except Event.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def get(self, request, pk):  # Include 'pk'
-        event = self.get_object(pk)
+    def get(self, request, pk1): 
+        event = self.get_object(pk1)
         if event:
             serializer = EventDetailSerializer(event)
             return Response(serializer.data)
@@ -70,6 +80,7 @@ class EventView(APIView):
 
 class EventCreateView(APIView):
     queryset = Event.objects.all()
+    permission_classes = [IsAuthenticated, IsClubAdmin]
     
     def post(self, request, pk):
         """
@@ -90,7 +101,7 @@ class EventCreateView(APIView):
 class EventsListView(generics.ListAPIView):
     queryset = Event.objects.all() 
     serializer_class = EventSerializer  
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClubMember]
 
     def get_queryset(self):
         club_id = self.kwargs['pk']

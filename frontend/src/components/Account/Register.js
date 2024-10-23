@@ -1,146 +1,152 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; 
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  TextField, 
+  Button, 
+  Typography, 
+  FormControl, 
+  FormLabel, 
+  RadioGroup, 
+  FormControlLabel, 
+  Radio, 
+  Alert, 
+  Container,
+  Grid
+} from '@mui/material';
 
 function Register() {
-    const navigate = useNavigate(); 
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [first_name, setFN] = useState('');
-    const [surname, setSN] = useState('');
-    const [date_of_birth, setDOB] = useState('');
-    const [biological_gender, setBG] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [surname, setSurname] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [biologicalGender, setBiologicalGender] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState(null);
 
-    
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    const handleSubmit = async (event) => {
-        event.preventDefault(); 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
 
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            return;
-        }
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/account/register/', {
+        username,
+        email,
+        first_name: firstName, // Use first_name for consistency
+        surname,
+        date_of_birth: dateOfBirth, // Use date_of_birth for consistency
+        biological_gender: biologicalGender, // Use biological_gender for consistency
+        password,
+      });
 
-        try {
-            const response = await axios.post('http://127.0.0.1:8000/account/register/', {
-                username,
-                email,
-                first_name,
-                surname,
-                date_of_birth,
-                biological_gender,
-                password,
-            });
+      console.log('Registration successful:', response.data);
+      navigate('/account/login'); // Redirect to login after successful registration 
+    } catch (error) {
+      setError(error.response.data.detail || 'Registration failed.');
+      console.error('Registration error:', error);
+    }
+  };
 
-            console.log('Registration successful:', response.data);
-            navigate('/account/login'); // Redirect to login after successful registration 
-        } catch (error) {
-            setError(error.response.data.detail || 'Registration failed.'); 
-            console.error('Registration error:', error);
-        }
-    };
-
-    return (
-        <div>
-            <h2>Register</h2>
-            {error && <p className="error">{error}</p>} 
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="username">Username:</label>
-                    <input
-                        type="text"
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="email">Email:</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="first_name">First name:</label>
-                    <input
-                        type="text"
-                        id="first_name"
-                        value={first_name}
-                        onChange={(e) => setFN(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="surname">Surname:</label>
-                    <input
-                        type="text"
-                        id="Surname"
-                        value={surname}
-                        onChange={(e) => setSN(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="date_of_birth">Date of birth:</label>
-                    <input
-                        type="date"
-                        id="date_of_birth"
-                        value={date_of_birth}
-                        onChange={(e) => setDOB(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="biological_gender">Biological gender:</label>
-                    <div>
-                        <input 
-                            type="radio" 
-                            id="male" 
-                            name="biological_gender" 
-                            value="male" 
-                            checked={biological_gender === 'male'}
-                            onChange={(e) => setBG(e.target.value)}
-                        />
-                        <label htmlFor="male">Male</label>
-                    </div>
-
-                    <div>
-                        <input 
-                            type="radio" 
-                            id="female" 
-                            name="biological_gender" 
-                            value="female" 
-                            checked={biological_gender === 'female'}
-                            onChange={(e) => setBG(e.target.value)}
-                        />
-                        <label htmlFor="female">Female</label>
-                    </div>
-            </div>
-                <div>
-                    <label htmlFor="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="confirmPassword">Confirm Password:</label>
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                </div>
-                <button type="submit">Register</button>
+  return (
+     <Container maxWidth="md" sx={{padding:"10px"}}> {/* Wrap the content in a Container */}
+      <Grid container spacing={2} justifyContent="center" alignItems="center" sx={{ minHeight: '100vh' }}> {/* Add Grid container */}
+        <Grid item xs={12} md={6}> {/* Adjust column sizes as needed */}
+          <Typography variant="h4" gutterBottom align="center">Register</Typography>
+          {error && <Alert severity="error">{error}</Alert>} 
+          <form onSubmit={handleSubmit}>
+      
+            <TextField
+            label="Username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <TextField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <TextField
+            label="First Name"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <TextField
+            label="Surname"
+            type="text"
+            value={surname}
+            onChange={(e) => setSurname(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <TextField
+            label="Date of Birth"
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <FormControl component="fieldset" margin="normal" fullWidth>
+            <FormLabel component="legend">Biological Gender</FormLabel>
+            <RadioGroup
+                aria-label="gender"
+                name="biologicalGender"
+                value={biologicalGender}
+                onChange={(e) => setBiologicalGender(e.target.value)}
+            >
+                <FormControlLabel 
+                value="male" 
+                control={<Radio />} 
+                label="Male" 
+                />
+                <FormControlLabel 
+                value="female" 
+                control={<Radio />} 
+                label="Female" 
+                />
+            </RadioGroup>
+            </FormControl>
+            <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <TextField
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            margin="normal"
+            fullWidth
+            />
+            <Button type="submit" variant="contained" color="primary" fullWidth>
+            Register
+            </Button>
             </form>
-        </div>
-    );
+            <Typography>Already have an account? Login <Link to="/account/login/">here.</Link></Typography>
+        </Grid>
+      </Grid>
+    </Container>
+  );
 }
 
 export default Register;

@@ -17,93 +17,61 @@ import MemberDetail from './components/Clubs/Members';
 import EventsDetail from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvent';
 import EventPage from './components/Events/EventView';
+import MemberAttendanceComponent from './components/Clubs/Attendance';
+import MyClubsList from './components/Clubs/MyClubs';
 
 function App() {
   
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   const [isAuthenticated, setIsAuthenticated] = useState(!!token);
-  useEffect(() => {
-    // A. Function for asking Django whether the token is valid
-    /*
-    const verifyToken = async (token) => {
-      try {
-        const response = await axios.post('http://127.0.0.1:8000/account/verify-token/', {}, {
-          headers: {
-            Authorization: `Token ${token}`
-          }
-        });
-        setIsAuthenticated(response.data.valid);
-      } catch (error) {
-        console.error('Error verifying token:', error);
-        setIsAuthenticated(false);
-      }
-    };
-    */
 
-    // 1. Initial Check:
+
+  useEffect(() => {
+
     const initialToken = localStorage.getItem('access_token');
     if (initialToken) {
-      //verifyToken(initialToken);
       setIsAuthenticated(true)
     } else {
       setIsAuthenticated(false);
     }
   
-    // 2. Token Verification Interval:
-    /*
-    const intervalId = setInterval(async () => {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        verifyToken(token);
-      }
-    }, 60000); // Verify every 60 seconds = 60000 milliseconds
-    */
-  
-    // 3. Local Storage Change Listener:
     const handleStorageChange = () => {
       const token = localStorage.getItem('access_token');
       if (token) {
         setIsAuthenticated(true);
-        //verifyToken(token);
       } else {
         setIsAuthenticated(false);
       }
     };
     window.addEventListener('storage', handleStorageChange);
   
-    // 4. Cleanup on Unmount:
     return () => {
-      //clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
   return (
-    <div style={{ display: 'flex' }}> 
+    <div style={{ display: 'flex' }}>
       <Router>
-        {isAuthenticated && <Navbar/>}  {/* Show navbar only if logged in */}
+        {isAuthenticated && <Navbar />}
         <Container style={{ marginLeft: 0 }}>
           <Routes>
-          {/* Redirect to login if not authenticated */}
-          {/* Main content area */}
-            <Route path="/" element={isAuthenticated ? <ClubDetail/> : <Navigate to="/account/login" />}/> 
-            <Route path="/club/:clubId" element={isAuthenticated ? <ClubPage /> : <Navigate to="/account/login" />}/>
+            <Route path="/" element={<ClubDetail />} />
+            <Route path="/club/myClubs" element={<MyClubsList />} />
+            <Route path="/club/:clubId" element={isAuthenticated ? <ClubPage /> : <Navigate to="/account/login" />} /> 
             <Route path="/club/edit/:clubId" element={isAuthenticated ? <EditClub /> : <Navigate to="/account/login" />} />
+            <Route path="/club/attendance/:clubId" element={isAuthenticated ? <MemberAttendanceComponent /> : <Navigate to="/account/login" />} />
             <Route path="/club/create" element={isAuthenticated ? <CreateClub /> : <Navigate to="/account/login" />} />
             <Route path="/account/profile" element={isAuthenticated ? <UserProfile /> : <Navigate to="/account/login" />} />
-            <Route path="/account/logout" element={isAuthenticated ? <Logout setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/account/login" />} /> 
-            <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests/> : <Navigate to="/account/login" />} />
-            <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail/> : <Navigate to="/account/login" />} />
-            <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail/> : <Navigate to="/account/login" />} />
-            <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent/> : <Navigate to="/account/login" />} />
-            <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage/> : <Navigate to="/account/login" />} />  
+            <Route path="/account/logout" element={isAuthenticated ? <Logout setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/account/login" />} />
+            <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests /> : <Navigate to="/account/login" />} />
+            <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail /> : <Navigate to="/account/login" />} />
+            <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail /> : <Navigate to="/account/login" />} />
+            <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent /> : <Navigate to="/account/login" />} />
+            <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage /> : <Navigate to="/account/login" />} />
             <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
-            <Route path="/account/register" element={!isAuthenticated ? <Register /> : <Navigate to="/"/>} /> 
+            <Route path="/account/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
           </Routes>
         </Container>
-
-        
-        
-          
       </Router>
     </div>
   );

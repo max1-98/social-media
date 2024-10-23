@@ -43,6 +43,7 @@ class Event(models.Model):
     """
     active_members = models.ManyToManyField(Member, related_name='active_events', blank=True)
     player_match_counts = models.JSONField(default=dict, blank=True)
+    in_game_members = models.ManyToManyField(Member, related_name='in_game_members', blank=True)
 
     played_one_match = models.ManyToManyField(Member, related_name='played_matches', blank=True)
 

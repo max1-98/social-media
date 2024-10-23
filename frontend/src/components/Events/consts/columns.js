@@ -13,4 +13,13 @@ export const eventcolumns = [
 export const membercolumns = [
   { id: 'name', label: 'name', minWidth: 130},
   { id: 'username', label: 'username', minWidth: 130},
+  { id: 'elo', label: 'Elo', minWidth: 130},
+  { id: 'de/activate', label: '', minWidth: 130},
+]
+
+export const game_columns = [
+  { id: 'start_time', label: 'Start time', minWidth: 130},
+  { id: 'team1', label: 'Team 1', minWidth: 130},
+  { id: 'team2', label: 'Team 2', minWidth: 130},
+  { id: 'score', label: 'Score', minWidth: 130},
 ]
