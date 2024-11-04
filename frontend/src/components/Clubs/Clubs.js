@@ -10,6 +10,8 @@ import {
   Grid2,
   Box,
   Button,
+  Paper,
+  Card,
 } from '@mui/material';
 
 function ClubDetail() {
@@ -39,37 +41,42 @@ function ClubDetail() {
   }
 
   return (
-    <Grid2 container justifyContent="flex-start" alignItems="flex-start" height="100vh">
-      
-      <Grid2 item xs={12} md={12} sx={{ width: '100%' }}>
-        <Box sx={{ padding: 4 }}>
-          <Typography variant="h4" gutterBottom align="center">
-            All Clubs
-          </Typography>
-          <List sx={{ mt: 2, width: '100%' }}> 
+    <Paper>
+      <Grid2 container justifyContent="flex-start" alignItems="flex-start" height="100vh">
+        
+        <Grid2 item xs={12} md={12} sx={{ width: '100%' }}>
+          <Box sx={{ padding: 4 }}>
+            <Typography variant="h4" gutterBottom align="center">
+              All Clubs
+            </Typography>
+            <Card sx={{p:1}}>
+              <List sx={{ mt: 2, width: '100%' }}> 
 
-            {clubs.map((club, index) => (
-              <ListItem key={index}>
-                <ListItemButton
-                  component={Link}
-                  to={`/club/${club.id}`}
-                >
-                  <ListItemText primary={club.name} />
-                  <Typography variant="body2" color="textSecondary">
-                    Sport: {club.sport}
-                  </Typography>
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-          <Box mt={2} sx={{ml: "20px"}} textAlign="left">
-            <Button component={Link} to="/club/create" variant="contained">
-              Create Club
-            </Button>
+                {clubs.map((club, index) => (
+                  <ListItem key={index}>
+                    <ListItemButton
+                      component={Link}
+                      to={`/club/${club.id}`}
+                    >
+                      <ListItemText primary={club.name} />
+                      <Typography variant="body2" color="textSecondary">
+                        Sport: {club.sport}
+                      </Typography>
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+              <Box mt={2} sx={{ml: "20px"}} textAlign="left">
+                <Button component={Link} to="/club/create" variant="contained" color={"secondary"}>
+                  Create Club
+                </Button>
+              </Box>
+            </Card>
+            
           </Box>
-        </Box>
+        </Grid2>
       </Grid2>
-    </Grid2>
+    </Paper>
   );
 }
 

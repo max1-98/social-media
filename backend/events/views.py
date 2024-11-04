@@ -11,10 +11,28 @@ from rest_framework import status, generics
 
 # Create your views here.
 from .serializers import ActivateMemberSerializer, DeactivateMemberSerializer, CompleteEventSerializer, StartEventSerializer
-from .serializers import EventSerializer, EventDetailSerializer
+from .serializers import EventSerializer, EventDetailSerializer, EventSettingsSerializer, EventStatsSerializer
 from .models import Event
 from clubs.permissions import IsClubAdmin, IsClubMember
 from clubs.models import ClubModel 
+from .fetch_events import get_upcoming_events_for_user, get_active_events_for_user
+
+
+class ActiveEventsView(generics.ListAPIView):
+
+    queryset = Event.objects.all() 
+    serializer_class = EventSerializer  
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        
+        return get_active_events_for_user(self.request.user)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
 
 class ActivateMemberView(APIView):
 
@@ -41,25 +59,6 @@ class DectivateMemberView(APIView):
         result = serializer.save() 
         return Response(result, status=status.HTTP_200_OK)
 
-class CompleteEventView(APIView):
-    
-    permission_classes = [IsAuthenticated, IsClubAdmin]
-
-    def post(self, request):
-        serializer = CompleteEventSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save() 
-        return Response(result, status=status.HTTP_200_OK)
-
-class StartEventView(APIView):
-    permission_classes = [IsAuthenticated, IsClubAdmin]
-
-    def post(self, request):
-        serializer = StartEventSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save() 
-        return Response(result, status=status.HTTP_200_OK)
-    
 class EventView(APIView):
     permission_classes = [IsAuthenticated, IsClubMember]
 
@@ -97,7 +96,34 @@ class EventCreateView(APIView):
             serialized_event = EventSerializer(event)
             return Response(serialized_event.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
+class EventSettingsUpdateView(generics.UpdateAPIView):
+    """
+    View to update event settings.
+    """
+    permission_classes = [IsAuthenticated, IsClubAdmin]
+    serializer_class = EventSettingsSerializer
+
+    def update(self, request, *args, **kwargs):
+        event_id = kwargs.get('pk1')
+        event = get_object_or_404(Event, pk=event_id)
+
+        print(request.data)
+        serializer = self.get_serializer(event, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EventStatsView(APIView):
+
+    permission_classes = [IsAuthenticated, IsClubMember]
+
+    def get(self, request, pk1):
+        event = get_object_or_404(Event, pk=pk1)
+        serializer = EventStatsSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class EventsListView(generics.ListAPIView):
     queryset = Event.objects.all() 
     serializer_class = EventSerializer  
@@ -108,6 +134,47 @@ class EventsListView(generics.ListAPIView):
         club = get_object_or_404(ClubModel, pk=club_id)
         return Event.objects.filter(club=club)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
+    
+class CompleteEventView(APIView):
+    
+    permission_classes = [IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        """
+        Reverses the status of the event: 
+            complete -> incomplete
+            incomplete -> complete
+        """
+
+        serializer = CompleteEventSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save() 
+        return Response(result, status=status.HTTP_200_OK)
+
+class StartEventView(APIView):
+    permission_classes = [IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = StartEventSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save() 
+        return Response(result, status=status.HTTP_200_OK)
+
+class UpcomingEventView(generics.ListAPIView):
+
+    queryset = Event.objects.all() 
+    serializer_class = EventSerializer  
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        
+        return get_upcoming_events_for_user(self.request.user)
+    
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)

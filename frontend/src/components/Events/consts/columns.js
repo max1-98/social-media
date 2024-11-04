@@ -11,9 +11,9 @@ export const eventcolumns = [
 
 
 export const membercolumns = [
-  { id: 'name', label: 'name', minWidth: 130},
-  { id: 'username', label: 'username', minWidth: 130},
-  { id: 'elo', label: 'Elo', minWidth: 130},
+  { id: 'name', label: 'Name', minWidth: 70},
+  { id: 'username', label: 'Username', minWidth: 70},
+  { id: 'elo', label: 'Elo', minWidth: 60},
   { id: 'de/activate', label: '', minWidth: 130},
 ]
 

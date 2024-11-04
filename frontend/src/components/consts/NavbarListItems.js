@@ -28,7 +28,14 @@ export const mainNavbarItems = [
     }
     ,
     {
-        id: 4,
+        id: 5,
+        icon: "",
+        label: "Past games",
+        route: '/account/past-games',
+    }
+    ,
+    {
+        id: 6,
         icon: "",
         label: 'Logout',
         route: '/account/logout',

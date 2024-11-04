@@ -19,11 +19,22 @@ import CreateEvent from './components/Events/CreateEvent';
 import EventPage from './components/Events/EventView';
 import MemberAttendanceComponent from './components/Clubs/Attendance';
 import MyClubsList from './components/Clubs/MyClubs';
+import PastGames from './components/Account/PastGames';
+import GameTypeElos from './components/Account/GameTypeElos';
+import UpcomingEvents from './components/Events/MyEvents';
+
+// Theme
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { ColorModeContext, useMode } from './theme';
+
 
 function App() {
   
   const token = localStorage.getItem('access_token');
   const [isAuthenticated, setIsAuthenticated] = useState(!!token);
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [theme, colorMode] = useMode();
 
 
   useEffect(() => {
@@ -34,7 +45,7 @@ function App() {
     } else {
       setIsAuthenticated(false);
     }
-  
+
     const handleStorageChange = () => {
       const token = localStorage.getItem('access_token');
       if (token) {
@@ -50,30 +61,41 @@ function App() {
     };
   }, []);
   return (
-    <div style={{ display: 'flex' }}>
-      <Router>
-        {isAuthenticated && <Navbar />}
-        <Container style={{ marginLeft: 0 }}>
-          <Routes>
-            <Route path="/" element={<ClubDetail />} />
-            <Route path="/club/myClubs" element={<MyClubsList />} />
-            <Route path="/club/:clubId" element={isAuthenticated ? <ClubPage /> : <Navigate to="/account/login" />} /> 
-            <Route path="/club/edit/:clubId" element={isAuthenticated ? <EditClub /> : <Navigate to="/account/login" />} />
-            <Route path="/club/attendance/:clubId" element={isAuthenticated ? <MemberAttendanceComponent /> : <Navigate to="/account/login" />} />
-            <Route path="/club/create" element={isAuthenticated ? <CreateClub /> : <Navigate to="/account/login" />} />
-            <Route path="/account/profile" element={isAuthenticated ? <UserProfile /> : <Navigate to="/account/login" />} />
-            <Route path="/account/logout" element={isAuthenticated ? <Logout setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/account/login" />} />
-            <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests /> : <Navigate to="/account/login" />} />
-            <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail /> : <Navigate to="/account/login" />} />
-            <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail /> : <Navigate to="/account/login" />} />
-            <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent /> : <Navigate to="/account/login" />} />
-            <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage /> : <Navigate to="/account/login" />} />
-            <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
-            <Route path="/account/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
-          </Routes>
-        </Container>
-      </Router>
-    </div>
+    <ColorModeContext.Provider value={colorMode}>
+      <div style={{ display: 'flex' }}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Router>
+            {isAuthenticated &&  (<Navbar collapsed={collapsed} setCollapsed={setCollapsed}/>)}
+            <Container style={{ marginLeft: 0 }}>
+              <Routes>
+                <Route path="/" element={isAuthenticated ? <ClubDetail /> : <Navigate to="/account/login" />} />
+
+                {/* Club components */}
+                <Route path="/club/myClubs" element={isAuthenticated ? <MyClubsList/> : <Navigate to="/account/login" />} />
+                <Route path="/club/:clubId" element={isAuthenticated ? <ClubPage/> : <Navigate to="/account/login" />} /> 
+                <Route path="/club/edit/:clubId" element={isAuthenticated ? <EditClub/> : <Navigate to="/account/login" />} />
+                <Route path="/club/attendance/:clubId" element={isAuthenticated ? <MemberAttendanceComponent/> : <Navigate to="/account/login" />} />
+                <Route path="/club/create" element={isAuthenticated ? <CreateClub/> : <Navigate to="/account/login" />} />
+                <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests/> : <Navigate to="/account/login" />} />
+                <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail/> : <Navigate to="/account/login" />} />
+                <Route path="/club/events/:clubId" element={isAuthenticated ? <EventsDetail/> : <Navigate to="/account/login" />} />
+                <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent/> : <Navigate to="/account/login" />} />
+                <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage/> : <Navigate to="/account/login" />} />
+
+                {/* Account components */}
+                <Route path="/account/past-games" element={isAuthenticated ? < PastGames/> : <Navigate to="/account/login"/>}/>
+                <Route path="/account/profile" element={isAuthenticated ? <UserProfile/> : <Navigate to="/account/login" />} />
+                <Route path="/account/logout" element={isAuthenticated ? <Logout setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/account/login" />} />
+                <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
+                <Route path="/account/register" element={!isAuthenticated ? <Register/> : <Navigate to="/" />} />
+                <Route path="/account/club/:game_type" element={isAuthenticated ? <GameTypeElos/>: <Navigate to="/account/login" />}/>
+              </Routes>
+            </Container>
+          </Router>
+        </ThemeProvider>
+      </div>
+    </ColorModeContext.Provider>
   );
 }
 

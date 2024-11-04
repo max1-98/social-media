@@ -5,9 +5,10 @@ import {
     TextField,
     Button,
     Typography,
-    Grid,
+    Grid2,
     Box,
     Alert,
+    Card,
   } from '@mui/material';
 
 
@@ -46,15 +47,16 @@ function Login(props) {
     };
 
     return (
-        <Grid container justifyContent="center" alignItems="center" height="100vh">
-            <Grid item xs={12} md={4}>
-                <Box
-                sx={{
-                    padding: 4,
-                    borderRadius: 2,
-                    boxShadow: 3,
-                }}
+        <Grid2 container justifyContent="center" alignItems="center" height="100vh">
+            <Grid2 item xs={12} md={4}>
+                <Card
+                    sx={{
+                        padding: 4,
+                        borderRadius: 2,
+                        boxShadow: 3,
+                    }}
                 >
+                
                 <Typography variant="h4" gutterBottom align="center">
                     Welcome to [website name]!
                 </Typography>
@@ -89,8 +91,8 @@ function Login(props) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     />
-                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                    Login
+                    <Button type="submit" variant="contained" color="secondary" fullWidth sx={{ mt: 2 }}>
+                        Login
                     </Button>
                 </form>
 
@@ -98,9 +100,9 @@ function Login(props) {
                     Don't have an account? Click{' '}
                     <Link to="/account/register/">here</Link> to register.
                 </Typography>
-                </Box>
-            </Grid>
-        </Grid>
+                </Card>
+            </Grid2>
+        </Grid2>
     );
 }
 

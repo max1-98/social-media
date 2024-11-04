@@ -2,6 +2,22 @@ from rest_framework import serializers
 from .models import Game
 from clubs.models import Member
 
+class SimpleMemberSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    first_name = serializers.CharField(source='user.first_name')
+    surname = serializers.CharField(source='user.surname')
+    
+    class Meta:
+        model = Member
+        fields = ('id', 'username', 'first_name', 'surname') 
+
+class GameMembersSerializer(serializers.Serializer):
+    member_ids = serializers.ListField(child=serializers.IntegerField(), required=True) 
+
+    class Meta:
+        model = Game
+        fields = ('member_ids',)  # Only the member_ids field is included
+
 class MemberSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     first_name = serializers.CharField(source='user.first_name')

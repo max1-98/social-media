@@ -7,7 +7,7 @@ from .views import AllClubView, ClubDetailView, ClubUpdateView, ClubCreateView
 
 # Member views
 from .views import MembersListEventView, MemberAcceptView, MemberDeleteView, MemberRequestCreateView, MemberRequestDeleteView, MemberRequestListView
-from .views import MemberAttendanceListView, CreateDummyUserView, MembersListView, MyClubsListView, MakeMemberAdminView
+from .views import MemberAttendanceListView, CreateDummyUserView, MembersListView, MyClubsListView, AdminUpdateView
 urlpatterns = [
     # Club views
     path('clubs/', AllClubView.as_view()),
@@ -27,5 +27,5 @@ urlpatterns = [
     path('club/member/<int:pk>/', MemberDeleteView.as_view()), # Deleting yourself (ie. leaving)
     path('clubs/member-attendance/', MemberAttendanceListView.as_view()),
     path('club/dummy-user/create/<int:pk>/', CreateDummyUserView.as_view()),
-    path('club/make-admin/<int:pk2>/<int:pk>/', MakeMemberAdminView.as_view()),
+    path('club/make-admin/<int:pk2>/<int:pk>/', AdminUpdateView.as_view()),
 ]

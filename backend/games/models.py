@@ -59,4 +59,3 @@ def update_all_users(sender, instance, action, reverse, **kwargs):
         all_members = set(instance.team1.all()) | set(instance.team2.all())
         instance.all_users.set(all_members)
         instance.save()
-

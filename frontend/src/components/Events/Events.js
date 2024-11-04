@@ -11,7 +11,11 @@ import {
   TableRow,
   Paper,
   TablePagination,
+  Grid2,
+  Button,
 } from '@mui/material';
+import EventComponent from './EventComponent/EventComponent';
+import { fetchClub } from '../functions/fetch_functions';
 
 function EventsDetail() { // Remove the props argument
   const { clubId } = useParams();
@@ -19,6 +23,7 @@ function EventsDetail() { // Remove the props argument
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [rows, setRows] = useState([]);
+  const [club, setClub] = useState({});
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -46,10 +51,12 @@ function EventsDetail() { // Remove the props argument
         start_time: event.start_time,
         finish_time: event.finish_time,
         number_of_courts: event.number_of_courts,
-        sbmm: event.sbmm ? 'Yes' : 'No', 
+        sbmm: event.sbmm, 
         guests_allowed: event.guests_allowed ? 'Yes' : 'No', 
         over_18_under_18_mixed: event.over_18_under_18_mixed,
-        id: event.id, 
+        id: event.id,
+        club_id: event.club_id,
+        club_name: event.club_name,
       })));
       
     } catch (error) {
@@ -58,56 +65,23 @@ function EventsDetail() { // Remove the props argument
   };
 
   useEffect(() => {
-    fetchEvents(clubId); // Fetch clubs on component mount
-  }, [clubId]); // Empty dependency array to only fetch once
+    fetchEvents(clubId); 
+    fetchClub(clubId, setClub);
+  }, [clubId]); 
 
   return (
     <>
-      <div>
-        <button onClick={() => navigate(`/club/events/create/${clubId}`)}>Create event</button>
-      </div>
+      <Paper>
+        <Button onClick={() => navigate(`/club/events/create/${clubId}`)}>Create event</Button>
+      </Paper>
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
-          <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow>
-              {eventcolumns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                  >
-                    {column.label}
-                  </TableCell>
-                ))}
-                <TableCell key="link" align="center">Links</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-            {rows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow hover role="checkbox" tabIndex={-1} key={row.sport}>
-                    {eventcolumns.map((column) => (
-                      <TableCell key={column.id} align={column.align}>
-                        {row[column.id]}
-                      </TableCell>
-                    ))}
-                    <TableCell key="link" align="center"> <Link to={`/club/event/${clubId}/${row.id}`}>View</Link></TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+        <Grid2 container spacing={1}>
+          {rows.map( (row) =>
+            <EventComponent
+              event = {row}
+            />
+          )}
+        </Grid2>
       </Paper>
 
     </>

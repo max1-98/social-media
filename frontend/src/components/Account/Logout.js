@@ -26,8 +26,9 @@ function Logout(props) {
       );
 
       localStorage.removeItem('access_token');
-      props.setIsAuthenticated(false);
+      
       navigate('/account/login');
+      props.setIsAuthenticated(false);
       console.log('Logout successful!');
     } catch (error) {
       console.error('Logout error:', error);

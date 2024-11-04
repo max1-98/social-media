@@ -79,7 +79,7 @@ function MemberDetail() {
       console.error('Error deleting member:', error);
     }
   };
-  const handleAdmin = async (club_id, member_id) => {
+  const handleAddAdmin = async (club_id, member_id) => {
     try {
       const token = localStorage.getItem('access_token');
       const headers = {
@@ -89,6 +89,26 @@ function MemberDetail() {
       };
 
       const response = await axios.get(
+        `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
+        { headers }
+      );
+      fetchMembers(clubId);
+  
+    } catch (error) {
+      console.error('Error making user an admin:', error);
+    }
+  };
+
+  const handleRemoveAdmin = async (club_id, member_id) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+      };
+
+      const response = await axios.delete(
         `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
         { headers }
       );
@@ -227,12 +247,21 @@ function MemberDetail() {
                   <>
                   { !member.is_club_admin && (
                   <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleAdmin(clubId, member.id)}
+                  variant="outlined"
+                  color="success"
+                  onClick={() => handleAddAdmin(clubId, member.id)}
                   >
                     Make Admin
                   </Button>
+                  )}
+                  { member.is_club_admin && (
+                    <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleRemoveAdmin(clubId, member.id)}
+                    >
+                      Remove Admin
+                    </Button>
                   )}
                   </>
                   

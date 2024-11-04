@@ -25,9 +25,11 @@ function Member_table(  columns,
                     ) 
     {
 return (
-    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Typography variant="h5" sx={{ marginLeft: '10px', mt: '4px'}}>{title}</Typography>
-        <TableContainer sx={{ maxHeight: 220 }}>
+    <Paper sx={{ width: '100%', overflow: 'hidden'}} elevation={4}>
+
+        <Typography variant="h6" sx={{textAlign:"center", fontWeight:600}}>{title}</Typography>
+
+        <TableContainer sx={{ maxHeight: "100%" }}>
             <Table stickyHeader aria-label="sticky table">
                 <TableHead>
                     <TableRow>
@@ -36,6 +38,7 @@ return (
                             key={column.id}
                             align={column.align}
                             style={{ minWidth: column.minWidth }}
+                            sx={{bgcolor: "neutral.light"}}
                         >
                             {column.label}
                         </TableCell>

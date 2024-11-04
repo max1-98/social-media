@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'games',
     'corsheaders',
     'oauth2_provider',
+    'posts',
     'social_django',
     'drf_social_oauth2',
 ]

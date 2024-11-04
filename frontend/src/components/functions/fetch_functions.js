@@ -23,7 +23,7 @@ export const fetchEvent = async (event_id, setEvent, setAMembers, setInGameMembe
     }
   };
 
-  export const fetchCompleteEventGames = async (event_id, setGames) => {
+export const fetchCompleteEventGames = async (event_id, setGames) => {
 
     try {
         const token = localStorage.getItem('access_token');
@@ -36,12 +36,11 @@ export const fetchEvent = async (event_id, setEvent, setAMembers, setInGameMembe
       headers: headers_get
     });
         setGames(response.data);
-        console.log(response.data);
-    
     } catch (error) {
         console.error('Error fetching event:', error);
     }
   };
+  
 export const fetchClub = async (club_id, setClub) => {
 
     try {
@@ -98,4 +97,23 @@ export const fetchMembers = async (event_id, setMembers) => {
     } catch (error) {
       console.error('Error fetching clubs:', error);
     }
+  };
+
+export const fetchStats = async (event_id, setStats) => {
+  try {
+      const token = localStorage.getItem('access_token');
+      const headers_get =   {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          accept: 'application/json',
+      }
+      const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/stats/`, {
+          headers: headers_get
+      }); 
+      console.log(response.data)
+      setStats(response.data);
+  } catch (error) {
+    console.error('Error fetching clubs:', error);
+  }
+
   };

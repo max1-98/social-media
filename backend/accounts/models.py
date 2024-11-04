@@ -52,3 +52,4 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.following.count()
     
 from elo.models import Elo
+

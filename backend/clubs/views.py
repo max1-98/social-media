@@ -306,9 +306,9 @@ class CreateDummyUserView(generics.CreateAPIView):
         dummy_user.create_member()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-class MakeMemberAdminView(generics.RetrieveUpdateAPIView):
+class AdminUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
-    View to make a member a club admin.
+    View to make/remove a member as club admin.
     """
     permission_classes = [IsAuthenticated, IsClubPresident]
     serializer_class = None  # No serializer needed for this view
@@ -330,5 +330,23 @@ class MakeMemberAdminView(generics.RetrieveUpdateAPIView):
         ClubAdmin.objects.create(club=club, admin=user)
         return Response({"message": "User made a club admin successfully."}, status=status.HTTP_201_CREATED)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Removes a member as a club admin.
+        """
+        member_id = kwargs.get('pk2')
+        member = get_object_or_404(Member, pk=member_id)
+        user = member.user
+        club = member.club
 
+        # Delete the ClubAdmin object if it exists
+        admin_instance = ClubAdmin.objects.filter(club=club, admin=user).first()
+        if admin_instance:
+            admin_instance.delete()
+            return Response({"message": "User removed as club admin successfully."}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {"error": "This user is not a club admin."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
