@@ -36,3 +36,19 @@
     transform: rotate(360deg);
   }
 }
+
+.leaflet-container {
+  width: 100%;
+}
+
+.small-map {
+  height: 40vh;
+}
+
+.big-map2 {
+  height: 89vh;
+}
+
+.big-map1 {
+  height: 70vh;
+}

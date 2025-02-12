@@ -2,7 +2,7 @@ import { createTheme, linkClasses } from "@mui/material";
 import { create } from "@mui/material/styles/createTransitions";
 import { bgcolor, fontSize, palette, typography } from "@mui/system";
 import { createContext, useMemo, useState } from "react";
-
+import { alpha, getContrastRatio } from '@mui/material/styles';
 
 export const tokens = (mode) => ({
   ...(mode==="dark" ?
@@ -76,72 +76,73 @@ export const tokens = (mode) => ({
 
     : 
 
-    {grey: {
-      100: "#F5F5F5",
-      200: "#EEEEEE",
-      300: "#E0E0E0",
-      400: "#BDBDBD",
-      500: "#9E9E9E",
-      600: "#757575",
-      700: "#616161",
-      800: "#424242",
-      900: "#212121",
-    },
-    primary: {
-      100: "#E0E0E0", // Slightly lighter than original 100
-      200: "#C2C2C2",
-      300: "#A3A3A3",
-      400: "#858585",
-      500: "#666666",
-      600: "#525252",
-      700: "#3D3D3D",
-      800: "#292929",
-      900: "#141414",
-    },
-    greenAccent: {
-      100: "#E9F5EE",
-      200: "#C8F0E5",
-      300: "#A9EBE2",
-      400: "#8ACCE0",
-      500: "#6CC1DB",
-      600: "#52B1C5",
-      700: "#3D9CC8",
-      800: "#2A84C1",
-      900: "#176DBF",
-    },
-    redAccent: {
-      100: "#FFF1EF",
-      200: "#FFD9D5",
-      300: "#FFC1BC",
-      400: "#FFA9A2",
-      500: "#FF8F88",
-      600: "#FF7670",
-      700: "#FF5C58",
-      800: "#FF433E",
-      900: "#FF2A24",
-    },
-    blueAccent: {
-      100: "#F0F3FF",
-      200: "#E1E6FF",
-      300: "#D1D9FF",
-      400: "#BDC2FF",
-      500: "#A4B5FF",
-      600: "#8D9EFF",
-      700: "#7588FF",
-      800: "#5D72FF",
-      900: "#455CFF",
-    },
-    yellowAccent: {
-      100: "#323319",
-      200: "#646633",
-      300: "#96994c",
-      400: "#c8cc66",
-      500: "#faff7f",
-      600: "#fbff99",
-      700: "#fcffb2",
-      800: "#fdffcc",
-      900: "#feffe5"
-    },
+    {
+      "grey": {
+        "100": "#F9F9F9",
+        "200": "#F2F2F2",
+        "300": "#E8E8E8",
+        "400": "#D3D3D3",
+        "500": "#BDBDBD",
+        "600": "#A6A6A6",
+        "700": "#8F8F8F",
+        "800": "#787878",
+        "900": "#616161"
+      },
+      "primary": {
+          100: "#fefefe",
+          200: "#fdfdfd",
+          300: "#fbfbfb",
+          400: "#fafafa",
+          500: "#f9f9f9",
+          600: "#c7c7c7",
+          700: "#959595",
+          800: "#646464",
+          900: "#323232"
+      },
+      "greenAccent": {
+        100: "#cdf4e9",
+        200: "#9be9d4",
+        300: "#69ddbe",
+        400: "#37d2a9",
+        500: "#05c793",
+        600: "#049f76",
+        700: "#037758",
+        800: "#02503b",
+        900: "#01281d"
+      },
+      "redAccent": {
+        "100": "#FFF5F2",
+        "200": "#FFEBE8",
+        "300": "#FFD8D1",
+        "400": "#FFC3B5",
+        "500": "#FFAAB0",
+        "600": "#FF968A",
+        "700": "#FF8264",
+        "800": "#FF6E40",
+        "900": "#FF5A1B"
+      },
+      "blueAccent": {
+        100: "#ced0dd",
+        200: "#9da1bb",
+        300: "#6d7198",
+        400: "#3c4276",
+        500: "#0b1354",
+        600: "#090f43",
+        700: "#070b32",
+        800: "#040822",
+        900: "#020411"
+      },
+      "yellowAccent": {
+        "100": "#FEFEF0",
+        "200": "#FDFDF2",
+        "300": "#FCFCF6",
+        "400": "#FAFAE1",
+        "500": "#F8F8CC",
+        "600": "#F7F7B7",
+        "700": "#F6F6A2",
+        "800": "#F5F58D",
+        "900": "#F4F478"
+      },
   }
   )
 
@@ -158,15 +159,21 @@ export const themeSettings = (mode) => {
         {
           primary: {
             main: colors.primary[500],
+            light: colors.primary[700],
+            dark: colors.primary[300],
+            contrastText: getContrastRatio(colors.primary[500], '#fff') > 4.5 ? '#fff' : '#111',
           },
           secondary: {
             main: colors.greenAccent[500],
             dark: colors.greenAccent[700],
+            light: colors.greenAccent[300],
+            contrastText: getContrastRatio(colors.greenAccent[500], '#fff') > 4.5 ? '#fff' : '#111',
           },
           neutral: {
             dark: colors.grey[700],
             main: colors.grey[500],
             light: colors.grey[600],
+            contrastText: getContrastRatio(colors.grey[500], '#fff') > 4.5 ? '#fff' : '#111',
           },
           background: {
             default: colors.primary[500],
@@ -174,29 +181,60 @@ export const themeSettings = (mode) => {
           terniary: {
             main: colors.yellowAccent[500],
             dark: colors.yellowAccent[700]
-          }
+          },
+          common: {
+            dark: "#2c2c2c",
+            main: "#dddddd",
+            light: "#ebebeb",
+            contrastText: '#fff',
+          
+          },
+          userprofile: {
+            card: colors.grey[800],
+            paper: colors.grey[700],
+            cardContrastText: getContrastRatio(colors.grey[800], '#fff') > 4.5 ? '#fff' : '#111',
+            paperContrastText: getContrastRatio(colors.grey[700], '#fff') > 4.5 ? '#fff' : '#111',
+
+          } 
         }
         :
         {
           primary: {
-            main: colors.primary[100],
+            main: colors.primary[500],
+            dark: colors.primary[700],
+            light: colors.primary[100],
+            contrastText: getContrastRatio(colors.primary[500], '#fff') > 4.5 ? '#fff' : '#111',
           },
           secondary: {
-            main: colors.greenAccent[500],
-            dark: colors.greenAccent[700],
+            main: colors.blueAccent[500],
+            dark: colors.blueAccent[700],
           },
           neutral: {
             dark: colors.grey[700],
             main: colors.grey[500],
-            light: colors.grey[100],
+            light: colors.grey[300],
           },
           background: {
-            default: "#fcfcfc",
+            default: colors.primary[500],
           },
           terniary: {
-            main: colors.yellowAccent[500],
-            dark: colors.yellowAccent[700]
-          }
+            main: colors.greenAccent[500],
+            dark: colors.greenAccent[700]
+          },
+          common: {
+            main: colors.primary[900],
+            dark: colors.primary[500],
+            light: colors.primary[400],
+            contrastText: getContrastRatio(colors.primary[500], '#fff') > 4.5 ? '#fff' : '#111',
+          },
+
+          userprofile: {
+            card: colors.primary[500],
+            paper: colors.blueAccent[500],
+            cardContrastText: getContrastRatio(colors.primary[500], '#fff') > 4.5 ? '#fff' : '#111',
+            paperContrastText: getContrastRatio(colors.blueAccent[500], '#fff') > 4.5 ? '#fff' : '#111',
+
+          } 
         }
       )
     },
@@ -221,25 +259,6 @@ export const themeSettings = (mode) => {
         fontsize: 14
       },
     },
-    components: {
-      MuiLink: {
-        // ... your Link styles ...
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            backgroundColor: colors.primary[600],
-          },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            backgroundColor: colors.primary[700], // Darker grey for Paper
-          },
-        },
-      },
-    },
   }
 }
 
@@ -251,7 +270,9 @@ export const ColorModeContext = createContext({
 });
 
 export const useMode = () => {
-  const [mode, setMode] = useState("dark");
+  const isSystemDark = window.matchMedia("(prefers-color-scheme:dark)").matches
+  const [mode, setMode] = useState(isSystemDark ? "dark" : "light");
+  
   
   const colorMode = useMemo(
     () => ({

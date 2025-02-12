@@ -1,38 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link, useNavigate, useParams } from 'react-router-dom'; // Import Link
-import { eventcolumns } from './consts/columns';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  TablePagination,
   Grid2,
   Button,
+  Typography,
+  Card,
 } from '@mui/material';
 import EventComponent from './EventComponent/EventComponent';
 import { fetchClub } from '../functions/fetch_functions';
 
 function EventsDetail() { // Remove the props argument
   const { clubId } = useParams();
-  const navigate = useNavigate();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [rows, setRows] = useState([]);
   const [club, setClub] = useState({});
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [activeEvents, setActiveEvents] = useState([]);
+  const [completedEvents, setCompletedEvents] = useState([]);
+  const navigate = useNavigate();
 
   const fetchEvents = async (club_id) => {
     try {
@@ -45,19 +30,15 @@ function EventsDetail() { // Remove the props argument
       }); 
 
       
-      setRows(response.data.map((event) => ({
-        sport: event.sport,
-        date: new Date(event.date).toLocaleDateString(), 
-        start_time: event.start_time,
-        finish_time: event.finish_time,
-        number_of_courts: event.number_of_courts,
-        sbmm: event.sbmm, 
-        guests_allowed: event.guests_allowed ? 'Yes' : 'No', 
-        over_18_under_18_mixed: event.over_18_under_18_mixed,
-        id: event.id,
-        club_id: event.club_id,
-        club_name: event.club_name,
-      })));
+      setUpcomingEvents(response.data.filter(event => !event.event_active)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))); // Sort upcoming by soonest
+      setActiveEvents(response.data.filter(event => event.event_active && !event.event_complete)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort active by most recent
+      setCompletedEvents(response.data.filter(event => event.event_active && event.event_complete)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort completed by most recent
+
+      console.log(activeEvents)
+      console.log(response.data)
       
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -70,21 +51,81 @@ function EventsDetail() { // Remove the props argument
   }, [clubId]); 
 
   return (
-    <>
-      <Paper>
-        <Button onClick={() => navigate(`/club/events/create/${clubId}`)}>Create event</Button>
-      </Paper>
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Grid2 container spacing={1}>
-          {rows.map( (row) =>
-            <EventComponent
-              event = {row}
-            />
-          )}
-        </Grid2>
-      </Paper>
+      <Paper sx={{p:1}}>
+        <Button onClick={()=>navigate(`/club/events/create/${clubId}`)} color="secondary">Create an event</Button>
+        {!activeEvents && !upcomingEvents && !completedEvents ? (
+          <Typography>Loading...</Typography>
+        )
+      
+        :(
+        <>
+          {/* Only display an Active Events part if there are active events */}
+          {activeEvents && activeEvents.length > 0 &&
+          (
+            <Card sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+              <Typography variant="h6" sx={{textAlign:"center", fontWeight: 600}}>Active Events!</Typography>
+              <Grid2 container spacing={1}>
+                {activeEvents.map( (event) =>
+                  <EventComponent
+                    event = {event}
+                  />
+                )}
+              </Grid2>
+            </Card>
+          )
+          }
 
-    </>
+            {/* Display an upcoming events, even if there are no upcoming events.*/}
+            <Card sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+            <Typography variant="h6" sx={{textAlign:"center", fontWeight: 600}}>Upcoming Events!</Typography>
+          
+              <Grid2 container spacing={1}>
+                {upcomingEvents && upcomingEvents.length > 0 ? 
+                (
+                  upcomingEvents.map( (event) =>
+                    <>
+                      <EventComponent
+                        event = {event}
+                      />
+                    </>
+                  )
+                ) 
+                  : 
+                  ( 
+                    <Grid2 item>
+                      <Typography variant="h4" sx={{textAlign:"center", fontWeight: 200}}> No upcoming events.</Typography>
+                    </Grid2> 
+                  )}
+                
+              </Grid2>
+              </Card>
+
+              {/* Display completed events, even if there are no complete events.*/}
+              <Card sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+              <Typography variant="h6" sx={{textAlign:"center", fontWeight: 600}}>
+                    Complete Events
+              </Typography>
+              <Grid2 container spacing={1}>
+                {completedEvents && completedEvents.length > 0 ? 
+                (
+                  completedEvents.map( (event) =>
+                    <>
+                      <EventComponent
+                        event = {event}
+                      />
+                    </>
+                  )
+                ) 
+                  : 
+                  (
+                    <Typography variant="h4" sx={{textAlign:"center", fontWeight: 200}}> No complete events.</Typography> 
+                  )}
+                
+              </Grid2>
+            </Card>
+          </>
+        )}
+    </Paper>
   );
 }
 

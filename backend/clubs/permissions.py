@@ -1,7 +1,22 @@
 from rest_framework.permissions import BasePermission
-from .models import ClubModel, ClubAdmin, Member
+from .models import ClubModel, Member
 from events.models import Event
 from django.shortcuts import get_object_or_404
+
+def is_user_admin(user, club):
+    memberships = user.memberships.all()
+    for membership in memberships:
+        if membership.club.id == club.id:
+            return membership.is_admin
+    
+    return False
+
+def is_user_member(user, club):
+    memberships = user.memberships.all()
+    for membership in memberships:
+        if membership.club.id == club.id:
+            return membership.is_member
+
 
 class IsClubMember(BasePermission):
     """
@@ -62,8 +77,9 @@ class IsClubAdmin(BasePermission):
                 event = get_object_or_404(Event, pk=event_id)
                 club_id = event.club_id # Assuming you have club_id in Event model
         if club_id:
-            club = get_object_or_404(ClubModel, pk=club_id)  # Retrieve the club
-            return ClubAdmin.objects.filter(club=club, admin=request.user).exists()
+            club = get_object_or_404(ClubModel, pk=club_id)
+            return is_user_admin(request.user, club)
+            
         return False 
 
 
@@ -74,7 +90,8 @@ class IsClubAdmin(BasePermission):
         This method is called for requests involving a specific object.
         """
         if isinstance(obj, ClubModel):
-            return ClubAdmin.objects.filter(club=obj, admin=request.user).exists()
+
+            return is_user_admin(request.user, obj)        
         return False
 
 class IsClubPresident(BasePermission):

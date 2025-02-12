@@ -1,6 +1,4 @@
-from games.models import Game
-from .models import Elo
-from math import cos, exp, pi, sin
+from math import exp
 from django.utils import timezone
 
 # Calculates the probability of the user with elo1 of winning (using sigmoid function)
@@ -28,10 +26,10 @@ def g(x):
 # Calculates the value of the elo-change outcome given a probability of the team winning
 def result(score_difference,p, game_type):
 
-    if game_type[:9] == "badminton":
+    if game_type.name[:9] == "badminton":
         
         return g(score_difference)-p
-    elif game_type[:6] == "tennis":
+    elif game_type.name[:6] == "tennis":
         """
         Need to find the way clubs score points and hence construct a proper way with dealing it.
         """
@@ -39,6 +37,11 @@ def result(score_difference,p, game_type):
         return g(score_difference)-p
 
 
+"""
+Converts a score + game_type into a boolean:
+    - If team1 won then it returns True
+    - Otherwise returns false
+"""
 def team1Win(score, game_type):
     """
     Determines if Team 1 won based on the score string.
@@ -50,21 +53,27 @@ def team1Win(score, game_type):
         bool: True if Team 1 won, False otherwise.
     """
     team1_score, team2_score = map(int, score.split(","))
-    if game_type == "badminton_doubles" or game_type == "badminton_singles":
+    if game_type.name == "badminton_doubles" or game_type.name == "badminton_singles":
         
         return team1_score > team2_score
 
     return team1_score > team2_score
 
+"""
+Returns the score difference. This is then used in the Elo calculations.
+"""
 def scoreDifference(score, game_type):
 
-    if game_type == "badminton_doubles" or game_type == "badminton_singles":
+    if game_type.name == "badminton doubles" or game_type.name == "badminton singles":
         team1_score, team2_score = map(int, score.split(","))
         return abs(team1_score-team2_score)
 
     team1_score, team2_score = map(int, score.split(","))
     return abs(team1_score-team2_score)
 
+"""
+Main function for updating Elo
+"""
 def update_elo(score, game, sbmm):
 
     k = 40
@@ -77,9 +86,8 @@ def update_elo(score, game, sbmm):
     # likewise from the losing team to the teaml list
     players1 = game.team1.all()
     players2 = game.team2.all()
-
+    
     if team1Win(score, game_type):
-        
         for player in players1:
             teamw.append(player.user.elos.get(game_type=game_type))
         for player in players2:
@@ -110,7 +118,7 @@ def update_elo(score, game, sbmm):
         pw = prob_win(elow_average, elol_average)
         change_in_elo = result(score_difference, pw, game_type)
         
-
+    
     for elo in teamw:
 
         if sbmm:
@@ -139,18 +147,5 @@ def update_elo(score, game, sbmm):
         elo.last_game = timezone.now().date()
         elo.save()
         elo.game_loses.add(game)
-
-""" Old Elo update method:
-if game_type == "badminton_doubles" or game_type == "badminton_singles":
-        A = 42*p-21
-        k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
-
-        return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
     
-    A = 42*p-21
-    
-    k = pi/(84*(sin(pi/84*(21-A))-sin(pi/84*(-21-A))))
-    
-    return 84*k/pi *(sin(pi/84*(score_difference-A))-sin(pi/84*(-21-A)))-0.5
 
-"""

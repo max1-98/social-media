@@ -1,0 +1,38 @@
+Dear [club],
+
+I'm writing to share information about a FREE to use website that I have spent the last few months developing.
+
+I strongly believe my website can help revolutionize the "club" industry, using:
+    - Easy to use game creation tools
+    - Easy for users to find clubs that are still active
+    - Almost 0 admin for club executives
+    - An attendance tracking tool
+
+But what is in it for me?
+I plan to add even better tools for clubs and other features which would require a paid subscription called Club+ 
+I plan to add sections for coaches / physios / nutritionists to post articles / courses where there would be a revenue sharing system (like medium)
+
+What are the game creation tools?
+
+Currently I have developed 3 modes:
+    - SBMM (Skill based match making), this is where the system decides games based on past performance, 
+      although tools for this already exist they all shared a common problem: players would get stuck in 
+      a loop and end up playing the same players most of the time, my SBMM algorithm solves this problem
+      using boosting. 
+    - Social, using a mathemtical optimisation algorithm the system creates games to socialise people as much
+      as possible. 
+    - Peg board, like the traditional peg board system except it's digital! No more buying pegs, no more 
+      "Who is Male visitor 4?" as you can create unlimited pegs FOR FREE
+
+On top of this, unlike other systems users can login and see clubs near them, filter by sport and find upcoming
+events easily. Users can join clubs and keep track of their progress for different game types such as badminton singles.
+
+Now I understand that most club members will not want to create an account, so how do we deal with this? 
+Well a club can create users that only this club can access. These members can later be connected with real accounts
+if a club member decides to create an account.
+
+What's in it for us?
+- In the future we plan on releasing Club+ and Member+, which will be a paid subscription version that allows clubs
+  and members to access premium functions / content, but this will be optional.
+
+Other features will follow shortly after, such as Leagues and Cups, we hope to see you on there!

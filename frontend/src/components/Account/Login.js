@@ -1,52 +1,86 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     TextField,
     Button,
     Typography,
     Grid2,
-    Box,
     Alert,
     Card,
+    AlertTitle,
+    Dialog,
+    DialogTitle,
+    DialogActions,
+    DialogContent,
   } from '@mui/material';
+import { handleLogin } from '../functions/auth_functions';
+import loginBackground from './login_background2.gif';
+import axios from 'axios';
 
 
 function Login(props) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
+    const [email, setEmail] = useState('');
+    const [forgotPassword, setForgotPassword] = useState(false);
+    const [Response, setResponse] = useState('');
+    const [good, setGood] = useState(null);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
+    
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-
+    const handleSubmitEmail = async (e) => {
         try {
-            const response = await axios.post('http://127.0.0.1:8000/auth/token/', {
-                client_id: 'ai21cVtLBNXSaGQ3QwklqOfxmdH3DOEB21iP2VwO',
-                client_secret: 'cn5upUUXY7gGPEkIccB1AZEIhCUR4h0V9MGY9jD7630HVqyY2kyN7NjoVjkx0EMxDwUVqKNugTdeUa5nD8fsXbewAopFjG9BCFNt5KSyYSYj1wf9CVrAlFxQsQq9GF5S',
-                grant_type: 'password',
-                username: username,
-                password: password,
-                
+            const response = await axios.post('http://localhost:8000/authorization/request_reset/', {
+            email: email
+            });
+            setResponse(response.data.detail);
+            setGood(true);
+        } catch(error) {
+            let errorMessage = 'An error occurred.';
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                errorMessage = error.response.data.detail || errorMessage; // Access detail if it exists
+            } else if (error.request) {
+                // The request was made but no response was received
+                errorMessage = 'No response from server'
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                errorMessage = error.message;
             }
-            );
-
-            // Store tokens in local storage
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('refresh_token', response.data.refresh_token);
-            props.setIsAuthenticated(true);
-            navigate("/")
-            console.log('Login successful!'); 
-            
-
-        } catch (error) {
-            setError(error.response.data.detail || 'Login failed.'); // Handle specific error messages from your API
-            console.error('Login error:', error);
+            setResponse(errorMessage); // Set the error message
+            setGood(false);
         }
     };
 
+
+    const handleClose = () => {
+        setForgotPassword(false);
+        setGood(null);
+        setResponse('');
+        setEmail('');
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        handleLogin({username:username, password:password, setError:setError, setIsAuthenticated:props.setIsAuthenticated, navigate: navigate});
+    };
+
     return (
+        <div
+            style={{
+                backgroundImage: `url(${loginBackground})`,
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center center',
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}
+        >
         <Grid2 container justifyContent="center" alignItems="center" height="100vh">
             <Grid2 item xs={12} md={4}>
                 <Card
@@ -54,26 +88,17 @@ function Login(props) {
                         padding: 4,
                         borderRadius: 2,
                         boxShadow: 3,
+                        opacity:0.95,
                     }}
                 >
                 
-                <Typography variant="h4" gutterBottom align="center">
-                    Welcome to [website name]!
+                <Typography variant="h4" gutterBottom align="center" sx={{fontWeight:1000}}>
+                    The Club Hub
                 </Typography>
                 <Typography variant="body1" gutterBottom align="center">
-                    In order to use the functionality of this website, you need to
-                    login.
+                    Enter your login details below to get playing.
                 </Typography>
 
-                <Typography variant="h5" gutterBottom align="center">
-                    Login
-                </Typography>
-
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                    </Alert>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <TextField
@@ -91,18 +116,63 @@ function Login(props) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     />
+                    { !(error==='') && (
+                        <Alert severity='error'>
+                            <AlertTitle>Login Error</AlertTitle>
+                            <Typography>{error}</Typography>
+                        </Alert>
+                    )}
                     <Button type="submit" variant="contained" color="secondary" fullWidth sx={{ mt: 2 }}>
                         Login
                     </Button>
                 </form>
 
                 <Typography variant="body2" align="center" mt={2}>
-                    Don't have an account? Click{' '}
-                    <Link to="/account/register/">here</Link> to register.
+                    Don't have an account? <Button onClick={()=> navigate("/account/register/")} color="secondary">Register</Button> 
+                    <br/>
+                    Forgot your password? <Button color="secondary" onClick={()=>setForgotPassword(true)}>Reset password</Button>
+                    
                 </Typography>
                 </Card>
             </Grid2>
         </Grid2>
+        <Dialog
+            open={forgotPassword}
+            onClose={handleClose}
+        >
+            <DialogTitle>Forgot Password?</DialogTitle>
+            <DialogContent>
+                <form onSubmit={handleSubmitEmail}>
+                <TextField
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    color="common"
+                />
+                </form>
+                {!(good === null) &&
+                    <Alert severity={good ? 'info' : 'error'}>
+
+                        {Response}
+                    </Alert>
+                }
+          
+            </DialogContent>
+            <DialogActions>
+                { good ?
+                (<Button color="success" variant="contained" onClick={handleClose}>Complete</Button>)
+                :
+                (<>
+                    <Button type="submit" variant="contained" color="secondary" onClick={()=> handleSubmitEmail()}>Submit</Button>
+                    <Button color="error" variant="contained" onClick={handleClose}>Cancel</Button>
+                </>)
+                }
+            </DialogActions>
+        </Dialog>
+        </div>
     );
 }
 

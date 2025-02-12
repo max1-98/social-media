@@ -6,12 +6,24 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
 # local app imports
-from clubs.models import Member
+from clubs.models import Member, ClubModel
 from accounts.models import CustomUser
 from .models import Event
+from games.models import GameType
 from elo.models import Elo
 from clubs.serializers import MemberBasicSerializer
+from games.serializers import GameTypeSerializer
+from games.views import number_in_team
 
+def get_min_matches(model):
+    try:
+      counts = model.player_match_counts
+      if not counts:
+          return 0
+      return min(counts.values())
+    except (AttributeError, TypeError, ValueError):
+        return 0
+    
 class ActivateMemberSerializer(serializers.Serializer):
     event_id = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
     member_id = serializers.PrimaryKeyRelatedField(queryset=Member.objects.all())
@@ -20,7 +32,7 @@ class ActivateMemberSerializer(serializers.Serializer):
         event_id = validated_data.get('event_id')
         member_id = validated_data.get('member_id')
         user = member_id.user
-        game_type = event_id.sport
+        game_type = event_id.game_type
 
         # Check if user already has Elo for this game type
         elo = user.elos.filter(game_type=game_type)  # Filter the Elo QuerySet
@@ -35,6 +47,11 @@ class ActivateMemberSerializer(serializers.Serializer):
 
         if not event_id.initial_elo.get(str(member_id.id),0):
             event_id.update_initial_elo(member_id)
+
+        
+        if not event_id.played_one_match.filter(pk=member_id.id).exists():
+            minima = get_min_matches(event_id)
+            event_id.player_match_counts[str(member_id.id)] = minima
 
         # Activate the member
         event_id.active_members.add(member_id)
@@ -58,10 +75,15 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
     active_members = MemberBasicSerializer(many=True, read_only=True)
     in_game_members = MemberBasicSerializer(many=True, read_only=True)
+    game_type = GameTypeSerializer()
+    team_size = serializers.SerializerMethodField()
     
     class Meta:
         model = Event
-        fields = ('id', 'sport', 'date', 'start_time', 'finish_time', 'number_of_courts', 'sbmm', 'guests_allowed', 'over_18_under_18_mixed', 'active_members','in_game_members', 'event_active', 'event_complete', 'mode', 'even_teams')
+        fields = ('id', 'game_type', 'date', 'start_time', 'finish_time', 'number_of_courts', 'sbmm', 'guests_allowed', 'over_18_under_18_mixed', 'active_members','in_game_members', 'event_active', 'event_complete', 'mode', 'even_teams', 'team_size')
+
+    def get_team_size(self,obj):
+        return number_in_team(obj.game_type)
  
 class EventSettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -103,28 +125,27 @@ class CompleteEventSerializer(serializers.Serializer):
         event_id.save()
 
         return {'message': 'Event complete status successfully reversed.'}
-    
-class EventSerializer(serializers.ModelSerializer):
 
-    club_id = serializers.SerializerMethodField()
-    club_name = serializers.SerializerMethodField()
+class EventClubSerializer(serializers.ModelSerializer):
+    logo = serializers.ImageField(use_url=True)
+
+    class Meta:
+        model = ClubModel 
+        fields = ('id', 'name', 'logo') 
+
+class EventSerializer(serializers.ModelSerializer):
+    club = EventClubSerializer()
+    game_type = GameTypeSerializer()
 
     class Meta:
         model = Event
-        fields = ('id', 'sport', 'date', 'start_time', 'finish_time', 'number_of_courts', 'sbmm', 'guests_allowed', 'over_18_under_18_mixed', 'club_id', 'club_name')
+        fields = ('id', 'date', 'start_time', 'finish_time', 'number_of_courts', 'sbmm', 'guests_allowed', 'over_18_under_18_mixed','event_active', 'event_complete', 'club', 'game_type')
 
-    def get_club_id(self, obj):
-        """
-        Returns the ID of the club associated with the event.
-        """
-        return obj.club.id 
-
-    def get_club_name(self, obj):
-        """
-        Returns the ID of the club associated with the event.
-        """
-        return obj.club.name
-    
+class EventCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ('id', 'date', 'start_time', 'finish_time', 'number_of_courts', 'sbmm', 'guests_allowed', 'over_18_under_18_mixed','event_active', 'event_complete')
+ 
 class EventStatsSerializer(serializers.ModelSerializer):
     best_winstreak_players = serializers.SerializerMethodField()
     highest_win_rate_players = serializers.SerializerMethodField()
@@ -173,7 +194,7 @@ class EventStatsSerializer(serializers.ModelSerializer):
         highest_win_rate = 0
         highest_win_rate_players = []
         for player_id in wins.keys():
-            win_rate = wins.get(player_id, 0) / match_counts.get(player_id, 1)  # Prevent division by 0
+            win_rate = wins.get(player_id, 0) / (match_counts.get(player_id, 1)-  wins.get(player_id, 0)) # Prevent division by 0
             if win_rate > highest_win_rate:
                 highest_win_rate = win_rate
                 highest_win_rate_players = [

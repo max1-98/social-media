@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 # Local imports
 from events.models import Event
 from .serializers import GameSerializer, CompleteGameSerializer, GameMembersSerializer, SimpleMemberSerializer
-from .models import Game
+from .models import Game, GameType
 from accounts.models import CustomUser
 from elo.models import Elo
 from events.models import Event
@@ -19,6 +19,7 @@ from clubs.models import Member
 from clubs.permissions import IsClubAdmin, IsClubMember
 
 from .fetch_games import get_user_last_games
+from .game_creation import sbmm, mixed_sbmm, social, even_teams
 
 
 # Elo functions
@@ -29,9 +30,9 @@ import random
 
 def number_in_team(game_type):
 
-    if game_type[-7:] == "singles":
+    if game_type.name[-7:] == "singles":
         return 1
-    elif game_type[-7:] == "doubles":
+    elif game_type.name[-7:] == "doubles":
         return 2
 
 # Currently only handles creating same gender games
@@ -47,8 +48,8 @@ class SBMMCreateGameView(APIView):
         event_id = request.data.get('event_id')
         event = get_object_or_404(Event, pk=event_id)
 
-        # Get game type, the members who are active and team size
-        game_type = event.sport
+        # Get game type model, the members who are active and team size
+        game_type = event.game_type
         active_members = event.active_members.all()
         team_size = number_in_team(game_type)
 
@@ -63,16 +64,19 @@ class SBMMCreateGameView(APIView):
         least_played_count = min(event.get_player_match_count(member) for member in active_members)
         least_played_members = [member for member in active_members if event.get_player_match_count(member) == least_played_count]
 
-        # Splits up available players in male and female.
-        male_members = active_members.filter(user__biological_gender='male')
-        female_members = active_members.filter(user__biological_gender='female')
-        mixed_possible = len(male_members)>=2 and len(female_members)>=2 and team_size == 2
+        # Splits up available players in male and female to check if Mixed is possible
+        if team_size == 2:
+            male_members = active_members.filter(user__biological_gender='male')
+            female_members = active_members.filter(user__biological_gender='female')
+            mixed_possible = len(male_members)>=2 and len(female_members)>=2 and team_size == 2
+        else:
+            mixed_possible = False
         
         # Randomly select one from least played members
         player_1 = random.choice(least_played_members)
 
         # Determine game type
-        game_type = event.sport
+        game_type = event.game_type
 
         # 0 is same gender, 1 is mixed
         choices = [0,1]
@@ -84,161 +88,9 @@ class SBMMCreateGameView(APIView):
         # If mixed is possible and that was the choice of the machine then the following algorithm is run.
         # Otherwise the same gender algorithm is run
         if choice and mixed_possible:
-            """
-            Takes player 1 (the player who has played the least)
-
-            Asserts gender of player 1.
-
-            Finds the closest 2 elo's of members from the same gender as player 1.
-
-            Picks 1 randomly from this set.
-
-            Then picks closest 4 of the opposite gender.
-
-            Picks 2 randomly from this set.
-
-            Then assigns the teams fairly.
-            """
-
-            player_1_gender = player_1.user.biological_gender
-            player_1_elo = player_1.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first()
-            team1 = [player_1]
-            potential_players = active_members.filter(user__biological_gender=player_1_gender).exclude(pk=player_1.pk)
-
-            if len(potential_players)<3:
-                closest_players = potential_players
-            else:
-                closest_players = sorted(
-                    potential_players,
-                    key=lambda player: abs(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first() - player_1_elo)
-                )[:2]
-
-            team2 = [random.choice(closest_players)]
-
-            opposite_gender = 'female' if player_1_gender == 'male' else 'male'
-            potential_players2 = active_members.filter(user__biological_gender=opposite_gender)
-
-            if len(potential_players) < 5:
-                closest_players2 = potential_players2
-            else:
-                closest_players2 = sorted(
-                    potential_players2,
-                    key=lambda player: abs(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first() - player_1_elo)
-                )[:4]
-
-            closest_players2 = list(closest_players2)
-            player3 = random.choice(closest_players2)
-            closest_players2.remove(player3)
-            player4 = random.choice(closest_players2)
-
-            team1.append(player3)
-            team2.append(player4)
-
+            team1, team2 = mixed_sbmm(player_1, game_type, active_members)
         else:
-
-            """
-            Handles same gender match generation
-
-            Asserts gender of player 1. 
-
-            Finds closest 5 of the same gender as player 1. 
-            Picks randomly out of this grouping. 
-
-            Chooses smallest difference pairing in average elo out of those 4
-
-            If there are not 5 available then tops this off with members from the opposite gender and repeats the same
-            as above.
-            """
-            # Same gender game
-            player_1_gender = player_1.user.biological_gender
-            potential_players = active_members.filter(user__biological_gender=player_1_gender).exclude(pk=player_1.pk)  # Exclude player_1
-            player_1_elo = player_1.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first()
-
-            if potential_players.count() >= 2*team_size+1:
-
-                # Choose 5 closest players by Elo
-                
-                closest_players = sorted(
-                    potential_players,
-                    key=lambda player: abs(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first() - player_1_elo)
-                )[:2*team_size+1]
-
-                # Chooses randomly from closest_players at the end
-            else:
-
-                # Set players to be those closest players. Then fill up with members of the opposite gender.
-                closest_players = list(potential_players)
-
-                # Not enough players of the same gender, include opposite gender
-                opposite_gender = 'female' if player_1_gender == 'male' else 'male'
-
-                # potential players of the opposite gender
-                potential_players_o_g = active_members.filter(user__biological_gender=opposite_gender)
-                n = len(closest_players)
-                
-                # Checks whether there are at least 5-n members of the opposite gender. Then picks the closest from them.
-                # Then picks randomly from those random players
-                if potential_players_o_g.count() >= 2*team_size+1-n:
-
-                    # Append to closest players instead
-                    closest_players1 = sorted(
-                        potential_players_o_g,
-                        key=lambda player: abs(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first() - player_1_elo)
-                    )[:(2*team_size+1-n)]
-
-                    for player in closest_players1:
-                        closest_players.append(player)
-
-                    # Pick 4-n people randomly from this set
-
-                else:
-                    # Pick 4-n people randomly from this set
-                    potential_players_o_g  = list(potential_players_o_g)
-                    for player in potential_players_o_g:
-                        closest_players.append(player)
-
-            i = 0
-            
-            players = [player_1]
-            closest_players = list(closest_players)
-            
-            
-            # Creates set of all players.
-            while len(players) < 2*team_size and i < 2*team_size:
-                player = random.choice(closest_players)
-                players.append(player)
-                closest_players.remove(player)
-                i += 1
-
-            # Collects all player elo's for this gamemode
-            player_elos = []
-            for player in players:
-                player_elos.append(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first())
-
-            elo_differences = []
-
-            """
-            Finds equal teams when the team size is 2. Need to improve this for larger team sizes.
-            """
-            if team_size ==2:
-                for i in range(2*team_size-1):
-                    for j in range(i+1,2*team_size):
-                        # To average we could divide by 2, but this division is redunant as we will find a min later
-                        team_1_elo = player_elos[i]+player_elos[j]
-
-                        team_2_elo = 0
-                        for k in range(2*team_size):
-                            if k != i and k!=j:
-                                team_2_elo += player_elos[k]
-                        
-                        elo_differences.append((abs(team_1_elo-team_2_elo),(i,j)))
-            
-                smallest_difference, (i, j) = min(elo_differences)
-                team1 = [players[i], players[j]]
-                team2 = [players[k] for k in range(len(players)) if k != i and k != j]
-            else:
-                team1 = [players[0]]
-                team2 = [players[1]]
+            team1, team2 = sbmm(player_1, active_members, team_size, game_type)
 
         # Create Game instance
         game = Game.objects.create(
@@ -289,8 +141,8 @@ class SocialCreateGameView(APIView):
         event_id = request.data.get('event_id')
         event = get_object_or_404(Event, pk=event_id)
 
-        # Get the sport type and active members
-        game_type = event.sport
+        # Get the game type and active members
+        game_type = event.game_type
         active_members = event.active_members.all()
 
         # Boolean for deciding even teams or not
@@ -298,7 +150,6 @@ class SocialCreateGameView(APIView):
 
         # Gets the team sizes and number of available members
         team_size = number_in_team(game_type)
-        avail_members = active_members.count()
 
         # If there aren't enough people to form two teams then send a Bad Request status back
         if active_members.count() < 2*team_size:
@@ -307,142 +158,43 @@ class SocialCreateGameView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-        while avail_members >= 2*team_size:
 
-            # Creates a list of players who have played the least number of games. 
-            least_played_count = min(event.get_player_match_count(member) for member in active_members)
-            least_played_members = [member for member in active_members if event.get_player_match_count(member) == least_played_count]
+        # Creates a list of players who have played the least number of games. 
+        least_played_count = min(event.get_player_match_count(member) for member in active_members)
+        least_played_members = [member for member in active_members if event.get_player_match_count(member) == least_played_count]
+        
+        # Randomly select one from least played members
+        player_1 = random.choice(least_played_members)
+
+        # Determine game type
+        game_type = event.game_type
+        
+        potential_players = list(active_members.exclude(pk=player_1.pk))
+
+        team1, team2 = social(player_1, potential_players, event.played_with, team_size, game_type, et)
             
-            # Randomly select one from least played members
-            player_1 = random.choice(least_played_members)
-
-            # Determine game type
-            game_type = event.sport
-
-            # Finds the last game and creates a query set of players in the last game
-            games = event.games.order_by('-id')
-            last_players = []
-            for game in games:
-                if player_1 in game.all_users.all():
-
-                    # Player is in the game, ie. we have found their last game, keep player_1 in this list
-                    last_players = game.all_users
-                    break
-                
-            if last_players:
-                """
-                If the player has played a game then first find the set of players that they have not played with,
-                ie. exclude anyone from the last game.
-                """
-                potential_players = active_members.exclude(pk__in=[player.pk for player in last_players.all()])
-
-            else:
-                """
-                Otherwise just take the potential players to be everyone apart from player 1
-                """
-                potential_players = active_members.exclude(pk=player_1.pk)
-
-            """
-            If there are enough players from the set of players not including p1 then pick 2*team_size-1 from here
-            Else then pick all from potential players, then fill up with players from the last_players
-            """
-            potential_players = list(potential_players) 
-
-            if len(potential_players) > 2*team_size-1:
-
-                players = [player_1]
-                i = 0
-                while i < 2*team_size-1:
-                    new_player = random.choice(potential_players)
-                    players.append(new_player)
-                    potential_players.remove(new_player)
-                    i += 1
-
-            else:
-                players = potential_players
-                players.append(player_1)
-
-                if last_players:
-                    last_players = list(last_players.all())
-                    last_players.remove(player_1)
-
-                # This won't run if last_players doesn't exist because potential_players will be size 2*team_size
-                while len(players) < 2*team_size:
-                    new_player = random.choice(last_players)
-                    players.append(new_player)
-                    last_players.remove(new_player)
-
-            if et:
-                player_elos = []
-                for player in players:
-                    player_elos.append(player.user.elos.filter(game_type=game_type).values_list('elo', flat=True).first())
-
-                elo_differences = []
-
-                """
-                Finds equal teams when the team size is 2. Need to improve this for larger team sizes.
-                """
-                if team_size == 2:
-                    for i in range(2*team_size-1):
-                        for j in range(i+1,2*team_size):
-                            # To average we could divide by 2, but this division is redunant as we will find a min later
-                            team_1_elo = player_elos[i]+player_elos[j]
-                            team_2_elo = 0
-                            for k in range(2*team_size):
-                                if k != i and k!=j:
-                                    team_2_elo += player_elos[k]
-                                
-                            elo_differences.append((abs(team_1_elo-team_2_elo),(i,j)))
-                    
-                    smallest_difference, (i, j) = min(elo_differences)
-                    team1 = [players[i], players[j]]
-                    team2 = [players[k] for k in range(len(players)) if k != i and k != j]
-                else:
-                    team1 = [players[0]]
-                    team2 = [players[1]]
-            else:
-
-                team1 = []
-                team2 = []
-                print(players)
-
-                while len(team1) < team_size or len(team2) < team_size:
-                    player = random.choice(players)
-                    team1.append(player)
-                    players.remove(player)
-                    
-                    player = random.choice(players)
-                    team2.append(player)
-                    players.remove(player)
-
-            # Create Game instance
-            game = Game.objects.create(
-                event=event,
-                game_type=game_type,
-            )
-            # Add users to the team
-            for i in range(len(team1)):
-                game.team1.add(team1[i])
-                game.team2.add(team2[i])
-                event.active_members.remove(team1[i])
-                event.active_members.remove(team2[i])
-                event.in_game_members.add(team1[i])
-                event.in_game_members.add(team2[i])
+        # Create Game instance
+        game = Game.objects.create(
+            event=event,
+            game_type=game_type,
+        )
+        # Add users to the team
+        for i in range(len(team1)):
+            game.team1.add(team1[i])
+            game.team2.add(team2[i])
+            event.active_members.remove(team1[i])
+            event.active_members.remove(team2[i])
+            event.in_game_members.add(team1[i])
+            event.in_game_members.add(team2[i])
 
 
-            event.games.add(game)
-            event.save()
-            game.save()
+        event.games.add(game)
+        event.save()
+        game.save()
 
-            # Serialize the created game
-            serializer = GameSerializer(game, context={'game_type': game_type})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-        """
-        Edit this so it returns a list view
-        """
-        # Once a game has been made, reduce the avail_member count by the team_size
-        avail_members += -2*team_size    
+        # Serialize the created game
+        serializer = GameSerializer(game, context={'game_type': game_type})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)   
 
 class PegPlayer1View(APIView):
     permission_classes = [IsAuthenticated, IsClubAdmin]
@@ -454,7 +206,7 @@ class PegPlayer1View(APIView):
         event = get_object_or_404(Event, pk=event_id)
 
         # Get game type, the members who are active and team size
-        game_type = event.sport
+        game_type = event.game_type
         active_members = event.active_members.all()
         team_size = number_in_team(game_type)
 
@@ -478,6 +230,9 @@ class PegPlayer1View(APIView):
         else:
             return Response({"detail": "No members found for this event."}, status=status.HTTP_404_NOT_FOUND)
 
+"""
+Needs to be updated to adapt for different team sizes
+"""
 class PegCreateGameView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsClubAdmin]
     serializer_class = GameMembersSerializer
@@ -489,7 +244,7 @@ class PegCreateGameView(generics.CreateAPIView):
         event = get_object_or_404(Event, pk=event_id)
 
         # Get game type
-        game_type = event.sport
+        game_type = event.game_type
         team_size = number_in_team(game_type) # Assumes you have a number_in_team function
 
         # Serialize the teams selected by the player.
@@ -632,19 +387,17 @@ class CompleteGameView(APIView):
             game.save()
 
             update_elo(score, game, event.sbmm)
-
             # Re-add players to active members
             event.active_members.add(*game.all_users.all())
             event.in_game_members.remove(*game.all_users.all())
-
             # Add members to playedonematch if they haven't been added already
             for player in game.all_users.all():
                 if not player in event.played_one_match.all():
                     event.played_one_match.add(player)
-
             # Update player match counts
             event.update_player_match_counts(game)
             event.update_player_win_counts(game)
+            event.update_player_social_counts(game)
             event.save()
 
             return Response({"message": "Game completed successfully"}, status=status.HTTP_200_OK)
@@ -661,6 +414,7 @@ class CompleteGameView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+### COME BACK TO THIS VIEW, THE GET_SERIALIZER_CONTEXT FUNCTION SPECIFICALLY
 class GameListView(generics.ListAPIView):
     """
     List all Game objects.
@@ -719,5 +473,7 @@ class UserGamesListView(generics.ListAPIView):
         
         num_of_games = int(self.request.query_params.get('num_of_games', 10))  # Default to 10
         game_type = self.request.query_params.get('game_type')
+        if game_type:
+            game_type = GameType.objects.get(name=game_type)
         
         return get_user_last_games(user, game_type=game_type, limit=num_of_games)

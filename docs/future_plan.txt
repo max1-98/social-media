@@ -1,0 +1,9 @@
+
+Future plan:
+    Create a league
+    Add "Become a Coach"
+    Add "Find players"
+    Add a search bar for clubs
+    Add a search bar in Members on Active Event page / Members page
+
+Add injury function

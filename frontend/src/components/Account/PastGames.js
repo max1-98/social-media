@@ -1,11 +1,13 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { game_columns } from "../Events/consts/columns";
 import Game_table from "../tables/game_display_table";
+import { fetchUserGames } from "../functions/fetch_functions";
+import { Box, Paper } from "@mui/material";
 
 
 function PastGames() {
     const [games, setGames] = useState([]);
+    const [error, setError] = useState('');
 
     // Controlling the table
     const [page2, setPage2] = useState(0);
@@ -20,43 +22,23 @@ function PastGames() {
         setPage2(0);
     };
 
-    // Fetches games
-    const fetchGames = async () => {
-
-        try {
-            const token = localStorage.getItem('access_token');
-            const headers =   {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            }
-          const response = await axios.get(`http://127.0.0.1:8000/game/users/games/`, {
-          headers: headers
-        });
-            setGames(response.data);
-            console.log(response.data);
-        
-        } catch (error) {
-            console.error('Error fetching games:', error);
-        }
-      };
-
     // Initial fetch when loading the games
     useEffect(() => {
-        fetchGames()
+        fetchUserGames({setGames: setGames, setError: setError})
     }, []);
 
+
     return(
-        <>
-        {Game_table(
-          game_columns,
-          games, 
-          page2,
-          rowsPerPage2,
-          handleChangePage2,
-          handleChangeRowsPerPage,
-        )}
-        </>
+        <Box>
+            {Game_table(
+            game_columns,
+            games, 
+            page2,
+            rowsPerPage2,
+            handleChangePage2,
+            handleChangeRowsPerPage,
+            )}
+        </Box>
     )
 };
 

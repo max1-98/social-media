@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom'; // Import useParams
 import { game_columns} from './consts/columns';
-import { Button, Card, Chip, Grid2, Stack, Typography } from '@mui/material';
+import { Button, Card, Chip, Grid2, Paper, Typography, useMediaQuery, useTheme  } from '@mui/material';
 
 import { fetchClub, fetchCompleteEventGames, fetchEvent, fetchGames, fetchMembers, fetchStats } from '../functions/fetch_functions';
 import Game_table from '../tables/game_display_table';
@@ -25,11 +25,14 @@ function EventPage() {
   const [games, setGames] = useState([]);
   const [completeGames, setCGames] = useState([]);
   const [stats, setStats] = useState([]);
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
 
   // Open and Close Dialog constants
   const [open, setOpen] = useState(false); // State for dialog
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
   const [openPegDialog, setOpenPegDialog] = useState(false);
+  const [openAppBar, setOpenAppBar] = useState(false);
 
   // Peg board constants
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -95,12 +98,11 @@ function EventPage() {
       console.error('Error fetching event:', error);
     }
   };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch the event data
-        const eventResponse = await fetchEvent(eventId, setEvent, setAMembers, setInGameMembers);
+        await fetchEvent(eventId, setEvent, setAMembers, setInGameMembers);
         
         // Fetch the club data
         await fetchClub(clubId, setClub);
@@ -111,6 +113,7 @@ function EventPage() {
         // Fetch the members
         await fetchMembers(eventId, setMembers);
 
+        // Fetch the complete games
         await fetchCompleteEventGames(eventId, setCGames);
         
       } catch (error) {
@@ -132,7 +135,7 @@ function EventPage() {
   
   if (club) {
   return (
-    <> 
+    <Paper sx={{p:1}}> 
         {!event.event_active && club.is_club_admin && (
           <>
             {BeforeStart( 
@@ -177,13 +180,15 @@ function EventPage() {
                           setOpenSettingsDialog,
                           eventSettings,
                           setEventSettings,
-                          
                           openPegDialog, 
                           setOpenPegDialog,
                           selectedMembers, 
                           setSelectedMembers, 
                           player1Id, 
-                          setplayer1Id
+                          setplayer1Id,
+                          isSmallScreen,
+                          openAppBar, 
+                          setOpenAppBar,
                           
             )}
           </>
@@ -191,120 +196,91 @@ function EventPage() {
 
       { event.event_complete && stats.best_winstreak_players && (
         <>
-        <Button onClick={()=>handleComplete(eventId)}>Re-activate</Button>
-        <Grid2 container spacing={1}>
-          <Grid2 item size={{xs:6, lg: 3}}>
-            <Card sx={{padding: 1}}>
-              <Typography variant='h6' sx={{fontWeight:600}}>Best winstreak!</Typography>
-              {stats.best_winstreak_players.map( (player,index) => (
-                <>
-                  <Chip
-                    size={"large"}
-                    color={"success"}
-                    label={`${player.name} (${player.best_winstreak} winstreak)`} 
-                    variant="outlined" 
-                    sx={{
-                        padding: '0', 
-                        margin: '0', 
-                      }}
-                    />
-                </>
-              ))}
-            </Card>
-          </Grid2>
-          <Grid2 item size={{xs:6, lg: 3}}>
-            <Card sx={{padding: 1}}>
-              <Typography variant='h6' sx={{fontWeight:600}}>Best win-rate!</Typography>
-              {stats.highest_win_rate_players.map( (player,index) => (
+        <Button onClick={()=>handleComplete(eventId)} color="secondary" variant={"outlined"}>Re-activate</Button>
+        <Card sx={{p:1, mt:1, mb:1}}>
+          <Typography variant={"h4"} sx={{textAlign: "center"}}> Key Stats</Typography>
+          { stats ? (
+            <Grid2 container spacing={1} sx={{mt:1}}>
+              {stats.best_winstreak_players[0] && (
+              <Grid2 item size={{xs:6, lg: 3}} >
+                <Card sx={{padding: 1}} variant="outlined">
+                  <Typography variant='h6' sx={{fontWeight:600}}>Best winstreak! ({stats.best_winstreak_players[0].best_winstreak})</Typography>
+                  {stats.best_winstreak_players.map( (player,index) => (
                     <>
-                      <Chip
-                        size={"large"}
-                        color={"success"}
-                        label={`${player.name} (${player.win_rate} W/L)`} 
-                        variant="outlined" 
-                        sx={{
-                            padding: '0', 
-                            margin: '0', 
-                          }}
-                        />
+                      <Typography>{player.name}</Typography>
+                      
                     </>
                   ))}
-            </Card>
-          </Grid2>
-          <Grid2 item size={{xs:6, lg: 3}}>
-            <Card sx={{padding: 1}}>
-              <Typography variant='h6' sx={{fontWeight:600}}>Most elo-gained!</Typography>
-              {stats.highest_elo_gain_players.map( (player,index) => (
-                    <>
-                      <Chip
-                        size={"large"}
-                        color={"success"}
-                        label={`${player.name} (${player.elo_gain} elo gain)`} 
-                        variant="outlined" 
-                        sx={{
-                            padding: '0', 
-                            margin: '0', 
-                          }}
-                        />
-                    </>
-                  ))}
-            </Card>
-          </Grid2>
-          <Grid2 item size={{xs:6, lg: 3}}>
-            <Card sx={{padding: 1}}>
-              <Typography variant='h6' sx={{fontWeight:600}}>Hardest worker!</Typography>
-              {stats.most_games_played_players.map( (player,index) => (
-                    <>
-                      <Chip
-                        size={"large"}
-                        color={"success"}
-                        label={`${player.name} (${player.games_played} games played)`} 
-                        variant="outlined" 
-                        sx={{
-                            padding: '0', 
-                            margin: '0', 
-                          }}
-                        />
-                    </>
-                  ))}
-            </Card>
-          </Grid2>
-          <Grid2 item size={{xs:6, lg: 3}}>
-            <Card sx={{padding: 1}}>
-              <Typography variant='h6' sx={{fontWeight:600}}>Most wins!</Typography>
-              {stats.most_wins_players.map( (player,index) => (
-                    <>
-                      <Chip
-                        size={"large"}
-                        color={"success"}
-                        label={`${player.name} (${player.wins} wins)`} 
-                        variant="outlined" 
-                        sx={{
-                            padding: '0', 
-                            margin: '0', 
-                          }}
-                        />
-                    </>
-                  ))}
-              
-            </Card>
-          </Grid2>
-        </Grid2>
-        {Game_table(
-          game_columns,
-          completeGames, 
-          page2,
-          rowsPerPage2,
-          handleChangePage2,
-          handleChangeRowsPerPage,
-        )}
+                </Card>
+              </Grid2>)}
+              { stats.highest_win_rate_players[0] &&(
+              <Grid2 item size={{xs:6, lg: 3}}>
+                <Card sx={{padding: 1}} variant="outlined">
+                  <Typography variant='h6' sx={{fontWeight:600}}>Best win-rate! ({Math.ceil(stats.highest_win_rate_players[0].win_rate*100)/100} W/L)</Typography>
+                  {stats.highest_win_rate_players.map( (player,index) => (
+                        <Typography>{player.name}</Typography>
+                      ))}
+                </Card>
+              </Grid2>
+              )}
+              { stats.highest_elo_gain_players[0] && (
+                <Grid2 item size={{xs:6, lg: 3}}>
+                  <Card sx={{padding: 1}} variant="outlined">
+                    <Typography variant='h6' sx={{fontWeight:600}}>Most elo-gained! ({stats.highest_elo_gain_players[0].elo_gain} elo gained)</Typography>
+                    {stats.highest_elo_gain_players.map( (player,index) => (
+                          <>
+                          <Typography>{player.name}</Typography>
+                          </>
+                        ))}
+                  </Card>
+                </Grid2>
+              )}
+              {stats.most_games_played_players[0] && (
+              <Grid2 item size={{xs:6, lg: 3}}>
+                <Card sx={{padding: 1}} variant="outlined">
+                  <Typography variant='h6' sx={{fontWeight:600}}>Hardest workers! ({stats.most_games_played_players[0].games_played} games)</Typography>
+                  {stats.most_games_played_players.map( (player,index) => (
+                        <>
+                        <Typography>{player.name}</Typography>
+                        </>
+                      ))}
+                </Card>
+              </Grid2>)}
+              {stats.most_wins_players[0] && (
+              <Grid2 item size={{xs:6, lg: 3}}>
+                <Card sx={{padding: 1}} variant="outlined">
+                  <Typography variant='h6' sx={{fontWeight:600}}>Most wins! ({stats.most_wins_players[0].wins} wins)</Typography>
+                  {stats.most_wins_players.map( (player,index) => (
+                        <>
+                          <Typography>{player.name}</Typography>
+                        </>
+                      ))}
+                  
+                </Card>
+              </Grid2>)}
+            </Grid2>)
+            :
+            (<Typography>Loading</Typography>)
+            }
+        </Card>
+        <Card sx={{p:1}}>
+          <Typography variant={"h4"} sx={{textAlign: "center", mb: 1}}> All Games</Typography>
+            {Game_table(
+              game_columns,
+              completeGames, 
+              page2,
+              rowsPerPage2,
+              handleChangePage2,
+              handleChangeRowsPerPage,
+            )}
+        </Card>
         </>
       )}
-    </>
+    </Paper>
   );
 }
 else {
-  <h1>Loading...</h1>
+  <Typography>Loading...</Typography>
 }
 }
 

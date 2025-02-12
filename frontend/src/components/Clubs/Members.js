@@ -7,7 +7,7 @@ import {
   ListItemButton,
   ListItemText,
   Typography,
-  Grid,
+  Grid2,
   Box,
   Button,
   Dialog,
@@ -20,9 +20,12 @@ import {
   FormLabel,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Paper,
+  Radio,
+  Card,
+  useTheme
 } from '@mui/material';
-import { fetchClub } from '../functions/fetch_functions';
+import { fetchClub, fetchClubMembers } from '../functions/fetch_functions';
 
 function MemberDetail() {
   const [members, setMembers] = useState([]);
@@ -33,29 +36,12 @@ function MemberDetail() {
   const { clubId } = useParams();
   const [gender, setGender] = useState('');
   const [club, setClub] = useState(null);
-
-  const fetchMembers = async (clubId) => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/club/members/${clubId}/`,
-        {
-          headers: {
-            Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
-      );
-      console.log('Response Data:', response.data);
-      setMembers(response.data);
-    } catch (error) {
-      console.error('Error fetching members:', error);
-    }
-  };
+  const theme = useTheme();
+  
 
   useEffect(() => {
     if (clubId) {
-      fetchMembers(clubId);
+      fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       fetchClub(clubId, setClub);
     }
   }, [clubId]);
@@ -73,7 +59,7 @@ function MemberDetail() {
         `http://127.0.0.1:8000/club/member/${memberId}/${clubId}/`,
         { headers }
       );
-      fetchMembers(clubId);
+      fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       
     } catch (error) {
       console.error('Error deleting member:', error);
@@ -92,7 +78,7 @@ function MemberDetail() {
         `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
         { headers }
       );
-      fetchMembers(clubId);
+      fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
     } catch (error) {
       console.error('Error making user an admin:', error);
@@ -112,7 +98,7 @@ function MemberDetail() {
         `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
         { headers }
       );
-      fetchMembers(clubId);
+      fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
     } catch (error) {
       console.error('Error making user an admin:', error);
@@ -137,8 +123,7 @@ function MemberDetail() {
         }, 
         { headers }
       );
-      console.log(response.data);
-      fetchMembers(clubId);
+      fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       handleClose(); // Close the dialog
     } catch (error) {
       setError(error.response.data.detail || 'Error creating dummy user.');
@@ -169,19 +154,20 @@ function MemberDetail() {
     setSurname(event.target.value);
   };
 
-  if (members.length === 0) {
+  if (members.length === 0 || !club) {
     return <div>Loading...</div>;
   }
 
   return (
-    <Grid container justifyContent="flex-start" alignItems="flex-start" height="100vh">
-      <Grid item xs={12} md={8}>
-        <Box sx={{ padding: 4 }}>
+    <Paper>
+    <Grid2 container justifyContent="flex-start" alignItems="flex-start">
+      <Grid2 item size={12}>
+        <Box sx={{ padding: 4,  backgroundColor: theme.palette.userprofile.card, color: theme.palette.userprofile.cardContrastText}}>
           <Typography variant="h4" gutterBottom>
             All Members
           </Typography>
           {/* Create Member Button */}
-          <Button variant="contained" onClick={handleClickOpen}>
+          <Button sx={{my: 2}} variant="contained" color="secondary" onClick={handleClickOpen}>
             Create Member
           </Button>
           {/* Create Member Dialog */}
@@ -233,52 +219,55 @@ function MemberDetail() {
               <Button onClick={handleCreateMember}>Create</Button>
             </DialogActions>
           </Dialog>
-          <List sx={{ mt: 2 }}>
-            {members.map((member) => (
-              <ListItem key={member.id}>
-                <ListItemButton>
-                  <ListItemText
-                    primary={
-                      member.first_name + ' ' + member.surname
-                    }
-                  />
-                </ListItemButton>
-                {club.is_club_president && (
-                  <>
-                  { !member.is_club_admin && (
-                  <Button
-                  variant="outlined"
-                  color="success"
-                  onClick={() => handleAddAdmin(clubId, member.id)}
-                  >
-                    Make Admin
-                  </Button>
-                  )}
-                  { member.is_club_admin && (
+          <Card>
+            <List sx={{ mt: 2 }}>
+              {members.map((member) => (
+                <ListItem key={member.id}>
+                  <ListItemButton color="secondary">
+                    <ListItemText
+                      primary={
+                        member.first_name + ' ' + member.surname
+                      }
+                    />
+                  </ListItemButton>
+                  {club.is_club_president && (
+                    <>
+                    { !member.is_club_admin && (
                     <Button
                     variant="outlined"
-                    color="error"
-                    onClick={() => handleRemoveAdmin(clubId, member.id)}
+                    color="success"
+                    onClick={() => handleAddAdmin(clubId, member.id)}
                     >
-                      Remove Admin
+                      Make Admin
                     </Button>
+                    )}
+                    { member.is_club_admin && (
+                      <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleRemoveAdmin(clubId, member.id)}
+                      >
+                        Remove Admin
+                      </Button>
+                    )}
+                    </>
+                    
                   )}
-                  </>
-                  
-                )}
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleDelete(member.id)}
-                >
-                  Delete
-                </Button>
-              </ListItem>
-            ))}
-          </List>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleDelete(member.id)}
+                  >
+                    Delete
+                  </Button>
+                </ListItem>
+              ))}
+            </List>
+          </Card>
         </Box>
-      </Grid>
-    </Grid>
+      </Grid2>
+    </Grid2>
+    </Paper>
   );
 }
 

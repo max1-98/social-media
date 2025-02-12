@@ -11,6 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
   Checkbox,
+  Alert,
 } from '@mui/material';
 import axios from 'axios';
 import { fetchEvent, fetchGames } from '../../../functions/fetch_functions';
@@ -53,7 +54,7 @@ function SelectTeamDialog({ open, handleClose, player1Id, activeMembers, selecte
   };
 
   const handleTeamSelect = (event_id, selectedMembers, player1Id) => {
-    if (selectedMembers.length === 3) {
+    if (selectedMembers.length === 2*event.team_size-1) {
       onTeamSelect(event_id, selectedMembers, player1Id);
       handleClose();
     }
@@ -63,9 +64,11 @@ function SelectTeamDialog({ open, handleClose, player1Id, activeMembers, selecte
     <Dialog open={open} onClose={handleClose}>
       <DialogTitle>Select Team Members</DialogTitle>
       <DialogContent>
+      { !(selectedMembers.length=== 2*event.team_size-1) &&<Alert  sx={{my:1}} severity='warning'>You need to pick {2*event.team_size-1} people.</Alert>}
         <DialogContentText>
           Player 1: {player1Id.username}
         </DialogContentText>
+        
         <List>
           {activeMembers.filter(member => member.id !== player1Id.id).map((member) => (
             <ListItem key={member.id}>
@@ -83,7 +86,7 @@ function SelectTeamDialog({ open, handleClose, player1Id, activeMembers, selecte
       </DialogContent>
       <DialogActions>
         <Button color={"error"} onClick={handleClose}>Cancel</Button>
-        <Button color={"success"} disabled={selectedMembers.length !== 3} onClick={()=>handleTeamSelect(event.id, selectedMembers, player1Id)}>Select Team</Button> 
+        <Button color={"success"} disabled={selectedMembers.length !== 2*event.team_size-1} onClick={()=>handleTeamSelect(event.id, selectedMembers, player1Id)}>Select Team</Button> 
       </DialogActions>
     </Dialog>
   );

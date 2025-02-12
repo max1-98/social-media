@@ -1,0 +1,29 @@
+Plan is that Users will be able to become coaches and create premium content that other users can view.
+Then there will be a shared revenue scheme with the site and these coaches.
+
+Revenue streams:
+- Club+ (ie. the premium subscription for the app)
+- Ads (viewable by those who do not have Club+)
+
+Coaches can create content. Content will have pages, pages can feature text / slides.
+
+
+Pages required:
+- Coaches dashboard
+- Create content page
+- Discover content page
+- View content page
+
+
+Coaches dashboard:
+    Table of past content
+    Create content button
+    Delete button in the table (with are you sure dialog)
+    Graph with clicks per day, per month and per year. 
+    Revenue for this month calculator
+
+Models:
+    Coach Model
+    Content Model
+    Page Model
+

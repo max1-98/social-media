@@ -1,4 +1,4 @@
-import { Button } from "@mui/material";
+import { Button, Card, Paper } from "@mui/material";
 import { fetchEvent } from "../../functions/fetch_functions";
 import axios from "axios";
 
@@ -26,9 +26,9 @@ function BeforeStart(event, setEvent, setAMembers, setInGameMembers) {
         }
       };
 return (
-    <>
-        <Button onClick={() => handleStart(event.id)}>Start event</Button>
-    </>
+    <Paper sx={{p:10}}>
+      <Button onClick={() => handleStart(event.id)} color={"secondary"}>Start event</Button>
+    </Paper>
 )};
 
 export default BeforeStart;

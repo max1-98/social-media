@@ -1,9 +1,6 @@
 from django.db import models
 from clubs.models import ClubModel, Member
-from games.models import GAME_TYPE_CHOICES, Game
-from django.utils import timezone
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+from games.models import Game, GameType
 from elo.elo_functions import team1Win
 
 # Create your models here.
@@ -16,7 +13,7 @@ MODE_CHOICES = (
 
 class Event(models.Model):
 
-    sport = models.CharField(max_length=50, choices=GAME_TYPE_CHOICES)
+    game_type = models.ForeignKey(GameType, null=True, blank=True, on_delete=models.SET_NULL)
     games = models.ManyToManyField(Game, blank=True)
 
     # Key information for members
@@ -34,7 +31,7 @@ class Event(models.Model):
     sbmm = models.BooleanField(default=True)
 
     # Which mode and whether to assign even teams (only for social mode)
-    mode = models.CharField(max_length=50, choices=MODE_CHOICES, default="SBMM")
+    mode = models.CharField(max_length=50, choices=MODE_CHOICES, default="sbmm")
     even_teams = models.BooleanField(default=True)
 
     """
@@ -68,6 +65,7 @@ class Event(models.Model):
 
     # JSON field showing how many games each player (using UserID or MemberID?) won
     wins = models.JSONField(default=dict,blank=True)
+    played_with = models.JSONField(default=dict, blank=True) # Update everytime a game is complete
 
     # Displays current winstreaks of users (defaulted at 0)
     winstreaks = models.JSONField(default=dict, blank=True)
@@ -121,7 +119,7 @@ class Event(models.Model):
             # Adds a win and 1 to the winstreak of all people in team1
             for player in game.team1.all():
                 self.wins[str(player.id)] = self.wins.get(str(player.id), 0) + 1
-                self.winstreaks[str(player.id)] = self.wins.get(str(player.id), 0) + 1
+                self.winstreaks[str(player.id)] = self.winstreaks.get(str(player.id), 0) + 1
 
                 # If the best winstreak is less than the winstreak of this player then update the best_winstreak to be by this player
                 # If the best winstreak is equal to then update the best winstreak to include this player
@@ -157,7 +155,7 @@ class Event(models.Model):
 
     def update_initial_elo(self, player):
 
-        elo_model = player.user.elos.filter(game_type=self.sport).first()
+        elo_model = player.user.elos.filter(game_type=self.game_type).first()
 
         if not isinstance(self.initial_elo, dict):
             self.initial_elo = {}
@@ -173,8 +171,29 @@ class Event(models.Model):
 
         for key in self.initial_elo.keys():
             player = Member.objects.get(id=int(key))
-            elo_model = player.user.elos.filter(game_type=self.sport).first()
+            elo_model = player.user.elos.filter(game_type=self.game_type).first()
             self.final_elo[key] = elo_model.elo
 
         self.save()
+
+    def update_player_social_counts(self, game):
+
+        for player in game.all_users.all():
+            
+            played = self.played_with.get(str(player.id), {})
+
+            if not played:
+                for player1 in game.all_users.all():
+                    if player1.id != player.id:
+                        played[str(player1.id)] = 1
+            else:
+                for player1 in game.all_users.all():
+                    if player1.id != player.id:
+                        played[str(player1.id)] = played.get(str(player1.id),0) + 1
+            
+            self.played_with[str(player.id)] = played
+        
+        self.save()
+
+
 

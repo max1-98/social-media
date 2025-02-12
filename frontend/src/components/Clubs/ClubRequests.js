@@ -2,29 +2,41 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom'; // Import Link
+import { fetchMemberRequests } from '../functions/fetch_functions';
+import {
+    Typography,
+    Button,
+    Link,
+    Stack,
+    Paper,
+    Card,
+    Grid2,
+    AppBar,
+    Toolbar,
+    AlertTitle,
+    Alert,
+    IconButton,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Badge,
+    Box,
+    useTheme,
+    useMediaQuery,
+    Drawer,
+    Tooltip,
+    List,
+    ListItem,
+    Divider,
+  } from '@mui/material';
 
-
-function ClubRequests() { // Remove the props argument
+function ClubRequests() {
+     
     const { clubId } = useParams();
     const [memberRequests, setMemberRequests] = useState([]);
+    const [error, setError] = useState('');
 
-    const fetchMemberRequests = async (clubId) => {
-        try {
-        const response = await axios.get(`http://127.0.0.1:8000/club/requests/`+clubId, {
-            headers: {
-                Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            }
-        });
-    
-        // You can now access the member requests in `response.data`
-        setMemberRequests(response.data);
-        console.log(clubId)
-        } catch (error) {
-        console.error('Error fetching member requests:', error);
-        }
-    };
     const handleAccept = async (requestId) => {
         try {
             const token = localStorage.getItem('access_token');
@@ -41,7 +53,7 @@ function ClubRequests() { // Remove the props argument
 
 
             // Update the memberRequests state (you'll need to refetch from the backend)
-            fetchMemberRequests(clubId);
+            fetchMemberRequests({club_id: clubId, setMemberRequests: setMemberRequests, setError: setError});
         } catch (error) {
             console.error('Error accepting member request:', error);
         }
@@ -68,28 +80,38 @@ function ClubRequests() { // Remove the props argument
 
     useEffect(() => {
         if (clubId) {
-            fetchMemberRequests(clubId);
+            fetchMemberRequests({club_id: clubId, setMemberRequests: setMemberRequests, setError: setError});
         }
     }, [clubId]);
 
-    if (memberRequests.length === 0) { // Check if there are any clubs
-        return <div>There are no requests.</div>; 
-    }
 
     return (
-        <div>
-        <h2>Member Requests for Club {clubId}</h2>
-        <ul>
-            {memberRequests.map((request) => (
-            <li key={request.id}>
-                {request.username} requested to join on {new Date(request.date_requested).toLocaleDateString()}. 
-                <button onClick={() => handleAccept(request.id)}>Accept</button>
-                <button onClick={()=> handleDelete(request.id)}>Decline</button>
-            </li>
-            ))}
-        </ul>
+        <Paper sx={{p:2, height: memberRequests.length>0 ? "100%" : "100vh"}}>
+            <Typography variant="h4" sx={{fontWeight:800}}>Member Requests</Typography>
+            { memberRequests.length > 0 ? (
+                <>
+                    <List>
+                        <Divider/>
+                        {memberRequests.map((request) => (
+                            <>
+                                <ListItem key={request.id}>
+                                    {request.username} requested to join on {new Date(request.date_requested).toLocaleDateString()} 
+                                    <Button onClick={() => handleAccept(request.id)} color="secondary">Accept</Button>
+                                    <Button onClick={()=> handleDelete(request.id)} color="error">Decline</Button>
+                                </ListItem>
+                                <Divider/>
+                            </>
+                        ))}
+                    </List>
+                </>
+            )
+            :
+            (
+                <Typography>There are no member requests currently.</Typography>
+            )
+            }
         
-        </div>
+        </Paper>
     );
 }
 

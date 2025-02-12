@@ -16,6 +16,7 @@ import {
   Stack,
   Alert,
 } from '@mui/material';
+import { fetchClub } from '../functions/fetch_functions';
 
 function EditClub() {
   const [club, setClub] = useState(null);
@@ -30,26 +31,11 @@ function EditClub() {
     reset,
   } = useForm();
 
-  const fetchClub = async (club_id) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get(`http://127.0.0.1:8000/club/${club_id}/`, {
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      }
-    });
-    setClub(response.data);
-    reset(response.data);
-  } catch (error) {
-    console.error('Error fetching club:', error);
-  }
-  };
+  
 
   useEffect(() => {
     if (clubId) {
-      fetchClub(clubId);
+      fetchClub(clubId, setClub);
     }
   }, []);
 
@@ -123,21 +109,7 @@ function EditClub() {
                   Club Username is required
                 </FormHelperText>
               )}
-
-              <FormControl fullWidth>
-                <InputLabel id="sport-select-label">Sport</InputLabel>
-                <Select
-                  labelId="sport-select-label"
-                  id="sport"
-                  {...register('sport', { required: true })}
-                >
-                  <MenuItem value="badminton">Badminton</MenuItem>
-                  <MenuItem value="tennis">Tennis</MenuItem>
-                  <MenuItem value="paddle">Paddle</MenuItem>
-                </Select>
-                <FormHelperText>Choose a sport for the club.</FormHelperText>
-              </FormControl>
-
+              
               <TextField
                 label="Club Description"
                 fullWidth

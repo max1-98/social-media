@@ -16,13 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from elo.views import EloListView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('clubs.urls')),
-    path('', include('events.urls')),
+    path('club/', include('events.urls')),
     path('game/', include('games.urls')),
     path('account/', include('accounts.urls')),
     path('elo/', include('elo.urls')),
+    path('authorization/', include('authorization.urls')),
     re_path('auth/', include('drf_social_oauth2.urls', namespace='drf'))
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

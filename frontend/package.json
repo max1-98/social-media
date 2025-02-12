@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@coreui/icons": "^3.0.1",
+    "@coreui/icons-react": "^2.3.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@fontsource/roboto": "^5.1.0",
@@ -13,12 +15,16 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
+    "date-fns": "^4.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-easy-crop": "^5.1.0",
     "react-hook-form": "^7.53.0",
+    "react-leaflet": "^4.2.1",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^6.26.2",
     "react-scripts": "^5.0.1",
+    "react-use-websocket": "^4.11.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

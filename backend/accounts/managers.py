@@ -18,7 +18,7 @@ class CustomUserManager(BaseUserManager):
 
         # Normalize the email and username
         #email = self.normalize_email(email)
-        username = username.lower()  # Make usernames case-insensitive
+        username = username.lower()
 
         # Validate username
         if not re.match(r"^[a-zA-Z0-9_]{4,30}$", username):
@@ -32,6 +32,8 @@ class CustomUserManager(BaseUserManager):
             date_of_birth=date_of_birth,
             **extra_fields
         )
+
+        
         user.set_password(password)
         user.save(using=self._db)
         return user

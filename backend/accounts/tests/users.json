@@ -1,0 +1,65 @@
+[
+    {
+        "username":"max1-98",
+        "email": "maxsmithbusiness198@gmail.com",
+        "first_name": "Max",
+        "surname": "Smith", 
+        "password": "123password.com"
+    },
+    {
+        "username": "pierre_frank",
+        "email": "pf@yahoo.com",
+        "first_name": "Pierre",
+        "surname": "Frank", 
+        "password": "ThisIsMy123Password"
+    },
+    {
+        "username": "paula21",
+        "email": "paula@work.com",
+        "first_name": "Paula",
+        "surname": "Connors", 
+        "password": "_ses?12SerT"
+    },
+    {
+        "username": "_johnny_1",
+        "email": "johnny1@outlook.com",
+        "first_name": "Johnny",
+        "surname": "Spencer", 
+        "password": "_gregs?342Serl"
+    },
+    {
+        "username": "rachelsdiary",
+        "email": "rachel@aol.com",
+        "first_name": "Rachel",
+        "surname": "Damani", 
+        "password": "876iP_mbarf",
+    },
+    {
+        "username": "byro_badders",
+        "email": "byron_kennedy@aol.com",
+        "first_name": "Byron",
+        "surname": "Kennedy", 
+        "password": "akE`>#_6-/vBru$"
+    },
+    {
+        "username": "marg.payne",
+        "email": "marg.payne@gmail.com",
+        "first_name": "Margery",
+        "surname": "Payne", 
+        "password": "E+hM/WU[-6sHA.QF"
+    },
+    {
+        "username": "moshe__",
+        "email": "moshe_matthews@yahoo.com",
+        "first_name": "Moshe",
+        "surname": "Matthews", 
+        "password": "wKmUpW[b;5-V)jY9"
+    },
+    {
+        "username": "al_badminton",
+        "email": "alv_b@gmail.com",
+        "first_name": "Alvaro",
+        "surname": "Blaese", 
+        "password": "X/rP9h;-$!YWg^_D"
+    }
+]

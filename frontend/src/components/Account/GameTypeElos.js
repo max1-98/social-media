@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { game_columns } from "../Events/consts/columns";
 import Game_table from "../tables/game_display_table";
 import { useParams } from "react-router-dom";
+import { fetchUserGames } from "../functions/fetch_functions";
 
 
 
@@ -24,30 +25,9 @@ function GameTypeElos() {
         setPage2(0);
     };
 
-    // Fetches games
-    const fetchGames = async () => {
-
-        try {
-            const token = localStorage.getItem('access_token');
-            const headers =   {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            }
-          const response = await axios.get(`http://127.0.0.1:8000/game/users/games/?game_type=${game_type}`, {
-          headers: headers
-        });
-            setGames(response.data);
-            console.log(response.data);
-        
-        } catch (error) {
-            console.error('Error fetching games:', error);
-        }
-      };
-
     // Initial fetch when loading the games
     useEffect(() => {
-        fetchGames()
+        fetchUserGames(setGames, game_type);
     }, []);
 
     return(

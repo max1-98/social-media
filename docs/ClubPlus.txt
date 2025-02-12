@@ -1,0 +1,5 @@
+Features that will come with Club+
+
+    - Injury mode (temporarily lower your Elo and prevent your Elo from updating)
+    - Ad free 
+    - Access to premium content (nutrition content, coach content, physio content)

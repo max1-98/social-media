@@ -1,24 +1,13 @@
 from django.db import models
-from clubs.models import Member
+from clubs.models import Member, Sport
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.utils import timezone
 
-GAME_TYPE_CHOICES = (
-    ('badminton_singles', 'Badminton Singles'),
-    ('badminton_doubles', 'Badminton Doubles'),
-    ('tennis_singles', 'Tennis Singles'),
-    ('tennis_doubles', 'Tennis Doubles'),
-    ('paddle_singles', 'Paddle Singles'),
-    ('paddle_doubles', 'Paddle Doubles'),
-)
-
-# Create your models here.
-
 class Game(models.Model):
 
     # Games will be ran differently depending on the game type
-    game_type = models.CharField(max_length=20, choices=GAME_TYPE_CHOICES)
+    game_type = models.ForeignKey("games.GameType",  null=True, blank=True, on_delete=models.SET_NULL)
     start_time = models.DateTimeField(default=timezone.now)
     
     """
@@ -59,3 +48,11 @@ def update_all_users(sender, instance, action, reverse, **kwargs):
         all_members = set(instance.team1.all()) | set(instance.team2.all())
         instance.all_users.set(all_members)
         instance.save()
+
+class GameType(models.Model):
+
+    name = models.CharField(max_length=20)
+    description = models.CharField(max_length=200)
+    sport = models.ForeignKey(Sport, on_delete=models.SET_NULL, null=True)
+    events = models.ManyToManyField("events.Event", related_name="game_type_events")
+    team_size = models.IntegerField(default=2, editable=False)

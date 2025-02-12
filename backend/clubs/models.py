@@ -2,38 +2,36 @@ from django.db import models
 from django.utils import timezone
 from accounts.models import CustomUser
 from django.utils.crypto import get_random_string
-#from games.models import Game
 
-SPORT_CHOICES = [
-    ('badminton', 'Badminton'),
-    ('tennis', 'Tennis'),
-    ('paddle', 'Paddle'),
-]
 class ClubModel(models.Model):
 
-    club_username = models.CharField(max_length=150)
+    club_username = models.CharField(max_length=12)
     name = models.CharField(max_length=50, unique=True)
-    sport = models.CharField(max_length=10, choices=SPORT_CHOICES)
+    sport_type = models.ForeignKey("clubs.Sport",  null=True, blank=True, on_delete=models.SET_NULL)
     president = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='club_president')  # ForeignKey to the user model
-    info = models.TextField(blank=True, null=True)
-    website = models.URLField(blank=True, null=True)
-    signup_link = models.URLField(blank=True, null=True)
+    info = models.TextField(max_length=160, blank=True, null=True)
     date_created = models.DateTimeField(default=timezone.now)
     logo = models.ImageField(upload_to='club_logos', blank=True, null=True)
     bots = models.ManyToManyField(CustomUser, related_name="bots")
+    events = models.ManyToManyField('events.Event', related_name="club_events")
+    members = models.ManyToManyField('clubs.Member', related_name="members")
+    address = models.CharField(max_length=255, blank=True)
+    coordinates = models.JSONField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    socials = models.JSONField(default=list, blank=True)
+
+
+    def add_social(self, platform, url):
+        social_data = {"platform": platform, "url": url}
+        self.socials.append(social_data)
+        self.save()
+        
+    def remove_social(self,platform):
+        self.socials = [social for social in self.socials if social['platform'] != platform]
+        self.save()
 
     def __str__(self):
         return f"{self.name}"
-    
-class ClubAdmin(models.Model):
-    club = models.ForeignKey(ClubModel, on_delete=models.CASCADE, related_name='admins') 
-    admin = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='clubs_administered')
-
-    class Meta:
-        unique_together = ('club', 'admin')
-
-    def __str__(self):
-        return f"{self.admin.username} is admin for {self.club.name}"
     
 class MemberRequest(models.Model):
     club = models.ForeignKey(ClubModel, on_delete=models.CASCADE)
@@ -46,6 +44,12 @@ class MemberRequest(models.Model):
 class Member(models.Model):
     club = models.ForeignKey(ClubModel, on_delete=models.CASCADE)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    # To remove a member set this to False
+    is_member = models.BooleanField(default=True)
+
+    # To make someone an admin set this to True
+    is_admin = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
 
 class DummyUser(models.Model):
@@ -71,12 +75,16 @@ class DummyUser(models.Model):
         )
         # Set the user's is_active to False to prevent login
         user.is_active = False
-        user.save()
-
+        
         # Create a ClubMember object to link the user to the club
-        Member.objects.create(club=self.club, user=user)
+        member = Member.objects.create(club=self.club, user=user)
+        self.club.members.add(member)
+        user.memberships.add(member)
+        
         # Add the user to the bots field
         self.club.bots.add(user)
+        user.save()
+        self.club.save()
 
     def generate_unique_username(self):
 
@@ -87,6 +95,18 @@ class DummyUser(models.Model):
 
     def generate_random_password(self):
         return get_random_string(length=12)
+
+class Sport(models.Model):
+
+    name = models.CharField(max_length=50)
+    clubs = models.ManyToManyField(ClubModel, related_name="clubs")
+    game_types = models.ManyToManyField("games.GameType", related_name="game_types")
+
+class ClubStatus(models.Model):
+    name= models.CharField(max_length=20)
+
+    # Stores the date of the event scheduled furthest in the future.
+    event_dates = models.JSONField(blank=True, null=True)
 
 
 

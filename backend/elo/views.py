@@ -3,6 +3,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 # Django imports
 from django.shortcuts import get_object_or_404
@@ -11,6 +12,7 @@ from django.shortcuts import get_object_or_404
 from .models import Elo
 from accounts.models import CustomUser
 from .serializers import EloSerializer
+from games.models import GameType
 
 class EloListView(generics.ListAPIView):
     """
@@ -23,4 +25,8 @@ class EloListView(generics.ListAPIView):
         username = self.kwargs.get('username')
         user = get_object_or_404(CustomUser, username=username)
         return user.elos.all()
-    
+
+
+
+
+

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,7 +49,12 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'posts',
     'social_django',
+    'tasks',
     'drf_social_oauth2',
+    'authorization',
+    'channels',
+    'django_celery_beat',
+    'djangoviz',
 ]
 
 MIDDLEWARE = [
@@ -82,18 +89,34 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = 'backend.asgi.application'
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.environ.get("CHANNELS_REDIS", "redis://127.0.0.1:6379/0"))],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    'default' : {
+        'ENGINE' : 'django.db.backends.mysql',
+        'NAME' : 'django-app-db',
+        'USER' : 'root',
+        'PASSWORD' : '',
+        'HOST' : 'db',
+        'PORT' : '3306',
     }
 }
+
+
 
 # Auth user
 AUTH_USER_MODEL = "accounts.CustomUser"
@@ -133,6 +156,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -156,12 +183,74 @@ AUTHENTICATION_BACKENDS = (
 )
 
 OAUTH2_PROVIDER = {
-    # ... other settings ...
     'SCOPES': {
         'read': 'Read scope',
         'write': 'Write scope',
         'groups': 'Access to your groups',
     },
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,  # Token expiry (e.g., 1 hour)
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 360000,  
     'REFRESH_TOKEN_EXPIRE_SECONDS': 2592000,  # Refresh token expiry (e.g., 30 days)
+}
+
+# Google Maps
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+
+ADMINS = (
+    ('max125', 'max125@domain.com'),
+)
+
+# Admin info
+ADMIN_USERNAME = 'max125'
+ADMIN_EMAIL = 'max125@domain.com'
+ADMIN_INITIAL_PASSWORD = 'admin'
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get("EMAIL")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+
+### Celery
+from kombu import Queue
+from celery.schedules import crontab
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
+
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+
+# Force all queues to be explicitly listed in `CELERY_TASK_QUEUES` to help prevent typos
+CELERY_TASK_CREATE_MISSING_QUEUES = False
+
+CELERY_TASK_QUEUES = (
+    # need to define default queue here or exception would be raised
+    Queue('default'),
+    Queue('high_priority'),
+    Queue('low_priority'),
+)
+
+def route_task(name, args, kwargs, options, task=None, **kw):
+    if ':' in name:
+        queue, _ = name.split(':')
+        return {'queue': queue}
+    return {'queue': 'default'}
+
+
+CELERY_TASK_ROUTES = (route_task,)
+
+CELERY_BEAT_SCHEDULE = {
+    'task-clear-password-reset': {
+        'task': 'low_priority:clear_reset_password',
+        'schedule': crontab(hour=21, minute=20, day_of_week="sun"),
+    },
+    'task-clear-email-verify': {
+        'task': 'low_priority:clear_email_verify',
+        'schedule': crontab(hour=21, minute=20, day_of_week="sun"),
+    },
+    'task-clear-tokens': {
+        'task': 'low_priority:clear_expired_tokens',
+        'schedule': crontab(hour=11, minute=8, day_of_week="tuesday"),
+    }
 }

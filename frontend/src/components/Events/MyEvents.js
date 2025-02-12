@@ -2,28 +2,20 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate} from 'react-router-dom'; 
 import {
+  Box,
   Card,
   Typography,
   Grid2,
+  Divider,
 } from '@mui/material';
 import EventComponent from './EventComponent/EventComponent';
 
 function UpcomingEvents(props) {
+  
 
-  const {page, setPage, rowsPerPage, setRowsPerPage, rows1, setRows1, rows2, setRows2} = props
-  const navigate = useNavigate();
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-  const fetchActiveEvents = async () => {
+  const fetchMyEvents = async () => {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/club/events/active/`, {
+      const response = await axios.get(`http://127.0.0.1:8000/club/events/`, {
         headers: {
           Authorization: 'Bearer ' + localStorage.getItem('access_token'),
           'Content-Type': 'application/json',
@@ -31,82 +23,99 @@ function UpcomingEvents(props) {
       }
       }); 
 
+      props.setUpcomingEvents(response.data.filter(event => !event.event_active)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))); // Sort upcoming by soonest
+      props.setActiveEvents(response.data.filter(event => event.event_active && !event.event_complete)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort active by most recent
+      props.setCompletedEvents(response.data.filter(event => event.event_active && event.event_complete)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort completed by most recent
       
-      setRows2(response.data.map((event) => ({
-        sport: event.sport,
-        date: new Date(event.date).toLocaleDateString(), 
-        start_time: event.start_time,
-        finish_time: event.finish_time,
-        number_of_courts: event.number_of_courts,
-        sbmm: event.sbmm ? 'Yes' : 'No', 
-        guests_allowed: event.guests_allowed ? 'Yes' : 'No', 
-        over_18_under_18_mixed: event.over_18_under_18_mixed,
-        id: event.id,
-        club_id: event.club_id, 
-        club_name: event.club_name,
-      })));
       
     } catch (error) {
       console.error('Error fetching events:', error);
     }
   };
 
-  const fetchUpcomingEvents = async () => {
-    try {
-      const response = await axios.get(`http://127.0.0.1:8000/club/events/upcoming/`, {
-        headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      }); 
-
-      
-      setRows1(response.data.map((event) => ({
-        sport: event.sport,
-        date: new Date(event.date).toLocaleDateString(), 
-        start_time: event.start_time,
-        finish_time: event.finish_time,
-        number_of_courts: event.number_of_courts,
-        sbmm: event.sbmm ? 'Yes' : 'No', 
-        guests_allowed: event.guests_allowed ? 'Yes' : 'No', 
-        over_18_under_18_mixed: event.over_18_under_18_mixed,
-        id: event.id, 
-        club_id: event.club_id,
-        club_name: event.club_name,
-      })));
-      
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    }
-  };
-
+  
   useEffect(() => {
-    fetchUpcomingEvents();
-    fetchActiveEvents();
+    fetchMyEvents();
   }, []); 
 
   return (
     <>
-      <Card sx={{ mt: 1, pt: 1, width: '100%', overflow: 'hidden' }}>
-        <Typography variant="h6" sx={{textAlign:"center", fontWeight: 600}}>Active Events!</Typography>
-          <Grid2 container spacing={1} p={1}>
-            {rows2.map( (row) =>
-                  <EventComponent
-                    event = {row}
-                  />
-                )}
-          </Grid2>
-        <Typography variant="h6" sx={{textAlign:"center", fontWeight: 600}}>Upcoming Events!</Typography>
+    {props.activeEvents && props.upcomingEvents && props.completedEvents ? (
+      <Typography>Loading...</Typography>
+    )
+  
+    :(
+    <>
+      {/* Only display an Active Events part if there are active events */}
+      {props.activeEvents &&
+      ( 
+        <Box sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+          <Typography variant="h6" sx={{ml: 3, textAlign:"left", fontWeight: 600}}>Active events</Typography>
           <Grid2 container spacing={1}>
-            {rows1.map( (row) =>
+            {props.activeEvents.map( (event) =>
+              
                   <EventComponent
-                    event = {row}
+                    event = {event}
                   />
-                )}
+                
+            )}
           </Grid2>
-      </Card>
-
+        </Box>
+      )
+      }
+      <Divider/>
+      {/* Display an upcoming events, even if there are no upcoming events.*/}
+      <Box sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+        {props.upcomingEvents ? 
+        ( 
+          <>
+            <Typography variant="h6" sx={{ml: 3, textAlign:"left", fontWeight: 600}}>Upcoming events</Typography>
+            <Grid2 container spacing={1}>
+              {props.upcomingEvents.map((event) =>
+                
+                  <EventComponent
+                    event = {event}
+                  />
+              )}
+            </Grid2>
+          </>
+        ) 
+        : 
+        ( 
+          <Grid2 item>
+            <Typography variant="h4" sx={{ml: 2, textAlign:"left", fontWeight: 200}}> No upcoming events.</Typography>
+          </Grid2> 
+        )}
+      </Box>
+      <Divider/>
+      {/* Display completed events, even if there are no complete events.*/}
+      <Box sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
+        <Typography variant="h6" sx={{ml: 3, textAlign:"left", fontWeight: 600}}>
+              Past events
+        </Typography>
+        <Grid2 container spacing={1}>
+          {props.completedEvents.length> 0 ? 
+            (
+              props.completedEvents.map( (event) =>
+                <>
+                  <EventComponent
+                    event = {event}
+                  />
+                </>
+              )
+            ) 
+            : 
+            (
+              <Typography variant="h4" sx={{ml: 2, textAlign:"left", fontWeight: 200}}> No past events.</Typography> 
+            )}
+          
+          </Grid2>
+      </Box>
+      </>
+    )}
     </>
   );
 }

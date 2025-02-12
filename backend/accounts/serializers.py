@@ -6,14 +6,14 @@ from django.contrib.auth import authenticate
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name', 'surname', 'date_of_birth', 'biological_gender', 'follower_count', 'following_count','password') 
+        fields = ('id', 'username', 'email', 'first_name', 'surname', 'date_of_birth', 'biological_gender', 'password') 
         extra_kwargs = {
             'password': {'write_only': True},  # Password should not be returned in the response
             'id': {'read_only': True},  # ID should not be modifiable from the frontend
         }
 
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(**validated_data)  # Use the CustomUserManager's create_user method
+        user = CustomUser.objects.create_user(**validated_data)
         return user
 
     def update(self, instance, validated_data):
@@ -26,6 +26,18 @@ class CustomUserSerializer(serializers.ModelSerializer):
         instance.biological_gender = validated_data.get('biological_gender', instance.biological_gender)
         instance.save()
         return instance
+
+class NavbarUserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'first_name', 'surname', 'email_verify') 
+       
+class NewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model=CustomUser
+        fields= ('username', 'email', 'first_name', 'surname')
+   
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:

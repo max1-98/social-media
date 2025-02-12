@@ -11,7 +11,7 @@ import {
   FormControlLabel, 
   Radio, 
   Alert, 
-  Container,
+  Paper,
   Grid
 } from '@mui/material';
 
@@ -55,7 +55,7 @@ function Register() {
   };
 
   return (
-     <Container maxWidth="md" sx={{padding:"10px"}}> {/* Wrap the content in a Container */}
+     <Paper>
       <Grid container spacing={2} justifyContent="center" alignItems="center" sx={{ minHeight: '100vh' }}> {/* Add Grid container */}
         <Grid item xs={12} md={6}> {/* Adjust column sizes as needed */}
           <Typography variant="h4" gutterBottom align="center">Register</Typography>
@@ -145,7 +145,7 @@ function Register() {
             <Typography>Already have an account? Login <Link to="/account/login/">here.</Link></Typography>
         </Grid>
       </Grid>
-    </Container>
+      </Paper>
   );
 }
 

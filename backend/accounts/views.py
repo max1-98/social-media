@@ -14,12 +14,20 @@ from rest_framework.decorators import api_view
 
 
 # local apps import
-from .serializers import CustomUserSerializer, AuthSerializer, SimpleUserSerializer
+from .serializers import CustomUserSerializer, AuthSerializer, SimpleUserSerializer, NavbarUserInfoSerializer
 from .models import CustomUser
 
 
 class UserDetailView(generics.RetrieveAPIView):
     serializer_class = CustomUserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        
+        return self.request.user
+    
+class NavbarUserInfoView(generics.RetrieveAPIView):
+    serializer_class = NavbarUserInfoSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -50,7 +58,6 @@ class LogoutView(APIView):
         # Simply delete the token associated with the user
         #AuthToken.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""

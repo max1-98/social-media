@@ -1,7 +1,7 @@
 import {  fetchEvent, fetchGames} from "../../functions/fetch_functions";
 import { handleActivate, handleDeactivate } from "../../functions/handles_functions";
 
-import { Button, Grid2, AppBar, Toolbar, Paper} from '@mui/material';
+import { Button, Grid2, AppBar, Toolbar, Paper, Stack, Typography, Box, Alert, AlertTitle, Drawer, IconButton} from '@mui/material';
 import { membercolumns } from '../consts/columns';
 import axios from "axios";
 import Member_table from "../../tables/scroll_table";
@@ -9,6 +9,8 @@ import EventSettingsDialog from "./functions/EventsSettingsDialog";
 import DummyMemberCreateDialog from "./functions/DummyMemberCreateDialog";
 import GameDisplay from "./functions/GameDisplay";
 import SelectTeamDialog from "./functions/PegCreateGame";
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import CloseIcon from '@mui/icons-material/Close';
 
 function ActiveEvent(
         event, 
@@ -47,9 +49,11 @@ function ActiveEvent(
         selectedMembers, 
         setSelectedMembers, 
         player1Id, 
-        setplayer1Id
+        setplayer1Id,
+        isSmallScreen,
+        openAppBar, 
+        setOpenAppBar,
     ) {
-    
       
     const handleUpdateEventSettings = async (event_id, data) => {
       try {
@@ -104,7 +108,6 @@ function ActiveEvent(
         );
           setplayer1Id(response.data);
           setSelectedMembers([]);
-          console.log(selectedMembers)
           setOpenPegDialog(true);
           
       } catch (error) {
@@ -141,9 +144,31 @@ function ActiveEvent(
         );
         fetchGames(event_id, setGames);
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
+        setError('')
         } catch (error) {
-          console.error('Error fetching event:', error);
+           
+          let errorMessage = 'Server error';
+
+          if (error.response) {
+            errorMessage = error.response.data.error || errorMessage; 
+          } else if (error.request) {
+            // The request was made but no response was received
+            errorMessage = 'No response from server'
+          } else {
+              // Something happened in setting up the request that triggered an Error
+              errorMessage = error.message;
+          }
+          setError(errorMessage);
+
         }
+    };
+
+    const handleCloseAppBar = () => {
+      setOpenAppBar(false);
+    };
+
+    const handleOpenAppBar = () => {
+      setOpenAppBar(true);
     };
 
     const handleCreateSocialGame = async(event_id) => {
@@ -164,8 +189,20 @@ function ActiveEvent(
 
       fetchGames(event_id, setGames);
       fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
+      setError('');
       } catch (error) {
-        console.error('Error fetching event:', error);
+        let errorMessage = 'Server error';
+
+        if (error.response) {
+          errorMessage = error.response.data.error || errorMessage; 
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMessage = 'No response from server'
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            errorMessage = error.message;
+        }
+        setError(errorMessage);
       }
     };
 
@@ -193,70 +230,135 @@ function ActiveEvent(
 return (
     <>
     
-      { club.is_club_admin && (
-        <AppBar position="static" color={"primary"}>
-          <Toolbar>
-            <Button onClick={() => handleComplete(event.id)} color={"common"}>Complete event</Button>
-        
+        { isSmallScreen ? 
+        ( 
+            <AppBar position="static" color={"primary"}>
+              <Toolbar><IconButton onClick={()=>handleOpenAppBar()}><MenuOpenIcon/></IconButton></Toolbar>
+              <Drawer
+                anchor={"top"}
+                open={openAppBar}
+                onClose={()=>handleCloseAppBar()}
+                sx={{textAlign:"center", p: 2}}
+              >
+              <Stack direction="column" spacing={1}>
+                
+                <Box sx={{alignItems:"center"}}>
+                <IconButton onClick={()=>handleCloseAppBar()}><CloseIcon/></IconButton>
+                </Box>
 
-            {/* Create game button */}
-            { event.mode === 'sbmm' && (
-              <Button onClick={() => handleCreateSBMMGame(event.id)}  color={"common"}>Create game</Button>
-            )}
-            { event.mode === 'social' && (
-              <Button onClick={() => handleCreateSocialGame(event.id)} color={"common"}> Create game</Button>
-            )}
-            {
-              event.mode === 'peg_board' && (
-                <>
-                  <Button onClick={()=>handlePegStart(event.id)} color={"common"}>Create Game</Button>
-                  <SelectTeamDialog 
-                    open={openPegDialog}
-                    handleClose={handleClosePegDialog}
-                    player1Id={player1Id}
-                    activeMembers={amembers}
-                    selectedMembers={selectedMembers}
-                    setSelectedMembers={setSelectedMembers}
-                    setGames={setGames}
-                    setEvent={setEvent} 
-                    setAMembers={setAMembers} 
-                    setInGameMembers={setInGameMembers} 
-                    event={event}
+                { club.is_club_admin && (
+                  <>
+                    <Button onClick={() => handleComplete(event.id)} color={"common"}>Complete event</Button>
+                
+                    {/* Create game button */}
+                    { event.mode === 'sbmm' && (
+                      <Button onClick={() => handleCreateSBMMGame(event.id)}  color={"common"}>Create game</Button>
+                    )}
+                    { event.mode === 'social' && (
+                      <Button onClick={() => handleCreateSocialGame(event.id)} color={"common"}> Create game</Button>
+                    )}
+                    {
+                      event.mode === 'peg_board' && (
+                        <>
+                          <Button onClick={()=>handlePegStart(event.id)} color={"common"}>Create Game</Button>
+                        </>
+                    )}
+              
+                    {/* Create Member Dialog and Button */}
+                    <DummyMemberCreateDialog
+                      open={open}
+                      setOpen={setOpen}
+                      memberInfo={memberInfo}
+                      setMemberInfo={setMemberInfo}
+                      error={error}
+                      setError={setError}
+                      is_club_admin={club.is_club_admin}
+                      eventId={event.id}
+                      setMembers={setMembers}
+                      clubId={club.id}
                     />
+
+                    {/* Change mode Dialog and Button */}
+                    <Button onClick={() => setOpenSettingsDialog(true)} color={"common"}>Mode</Button>
+              
+                  </>
+                )}
+              
+              
+                <Typography variant="subtitle1">Gamemode: </Typography><Typography variant="subtitle2">{event.game_type.name}</Typography>
+                <Typography variant="subtitle1">Selection mode: </Typography><Typography variant="subtitle2">{event.mode}</Typography>
+              </Stack>
+            </Drawer>
+            </AppBar>
+            
+        )
+        :
+        (
+          <AppBar position="static" color={"primary"}>
+            <Toolbar>
+              { club.is_club_admin && (
+                <>
+                  <Button onClick={() => handleComplete(event.id)} color={"common"}>Complete event</Button>
+              
+                  {/* Create game button */}
+                  { event.mode === 'sbmm' && (
+                    <Button onClick={() => handleCreateSBMMGame(event.id)}  color={"common"}>Create game</Button>
+                  )}
+                  { event.mode === 'social' && (
+                    <Button onClick={() => handleCreateSocialGame(event.id)} color={"common"}> Create game</Button>
+                  )}
+                  {
+                    event.mode === 'peg_board' && (
+                      <>
+                        <Button onClick={()=>handlePegStart(event.id)} color={"common"}>Create Game</Button>
+                        
+                      </>
+                  )}
+              
+                  {/* Create Member Dialog and Button */}
+                
+                  <DummyMemberCreateDialog
+                    open={open}
+                    setOpen={setOpen}
+                    memberInfo={memberInfo}
+                    setMemberInfo={setMemberInfo}
+                    error={error}
+                    setError={setError}
+                    is_club_admin={club.is_club_admin}
+                    eventId={event.id}
+                    setMembers={setMembers}
+                    clubId={club.id}
+                  />
+
+                  {/* Change mode Dialog and Button */}
+                  <Button onClick={() => setOpenSettingsDialog(true)} color={"common"}>Mode</Button>
+                  
                 </>
-            )}
-        
-            {/* Create Member Dialog and Button */}
-          
-            <DummyMemberCreateDialog
-              open={open}
-              setOpen={setOpen}
-              memberInfo={memberInfo}
-              setMemberInfo={setMemberInfo}
-              error={error}
-              setError={setError}
-              is_club_admin={club.is_club_admin}
-              eventId={event.id}
-              setMembers={setMembers}
-              clubId={club.id}
-            />
-
-            {/* Change mode Dialog and Button */}
-            <Button onClick={() => setOpenSettingsDialog(true)} color={"common"}>Mode</Button>
-            <EventSettingsDialog
-                open={openSettingsDialog}
-                onClose={handleCloseSettingsDialog}
-                eventSettings={eventSettings}
-                setEventSettings={setEventSettings}
-                handleUpdateEventSettings={handleUpdateEventSettings}
-                eventId={event.id}
-            />
-          </Toolbar>
-        </AppBar>
+              )}
+              <Box sx={{flexGrow:1}}/>
+                <Stack direction="row" spacing={1} sx={{justifyContent:'flex-end'}}>
+                  <Box sx={{textAlign: "left"}}><Typography variant="subtitle1">Gamemode: </Typography><Typography variant="subtitle2">{event.game_type.name}</Typography></Box>
+                  <Box sx={{textAlign: "left"}}><Typography variant="subtitle1">Selection mode: </Typography><Typography variant="subtitle2">{event.mode}</Typography></Box>
+                </Stack>
+            </Toolbar>
+          </AppBar>
+        )}
+      
+      {club.is_club_admin && amembers.length < 2*event.team_size+2 && !(event.mode ==="peg_board") && (
+        <Alert severity="warning">
+          <AlertTitle>Low number of available players</AlertTitle>
+          There are not many available players to create a game with, this can lead to the algorithm assigning games similar to those already played.
+          For most effective game creation we recommended waiting for games to finish or waiting for more players to arrive before using the game selection algorithms.
+        </Alert>
       )}
-
+      {error && (
+        <Alert severity="error">
+          <AlertTitle>Error</AlertTitle>
+          {error}
+        </Alert>
+      )}
       {/* Games */}
-      <Paper sx={{p:1}}>
+      <Paper sx={{p:1, mt:1}}>
         <Grid2 container spacing={1} justifyContent="center">
           {games.map((game) => (
             <GameDisplay 
@@ -327,6 +429,27 @@ return (
         )}
         </Grid2>
       </Paper>
+      <SelectTeamDialog 
+        open={openPegDialog}
+        handleClose={handleClosePegDialog}
+        player1Id={player1Id}
+        activeMembers={amembers}
+        selectedMembers={selectedMembers}
+        setSelectedMembers={setSelectedMembers}
+        setGames={setGames}
+        setEvent={setEvent} 
+        setAMembers={setAMembers} 
+        setInGameMembers={setInGameMembers} 
+        event={event}
+      />
+      <EventSettingsDialog
+        open={openSettingsDialog}
+        onClose={handleCloseSettingsDialog}
+        eventSettings={eventSettings}
+        setEventSettings={setEventSettings}
+        handleUpdateEventSettings={handleUpdateEventSettings}
+        eventId={event.id}
+      />
     </>)};
 
 export default ActiveEvent;

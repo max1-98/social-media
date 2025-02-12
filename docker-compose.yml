@@ -1,0 +1,100 @@
+
+
+services:
+
+  api:
+    build: 
+      context: ./
+      dockerfile: ./compose/local/django/Dockerfile  
+    image: django_celery_example_web
+    command: /start     
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./.env/.dev-sample
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/frontend
+    depends_on:
+      - api
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: 'django-app-db'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+    volumes:
+      - ./backend/data/mysql/dbb:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+
+  celery_worker_1:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: django_celery_example_celery_worker
+    command: /start-celeryworker_1
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./.env/.dev-sample
+    depends_on:
+      - redis
+      - db
+
+  celery_worker_2:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: django_celery_example_celery_worker
+    command: /start-celeryworker_2
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./.env/.dev-sample
+    depends_on:
+      - redis
+      - db
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: django_celery_example_celery_beat
+    command: /start-celerybeat
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./.env/.dev-sample
+    depends_on:
+      - redis
+      - db
+
+  flower:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: django_celery_example_celery_flower
+    command: /start-flower
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - ./.env/.dev-sample
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+      - db
+
+
+

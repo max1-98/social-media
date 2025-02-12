@@ -18,9 +18,12 @@ function Game_table(  columns,
                     ) 
     {
 return (
-    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+    <Paper sx={{width: '100%', overflow: 'hidden' }}>
+        <Box sx={{height: '5vh'}}>
         <Typography variant="h5" sx={{ marginLeft: '10px', mt: '4px'}}>Games</Typography>
-        <TableContainer sx={{ maxHeight: 220 }}>
+        </Box>
+        <Box sx={{height: '94vh'}}>
+        <TableContainer sx={{ maxHeight: "89vh" }}>
             <Table stickyHeader aria-label="sticky table">
                 <TableHead>
                     <TableRow>
@@ -80,6 +83,7 @@ return (
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             />
+        </Box>
     </Paper>
 )};
 

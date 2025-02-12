@@ -1,5 +1,6 @@
 from django.db.models import Q
 from events.models import Event
+from games.models import Game
 
 def get_user_last_games(user, game_type=None, limit=10):
     """
@@ -13,30 +14,13 @@ def get_user_last_games(user, game_type=None, limit=10):
     Returns:
         A QuerySet of Game objects, ordered by game start time (most recent first).
     """
-    # Get all events the user has participated in
-    events = Event.objects.filter(
-        Q(played_one_match__user=user)
-    ).distinct()
+    games = Game.objects.filter(
+        all_users__user=user,
+        score__isnull=False,
+    ).select_related('game_type').prefetch_related('all_users') \
+    .order_by('-start_time')
 
-    # Order events by date (most recent first)
-    events = events.order_by('-date', '-start_time')
+    if game_type:
+        games = games.filter(game_type=game_type)
 
-    # Create a list to store the games
-    games = []
-
-    for event in events:
-        # Get games for the current event
-        event_games = event.games.filter(score__isnull=False).order_by('-start_time')
-        if game_type:
-            event_games = event_games.filter(game_type=game_type)
-
-        # Add the event's games to the list, up to the limit
-        for game in event_games:
-            if len(games) < limit and game.all_users.filter(user=user).exists():
-                games.append(game)
-                if len(games) == limit:
-                    break
-
-    # Return the games, ordered by start time (most recent first)
-    print(games)
-    return games
+    return games[:limit]
