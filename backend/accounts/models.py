@@ -24,20 +24,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
     first_name = models.CharField(  max_length=20,
-                                    blank=True, 
-                                    null=True,
                                     validators=[
                                         RegexValidator(r'^[a-zA-Z]*$', 'First name can only contain letters.')
                                     ]
                                     )  
     surname = models.CharField( max_length=20,
-                                blank=True, 
-                                null=True,
                                 validators=[
                                     RegexValidator(r'^[a-zA-Z]*$', 'First name can only contain letters.')
                                 ]
                                 ) 
-    date_of_birth = models.DateField(blank=True, null=True) 
+    date_of_birth = models.DateField() 
     biological_gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female')], default='male')
     elos = models.ManyToManyField('elo.Elo', related_name="elo_s")
     memberships = models.ManyToManyField('clubs.Member', related_name="memberships")

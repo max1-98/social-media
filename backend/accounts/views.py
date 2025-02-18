@@ -11,10 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 
-
-
 # local apps import
-from .serializers import CustomUserSerializer, AuthSerializer, SimpleUserSerializer, NavbarUserInfoSerializer
+from .serializers import CustomUserSerializer, SimpleUserSerializer, NavbarUserInfoSerializer
 from .models import CustomUser
 
 
@@ -23,7 +21,7 @@ class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        
+        print(self.request.headers)
         return self.request.user
     
 class NavbarUserInfoView(generics.RetrieveAPIView):
@@ -58,12 +56,3 @@ class LogoutView(APIView):
         # Simply delete the token associated with the user
         #AuthToken.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-class ManageUserView(generics.RetrieveUpdateAPIView):
-    """Manage the authenticated user"""
-    serializer_class = CustomUserSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_object(self):
-        """Retrieve and return authenticated user"""
-        return self.request.user

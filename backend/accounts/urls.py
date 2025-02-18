@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateUserView, ManageUserView, LogoutView, UserDetailView, SimpleProfileView
+from .views import CreateUserView, LogoutView, UserDetailView, SimpleProfileView
 from .views import NavbarUserInfoView
 
 app_name = 'accounts'

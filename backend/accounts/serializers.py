@@ -20,6 +20,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         # Don't allow updating the password through this serializer
         if 'password' in validated_data:
             del validated_data['password']
+
+        instance.username = validated_data.get('username', instance.first_name)
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.surname = validated_data.get('surname', instance.surname)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
@@ -30,7 +32,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class NavbarUserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name', 'surname', 'email_verify') 
+        fields = ('username', 'email', 'first_name', 'surname', 'email_verify') 
        
 class NewSerializer(serializers.ModelSerializer):
 
@@ -38,7 +40,6 @@ class NewSerializer(serializers.ModelSerializer):
         model=CustomUser
         fields= ('username', 'email', 'first_name', 'surname')
    
-
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -67,3 +68,4 @@ class AuthSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return 
+
