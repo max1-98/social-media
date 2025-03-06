@@ -4,7 +4,7 @@
 
 
  To use:
-  1. clone the repo to your local machine.
+  1. Clone the repo to your local machine.
   2. Create a folder called .env and add a file called .dev-sample, fill it in the way expressed below this list
   3. Install docker desktop and run the docker desktop app
   4. Go to the directory containing docker-compose.yml within  your CMD
