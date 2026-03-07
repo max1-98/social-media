@@ -10,7 +10,7 @@ from clubs.serializers import (
     ClubSerializer, ClubImageSerializer, ManyClubSerializer, MyClubSerializer,
 )
 from clubs.permissions import IsClubAdmin
-from accounts.models import CustomUser
+from clubs.services import create_club
 
 
 class AllClubView(APIView):
@@ -81,45 +81,16 @@ class ClubCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        club_username = request.data.get('club_username')
-        club_name = request.data.get('name')
-        club_description = request.data.get('info')
-
-        if not club_username:
-            return Response({"error": "Please provide a club username."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if len(club_username) > 12:
-            return Response({"error": "Username must be less than 12 characters."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not club_name:
-            return Response({"error": "Please provide a club name."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if len(club_name) > 50:
-            return Response({"error": "Club name must be less than 50 characters."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not club_description:
-            return Response({"error": "Please provide a club description."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if len(club_description) > 160:
-            return Response({"error": "Club description must be less than 160 characters."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if CustomUser.objects.filter(username=club_username).exists() or ClubModel.objects.filter(club_username=club_username).exists():
-            return Response({"error": "Club username already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if request.user:
-            club = ClubModel(
-                club_username=club_username,
-                name=club_name,
-                president=request.user,
-                info=club_description,
+        try:
+            club = create_club(
+                user=request.user,
+                club_username=request.data.get('club_username'),
+                name=request.data.get('name'),
+                info=request.data.get('info'),
             )
-        club.save()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        member = Member.objects.create(club=club, user=request.user)
-        member.is_admin = True
-        member.save()
-        request.user.memberships.add(member)
-        club.members.add(member)
         serializer = ClubSerializer(club)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

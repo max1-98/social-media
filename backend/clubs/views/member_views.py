@@ -5,12 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status, generics
 
 from events.models import Event
-from clubs.models import ClubModel, MemberRequest, Member, DummyUser
+from clubs.models import ClubModel, MemberRequest, Member
 from clubs.serializers import (
     MemberRequestSerializer, MemberRequestDetailSerializer,
     MemberEventSerializer, MemberBasicSerializer, CreateDummyUserSerializer,
 )
 from clubs.permissions import IsClubAdmin, IsClubPresident, is_user_member
+from clubs.services import accept_member_request, remove_member, promote_member, demote_member
 
 
 class MemberRequestListView(generics.ListAPIView):
@@ -109,23 +110,7 @@ class MemberAcceptView(APIView):
         member_request = self.get_object(member_request_id)
 
         if member_request:
-            club = member_request.club
-            user = member_request.user
-
-            memberships = user.memberships.all()
-            for membership in memberships:
-                if membership.club.id == club.id:
-                    membership.is_member = True
-                    member_request.delete()
-                    club.members.add(membership)
-                    return Response(status=status.HTTP_201_CREATED)
-
-            member = Member.objects.create(club=club, user=user)
-            club.members.add(member)
-            user.memberships.add(member)
-
-            member_request.delete()
-
+            accept_member_request(member_request)
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -155,33 +140,12 @@ class MemberDeleteView(generics.DestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         member = self.get_object()
 
-        if member.club.president == member.user:
-            return Response(
-                {"error": "A president cannot be revoked of their membership."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        try:
+            remove_member(member, request.user)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
-        if member:
-            if member.is_admin:
-                if member.club.president != request.user:
-                    return Response(
-                        {"error": "Only the club president can delete an admin."},
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-                member.is_admin = False
-            if not member.user.is_active and member.user.username[:10] == "dummyuser_":
-                id = int(member.user.username[10:])
-                dummymodel = DummyUser.objects.get(pk=id)
-                dummymodel.delete()
-                member.user.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-
-            member.club.members.remove(member)
-            member.is_member = False
-            member.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CreateDummyUserView(generics.CreateAPIView):
@@ -209,29 +173,20 @@ class AdminUpdateView(generics.RetrieveUpdateDestroyAPIView):
         member_id = kwargs.get('pk2')
         member = get_object_or_404(Member, pk=member_id)
 
-        if member.is_admin:
-            return Response(
-                {"error": "This user is already a club admin."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            promote_member(member)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        member.is_admin = True
-        member.save()
         return Response({"message": "User made a club admin successfully."}, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
-        """
-        Removes a member as a club admin.
-        """
         member_id = kwargs.get('pk2')
         member = get_object_or_404(Member, pk=member_id)
 
-        if member.is_admin:
-            member.is_admin = False
-            member.save()
-            return Response({"message": "User removed as club admin successfully."}, status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(
-                {"error": "This user is not a club admin."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            demote_member(member)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "User removed as club admin successfully."}, status=status.HTTP_204_NO_CONTENT)

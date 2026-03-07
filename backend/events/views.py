@@ -1,5 +1,4 @@
 # Django imports
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
 # rest_framework imports
@@ -12,11 +11,10 @@ from rest_framework.status import HTTP_200_OK
 from .serializers import ActivateMemberSerializer, DeactivateMemberSerializer, CompleteEventSerializer, StartEventSerializer
 from .serializers import EventSerializer, EventDetailSerializer, EventSettingsSerializer, EventStatsSerializer, EventCreateSerializer
 from .models import Event
-from games.models import GameType
 from clubs.permissions import IsClubAdmin, IsClubMember
-from clubs.models import ClubModel, ClubStatus 
-from .fetch_events import get_events_for_user, get_recent_event_date
-from backend.utils import string_to_date, is_more_than_four_weeks_ago
+from clubs.models import ClubModel
+from .fetch_events import get_events_for_user
+from .services import create_event, auto_manage_events
 
 
 class ActiveEventsView(generics.ListAPIView):
@@ -79,24 +77,15 @@ class EventCreateView(APIView):
     permission_classes = [IsAuthenticated, IsClubAdmin]
     
     def post(self, request, pk):
-        
-        game_type_name = request.data.get('game_type') # Get game_type from request data
-
         serializer = EventCreateSerializer(data=request.data)
-        game_type = get_object_or_404(GameType, name=game_type_name)
-        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if serializer.is_valid():
-            club_id = pk
-            club = ClubModel.objects.get(pk=club_id)
-            event = serializer.save(club=club)
-            event.game_type = game_type
-            event.save()
-            club.events.add(event)
-            club.save()
-            serialized_event = EventSerializer(event)
-            return Response(serialized_event.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        club = get_object_or_404(ClubModel, pk=pk)
+        game_type_name = request.data.get('game_type')
+        event = create_event(club, game_type_name, serializer.validated_data)
+
+        return Response(EventSerializer(event).data, status=status.HTTP_201_CREATED)
     
 class EventSettingsUpdateView(generics.UpdateAPIView):
     """
@@ -136,59 +125,11 @@ class EventsListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        auto_manage_events(queryset)
 
-        for event in queryset:
-
-            if not event.event_active and event.date < timezone.now().date():
-                start_datetime = timezone.datetime.combine(timezone.now().date(), event.start_time).astimezone()
-                if start_datetime < timezone.now():
-                    event.event_active=True
-                    event.save()
-                
-            if not event.event_complete:
-                if event.date + timezone.timedelta(days=2) < timezone.now().date():
-                    # Event has passed the 3-hour deadline
-                    event.event_complete = True
-                    event.save()
-
-            if event.event_complete and event.date + timezone.timedelta(days=2) < timezone.now().date():
-                # Event is complete and active
-                if event.games.count() == 0:
-
-                    # No games played, delete the event
-                    club = event.club 
-                    date_event = event.date
-                    event.delete()
-                    
-                    get_recent_event_date(club)
-                    active_model = ClubStatus.objects.get(pk=1)
-
-                    event_data = active_model.event_dates
-                    club_id=club.id
-
-                    #Check that it is a dictionary first before attempting to access it.
-                    if isinstance(event_data, dict):
-                        date_str = event_data.get(str(club_id))
-                        date = string_to_date(date_str)
-
-                        # Checks whether date comes before or at the same time event.date, hence we need to find the actual date
-                        if date is None or date <= date_event:
-                            most_recent_event = get_recent_event_date(club)
-
-                            if not most_recent_event or is_more_than_four_weeks_ago(most_recent_event):
-                                club.is_active = False
-                                active_model.event_dates.pop(str(club_id), None)
-                                club.save()
-                            else:
-                                active_model.event_dates[(str(club_id))] = str(most_recent_event)
-                                
-                            active_model.save()
-                        # Else we don't need to do anything as the current date is younger than the event we just deleted
-                    # the dictionary will exist or be empty as long as soon as the app has been
-                    
-
+        # Re-fetch after auto_manage_events may have deleted some events
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-
         return Response(serializer.data)
     
 class CompleteEventView(APIView):
