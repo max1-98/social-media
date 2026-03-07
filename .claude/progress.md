@@ -36,8 +36,8 @@
 
 | Task | Description | Status | Agent | Updated |
 |------|-------------|--------|-------|---------|
-| 3.1 | Split clubs/views.py (658 lines) | OPEN | — | — |
-| 3.2 | Extract service layer (backend) | OPEN | — | — |
+| 3.1 | Split clubs/views.py (658 lines) | DONE | claude-opus | 2026-03-07T21:15 |
+| 3.2 | Extract service layer (backend) | IN-PROGRESS | claude-opus | 2026-03-07T21:10 |
 | 3.3 | Add error boundaries (frontend) | OPEN | — | — |
 | 3.4 | Start TypeScript migration (frontend) | OPEN | — | — |
 | 3.5 | Extract React contexts | OPEN | — | — |
