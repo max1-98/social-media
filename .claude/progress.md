@@ -38,10 +38,10 @@
 |------|-------------|--------|-------|---------|
 | 3.1 | Split clubs/views.py (658 lines) | DONE | claude-opus | 2026-03-07T21:15 |
 | 3.2 | Extract service layer (backend) | DONE | claude-opus | 2026-03-07T22:30 |
-| 3.3 | Add error boundaries (frontend) | OPEN | — | — |
+| 3.3 | Add error boundaries (frontend) | DONE | claude-opus | 2026-03-07 |
 | 3.4 | Start TypeScript migration (frontend) | OPEN | — | — |
 | 3.5 | Extract React contexts | OPEN | — | — |
-| 3.6 | Consistent error responses (backend) | OPEN | — | — |
+| 3.6 | Consistent error responses (backend) | DONE | claude-opus | 2026-03-07 |
 
 ## Phase 4: Performance
 
