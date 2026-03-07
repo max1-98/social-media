@@ -1,37 +1,36 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import './App.css';
-import ClubDetail from './components/Clubs/Clubs';
-import ClubPage from './components/Clubs/ClubPage';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CreateClub from './components/Clubs/CreateClub';
-
-import Login from './components/Account/Login';
-import UserProfile from './components/Account/UserProfile';
-import Register from './components/Account/Register';
-import EditClub from './components/Clubs/EditClub';
-import ClubRequests from './components/Clubs/ClubRequests';
-import { Box } from '@mui/material';
-import MemberDetail from './components/Clubs/Members';
-import CreateEvent from './components/Events/CreateEvent';
-import EventPage from './components/Events/EventView';
-import MemberAttendanceComponent from './components/Clubs/Attendance';
-import PastGames from './components/Account/PastGames';
-import SocialForm from './components/Clubs/AddSocials';
-import AddressForm from './components/Clubs/AddressForm';
-import SportForm from './components/Clubs/SportForm';
-import PasswordReset from './components/Account/ResetPassword';
-import VerifyEmail from './components/Account/VerifyEmail';
-import ErrorBoundary from './components/ErrorBoundary';
-
-// Theme
+import { Box, CircularProgress } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ColorModeContext, useMode } from './theme';
 import SideNav from './components/Navbar/Navbar2';
 import { ProSidebarProvider } from 'react-pro-sidebar';
-
-// Auth context
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Eagerly loaded — visible on initial page load
+import Login from './components/Account/Login';
+import Register from './components/Account/Register';
+import ErrorBoundary from './components/ErrorBoundary';
+
+// Lazy loaded — code-split per route
+const ClubDetail = React.lazy(() => import('./components/Clubs/Clubs'));
+const ClubPage = React.lazy(() => import('./components/Clubs/ClubPage'));
+const CreateClub = React.lazy(() => import('./components/Clubs/CreateClub'));
+const EditClub = React.lazy(() => import('./components/Clubs/EditClub'));
+const ClubRequests = React.lazy(() => import('./components/Clubs/ClubRequests'));
+const MemberDetail = React.lazy(() => import('./components/Clubs/Members'));
+const CreateEvent = React.lazy(() => import('./components/Events/CreateEvent'));
+const EventPage = React.lazy(() => import('./components/Events/EventView'));
+const MemberAttendanceComponent = React.lazy(() => import('./components/Clubs/Attendance'));
+const PastGames = React.lazy(() => import('./components/Account/PastGames'));
+const SocialForm = React.lazy(() => import('./components/Clubs/AddSocials'));
+const AddressForm = React.lazy(() => import('./components/Clubs/AddressForm'));
+const SportForm = React.lazy(() => import('./components/Clubs/SportForm'));
+const PasswordReset = React.lazy(() => import('./components/Account/ResetPassword'));
+const VerifyEmail = React.lazy(() => import('./components/Account/VerifyEmail'));
+const UserProfile = React.lazy(() => import('./components/Account/UserProfile'));
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -43,6 +42,7 @@ function AppRoutes() {
       </ProSidebarProvider>
 
       <Box style={{ width: "100%" }}>
+        <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></Box>}>
         <Routes>
           <Route path="/" element={isAuthenticated ? <ErrorBoundary><ClubDetail /></ErrorBoundary> : <Navigate to="/account/login" />} />
 
@@ -67,6 +67,7 @@ function AppRoutes() {
           <Route path="/account/reset-password/:token" element={<PasswordReset/>} />
           <Route path="/account/verify_email/:token" element={<VerifyEmail/>}/>
         </Routes>
+        </Suspense>
       </Box>
     </>
   );

@@ -27,60 +27,61 @@ import { fetchClubs, fetchSports } from '../functions/fetch_functions';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import CloseIcon from '@mui/icons-material/Close';
+import type { ManyClub, Sport } from '../../types';
 
-const StyledTab = styled(Tab)(({ theme, selected }) => ({
+const StyledTab = styled(Tab)<{ selected?: boolean }>(({ theme, selected }) => ({
   backgroundColor: selected ? theme.palette.text.primary : 'transparent',
   color: selected ? "transparent" : theme.palette.text.primary,
   '&:hover': {
-    opacity: 0.7 //Reduce opacity on hover
+    opacity: 0.7
   }
 }));
 
 function ClubDetail() {
-  const [clubs, setClubs] = useState([]);
+  const [clubs, setClubs] = useState<ManyClub[]>([]);
   const navigate = useNavigate();
-  const [mapCenter, setMapCenter] = useState([54.257651, -2.681402]);
-  const [mapLoading, setMapLoading] = useState(true); 
+  const [mapCenter, setMapCenter] = useState<[number, number]>([54.257651, -2.681402]);
+  const [mapLoading, setMapLoading] = useState(true);
   const [zoom, setZoom] = useState(6);
-  const [userLoc, setUserLoc] = useState(null);
+  const [userLoc, setUserLoc] = useState<[number, number] | null>(null);
   const [ alertInfo, setAlertinfo] = useState(true);
-  const mapRef = useRef(null);
-  const [ne, setNE] = useState(null);
-  const [sw, setSW] = useState(null);
+  const mapRef = useRef<any>(null);
+  const [ne, setNE] = useState<{ lat: number; lng: number } | null>(null);
+  const [sw, setSW] = useState<{ lat: number; lng: number } | null>(null);
   const [sport, setSport] = useState("");
-  const [sports, setSports] = useState([]);
+  const [sports, setSports] = useState<Sport[]>([]);
   const [value, setValue] = useState(0);
   const [CoordUrl, setCoordUrl] = useState("");
   const [mapReady, setMapReady] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<unknown>('');
   const [ DrawerOpen, setDrawerOpen] = useState(false);
-  
+
 
   // Styling
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  function stringToColor(string) {
+
+  function stringToColor(string: string) {
     let hash = 0;
     let i;
-  
+
     /* eslint-disable no-bitwise */
     for (i = 0; i < string.length; i += 1) {
       hash = string.charCodeAt(i) + ((hash << 5) - hash);
     }
-  
+
     let color = '#';
-  
+
     for (i = 0; i < 3; i += 1) {
       const value = (hash >> (i * 8)) & 0xff;
       color += `00${value.toString(16)}`.slice(-2);
     }
     /* eslint-enable no-bitwise */
-  
+
     return color;
   }
-  
-  function stringAvatar(name) {
+
+  function stringAvatar(name: string) {
     return {
       sx: {
         bgcolor: stringToColor(name),
@@ -88,17 +89,17 @@ function ClubDetail() {
       children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
     };
   }
-  
-  const handleChange = (event, newValue) => {
+
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
-  const handleMoveEnd = (e) => {
+  const handleMoveEnd = (e: any) => {
     const bounds = e.target.getBounds();
-    setNE(prevNE => bounds._northEast); //Functional update for NE
-    setSW(prevSW => bounds._southWest); //Functional update for SW
+    setNE(bounds._northEast);
+    setSW(bounds._southWest);
   };
-  
+
   const handleMapReady = useCallback(() => {
     if (!mapReady) {
     setMapReady(true);
@@ -116,12 +117,12 @@ function ClubDetail() {
   useEffect(() => {
     if (mapReady){
       const bounds = mapRef.current.getBounds();
-      setNE(prevNE => bounds._northEast); //Functional update for NE
-      setSW(prevSW => bounds._southWest);
+      setNE(bounds._northEast);
+      setSW(bounds._southWest);
       mapRef.current.on('moveend', handleMoveEnd);
       mapRef.current.on('zoom', handleMoveEnd);
     }
-    
+
   }, [mapReady]);
 
   // Fetches clubs if the sport changes
@@ -150,7 +151,7 @@ function ClubDetail() {
       <Grid2 container sx={{ mr:-3}}>
 
         {/* Map container */}
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
 
           {/* Tabs */}
           <Box sx={{ width: '100%' }}>
@@ -160,11 +161,11 @@ function ClubDetail() {
                 onChange={handleChange}
                 variant="scrollable"
                 scrollButtons="auto"
-                allowScrollButtonsMobile 
+                allowScrollButtonsMobile
                 aria-label="scrollable sports tabs"
-              >  
-                <Box 
-                  onClick={()=> setDrawerOpen(true)} 
+              >
+                <Box
+                  onClick={()=> setDrawerOpen(true)}
                   sx={{
                     p:2,
                     textAlign: "center",
@@ -173,7 +174,7 @@ function ClubDetail() {
                         cursor: 'pointer',
                         color: 'secondary.main'
                     }
-                  }} 
+                  }}
                 >
                   <FormatListBulletedIcon/>
                   <Typography variant="subtitle2" sx={{fontWeight: 500}}>CLUB LIST</Typography>
@@ -187,7 +188,7 @@ function ClubDetail() {
           </Box>
 
           {/* Map */}
-          <MapContainer ref={(map) => {mapRef.current = map; if (map) handleMapReady();}} className={"big-map2"} center={mapCenter} zoom={zoom} scrollWheelZoom={false}>
+          <MapContainer ref={(map: any) => {mapRef.current = map; if (map) handleMapReady();}} className={"big-map2"} center={mapCenter} zoom={zoom} scrollWheelZoom={false}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -208,7 +209,7 @@ function ClubDetail() {
               )}
             {clubs.map((club,index) => (
               club.coordinates && (
-                <Marker position={[club.coordinates.lat, club.coordinates.lng]}>
+                <Marker key={club.id} position={[club.coordinates.lat, club.coordinates.lng]}>
                   <Popup>
                     <Box onClick={()=>navigate(`/club/${club.id}`)}>
                       <Typography variant="h6" sx={{mb:-1}}>{club.name}</Typography>
@@ -229,7 +230,7 @@ function ClubDetail() {
           onClose={()=> setDrawerOpen(false)}
         >
           <Paper sx={{height: "100vh", p:-1}}>
-            
+
             <Stack direction={"column"} sx={{maxHeight: '100%', overflow: 'auto'}} spacing={1}>
               <Box sx={{alignItems:"left"}}>
               <IconButton onClick={()=> setDrawerOpen(false)}><CloseIcon/></IconButton>
@@ -241,26 +242,26 @@ function ClubDetail() {
               <br/>
               "Avg. Att." is short for "average attendance", this finds the average attendance for that clubs events in the last 4 weeks.
               <br/>
-              <Button color={"common"} variant="outlined" onClick={()=>setAlertinfo(false)}>Dismiss</Button>
+              <Button color={"common" as any} variant="outlined" onClick={()=>setAlertinfo(false)}>Dismiss</Button>
               </Alert>
               </>
               )}
-            
+
               {clubs.map((club,index) => (
-                <Box>
+                <Box key={club.id}>
                   <Card onClick={()=>navigate(`/club/${club.id}`)} sx={{p:1, width: "100%", height:150}}>
                     <Grid2 container>
-                      <Grid2 item size={3}>
+                      <Grid2 size={3}>
                         <Stack spacing={1} sx={{alignItems:"center", textAlign:"center", justifyContent:"center"}}>
                           { club.logo ? <Avatar sx={{height: 50, width: 50}}  alt="profile picture" src={"http://127.0.0.1:8000/"+club.logo} />
                           :
                           <Avatar sx={{height: 50, width: 50}} {...stringAvatar(club.name)} />
                           }
-                        
+
                         <Typography sx={{fontSize: 10}}>@{club.club_username}</Typography>
                         </Stack>
                       </Grid2>
-                      <Grid2 item size={9}>
+                      <Grid2 size={9}>
                         <Box sx={{height: 90, width: "100%"}}>
                           <Typography variant={"subtitle2"}>{club.name}</Typography>
                           <Typography variant={"body2"}>{club.info}</Typography>
@@ -268,11 +269,11 @@ function ClubDetail() {
                       </Grid2>
                     </Grid2>
                     <Grid2 container>
-                      <Grid2 item size={3} sx={{textAlign:"center"}}>
-                        
+                      <Grid2 size={3} sx={{textAlign:"center"}}>
+
                         {club.sport_type ? (<SportIcon sport={club.sport_type.name}/>): <Typography>No sport type</Typography>}
                       </Grid2>
-                      <Grid2 item size={9}>
+                      <Grid2 size={9}>
                         <Stack direction="row" spacing={1}>
                         <Chip
                           size={"medium"}
@@ -280,7 +281,7 @@ function ClubDetail() {
                           variant="outlined"
                           color={club.is_active ? "success" : "error"}
                         />
-                        <Chip 
+                        <Chip
                           size={"medium"}
                           label={club.is_event_upcoming ? "Upcmg Evts" : "No events"}
                           variant="outlined"
@@ -296,14 +297,14 @@ function ClubDetail() {
                           :
                           <Chip
                             size={"medium"}
-                            label={`Avg. Att. ${Math.ceil(club.average_attendance)}`}
+                            label={`Avg. Att. ${Math.ceil(club.average_attendance as number)}`}
                             variant="outlined"
                             color={"secondary"}
                           />}
                         </Stack>
-                        
+
                       </Grid2>
-                    
+
                     </Grid2>
                   </Card>
                 </Box>
@@ -315,7 +316,7 @@ function ClubDetail() {
 
       </Grid2>
     </>
-    
+
   );
 }
 

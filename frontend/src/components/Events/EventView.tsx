@@ -1,48 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom'; // Import useParams
+import { useParams } from 'react-router-dom';
 import { game_columns} from './consts/columns';
-import { Button, Card, Chip, Grid2, Paper, Typography, useMediaQuery, useTheme  } from '@mui/material';
+import { Button, Card, Grid2, Paper, Typography, useMediaQuery, useTheme  } from '@mui/material';
 
 import { fetchClub, fetchCompleteEventGames, fetchEvent, fetchGames, fetchMembers, fetchStats } from '../functions/fetch_functions';
 import Game_table from '../tables/game_display_table';
 import BeforeStart from './EventViewComponents/BeforeStart';
 import ActiveEvent from './EventViewComponents/ActiveEvent';
+import type { Club, EventDetail, Member, MemberEvent, Game, CompleteGame } from '../../types';
 
 function EventPage() {
 
   // Constants for Game view top Navbar
-  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElNav, setAnchorElNav] = useState<HTMLElement | null>(null);
 
   // Constants for club / event and game info
-  const { clubId } = useParams(); // Get clubId from the URL
-  const { eventId } = useParams(); // Get eventId from the URL
-  const [club, setClub] = useState(null);
-  const [event, setEvent] = useState([]);
-  const [amembers, setAMembers] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [in_game_members, setInGameMembers] = useState([]);
-  const [games, setGames] = useState([]);
-  const [completeGames, setCGames] = useState([]);
-  const [stats, setStats] = useState([]);
+  const { clubId } = useParams();
+  const { eventId } = useParams();
+  const [club, setClub] = useState<Club | null>(null);
+  const [event, setEvent] = useState<any>([]);
+  const [amembers, setAMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberEvent[]>([]);
+  const [in_game_members, setInGameMembers] = useState<Member[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
+  const [completeGames, setCGames] = useState<CompleteGame[]>([]);
+  const [stats, setStats] = useState<any>([]);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
 
   // Open and Close Dialog constants
-  const [open, setOpen] = useState(false); // State for dialog
+  const [open, setOpen] = useState(false);
   const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
   const [openPegDialog, setOpenPegDialog] = useState(false);
   const [openAppBar, setOpenAppBar] = useState(false);
 
   // Peg board constants
-  const [selectedMembers, setSelectedMembers] = useState([]);
-  const [player1Id, setplayer1Id] = useState([]);
+  const [selectedMembers, setSelectedMembers] = useState<any[]>([]);
+  const [player1Id, setplayer1Id] = useState<any[]>([]);
 
   // For changing game mode
   const [eventSettings, setEventSettings] = useState({
-    sbmm: event.sbmm || true, // Use default value if event.sbmm is not available
-    mode: event.mode || 'sbmm', // Use default value if event.mode is not available
-    evenTeams: event.even_teams || true // Use default value if event.even_teams is not available
+    sbmm: event.sbmm || true,
+    mode: event.mode || 'sbmm',
+    evenTeams: event.even_teams || true
   });
 
   // Adding a member constants
@@ -51,14 +52,14 @@ function EventPage() {
     surname: '',
     gender: '',
   })
-  
+
   // Team score constants
   const [team1Score, setTeam1Score] = useState(0);
   const [team2Score, setTeam2Score] = useState(0);
-  
+
 
   // For displaying errors
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Table constants
   const [page, setPage] = useState(0);
@@ -68,18 +69,18 @@ function EventPage() {
   const [page2, setPage2] = useState(0);
   const [rowsPerPage2, setRowsPerPage2] = useState(10);
 
-  const handleChangePage2 = (event, newPage) => {
+  const handleChangePage2 = (_event: unknown, newPage: number) => {
     setPage2(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage2(parseInt(event.target.value, 10));
     setPage2(0);
   };
 
   // Can Delete after complete view made
-  const handleComplete = async(event_id) => {
-    
+  const handleComplete = async(event_id: number | string) => {
+
     try {
       await axios.post(`http://127.0.0.1:8000/club/event/complete/`,
       {
@@ -94,20 +95,20 @@ function EventPage() {
     const fetchData = async () => {
       try {
         // Fetch the event data
-        await fetchEvent(eventId, setEvent, setAMembers, setInGameMembers);
-        
+        await fetchEvent(eventId!, setEvent, setAMembers, setInGameMembers);
+
         // Fetch the club data
-        await fetchClub(clubId, setClub);
+        await fetchClub(clubId!, setClub);
 
         // Fetch the games data
-        await fetchGames(eventId, setGames);
+        await fetchGames(eventId!, setGames);
 
         // Fetch the members
-        await fetchMembers(eventId, setMembers);
+        await fetchMembers(eventId!, setMembers);
 
         // Fetch the complete games
-        await fetchCompleteEventGames(eventId, setCGames);
-        
+        await fetchCompleteEventGames(eventId!, setCGames);
+
       } catch (error) {
       }
     };
@@ -115,138 +116,138 @@ function EventPage() {
     if (eventId) {
       fetchData();
     }
-  }, [eventId]); 
+  }, [eventId]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (event.event_complete){
-      fetchStats(eventId, setStats)
+      fetchStats(eventId!, setStats)
     };
 
   }, [event.event_complete]);
-  
+
   if (club) {
   return (
-    <Paper sx={{p:1}}> 
+    <Paper sx={{p:1}}>
         {!event.event_active && club.is_club_admin && (
           <>
-            {BeforeStart( 
+            {BeforeStart(
                           event,
-                          setEvent, 
-                          setAMembers, 
+                          setEvent,
+                          setAMembers,
                           setInGameMembers)
             }
           </>
         )}
         {event.event_active && !event.event_complete && (
           <>
-            {ActiveEvent( 
-                          event, 
-                          club, 
-                          games, 
-                          members, 
-                          amembers, 
-                          in_game_members, 
-                          setEvent, 
-                          setAMembers, 
-                          setInGameMembers, 
+            {ActiveEvent(
+                          event,
+                          club,
+                          games,
+                          members,
+                          amembers,
+                          in_game_members,
+                          setEvent,
+                          setAMembers,
+                          setInGameMembers,
                           setMembers,
                           setGames,
-                          team1Score, 
+                          team1Score,
                           setTeam1Score,
                           team2Score,
                           setTeam2Score,
-                          open, 
+                          open,
                           setOpen,
                           memberInfo,
                           setMemberInfo,
-                          error, 
+                          error,
                           setError,
-                          page, 
+                          page,
                           setPage,
-                          page1, 
+                          page1,
                           setPage1,
-                          rowsPerPage, 
-                          setRowsPerPage, 
-                          openSettingsDialog, 
+                          rowsPerPage,
+                          setRowsPerPage,
+                          openSettingsDialog,
                           setOpenSettingsDialog,
                           eventSettings,
                           setEventSettings,
-                          openPegDialog, 
+                          openPegDialog,
                           setOpenPegDialog,
-                          selectedMembers, 
-                          setSelectedMembers, 
-                          player1Id, 
+                          selectedMembers,
+                          setSelectedMembers,
+                          player1Id,
                           setplayer1Id,
                           isSmallScreen,
-                          openAppBar, 
+                          openAppBar,
                           setOpenAppBar,
-                          
+
             )}
           </>
         )}
 
       { event.event_complete && stats.best_winstreak_players && (
         <>
-        <Button onClick={()=>handleComplete(eventId)} color="secondary" variant={"outlined"}>Re-activate</Button>
+        <Button onClick={()=>handleComplete(eventId!)} color="secondary" variant={"outlined"}>Re-activate</Button>
         <Card sx={{p:1, mt:1, mb:1}}>
           <Typography variant={"h4"} sx={{textAlign: "center"}}> Key Stats</Typography>
           { stats ? (
             <Grid2 container spacing={1} sx={{mt:1}}>
               {stats.best_winstreak_players[0] && (
-              <Grid2 item size={{xs:6, lg: 3}} >
+              <Grid2 size={{xs:6, lg: 3}} >
                 <Card sx={{padding: 1}} variant="outlined">
                   <Typography variant='h6' sx={{fontWeight:600}}>Best winstreak! ({stats.best_winstreak_players[0].best_winstreak})</Typography>
-                  {stats.best_winstreak_players.map( (player,index) => (
-                    <>
+                  {stats.best_winstreak_players.map( (player: any, index: number) => (
+                    <React.Fragment key={index}>
                       <Typography>{player.name}</Typography>
-                      
-                    </>
+
+                    </React.Fragment>
                   ))}
                 </Card>
               </Grid2>)}
               { stats.highest_win_rate_players[0] &&(
-              <Grid2 item size={{xs:6, lg: 3}}>
+              <Grid2 size={{xs:6, lg: 3}}>
                 <Card sx={{padding: 1}} variant="outlined">
                   <Typography variant='h6' sx={{fontWeight:600}}>Best win-rate! ({Math.ceil(stats.highest_win_rate_players[0].win_rate*100)/100} W/L)</Typography>
-                  {stats.highest_win_rate_players.map( (player,index) => (
-                        <Typography>{player.name}</Typography>
+                  {stats.highest_win_rate_players.map( (player: any, index: number) => (
+                        <Typography key={index}>{player.name}</Typography>
                       ))}
                 </Card>
               </Grid2>
               )}
               { stats.highest_elo_gain_players[0] && (
-                <Grid2 item size={{xs:6, lg: 3}}>
+                <Grid2 size={{xs:6, lg: 3}}>
                   <Card sx={{padding: 1}} variant="outlined">
                     <Typography variant='h6' sx={{fontWeight:600}}>Most elo-gained! ({stats.highest_elo_gain_players[0].elo_gain} elo gained)</Typography>
-                    {stats.highest_elo_gain_players.map( (player,index) => (
-                          <>
+                    {stats.highest_elo_gain_players.map( (player: any, index: number) => (
+                          <React.Fragment key={index}>
                           <Typography>{player.name}</Typography>
-                          </>
+                          </React.Fragment>
                         ))}
                   </Card>
                 </Grid2>
               )}
               {stats.most_games_played_players[0] && (
-              <Grid2 item size={{xs:6, lg: 3}}>
+              <Grid2 size={{xs:6, lg: 3}}>
                 <Card sx={{padding: 1}} variant="outlined">
                   <Typography variant='h6' sx={{fontWeight:600}}>Hardest workers! ({stats.most_games_played_players[0].games_played} games)</Typography>
-                  {stats.most_games_played_players.map( (player,index) => (
-                        <>
+                  {stats.most_games_played_players.map( (player: any, index: number) => (
+                        <React.Fragment key={index}>
                         <Typography>{player.name}</Typography>
-                        </>
+                        </React.Fragment>
                       ))}
                 </Card>
               </Grid2>)}
               {stats.most_wins_players[0] && (
-              <Grid2 item size={{xs:6, lg: 3}}>
+              <Grid2 size={{xs:6, lg: 3}}>
                 <Card sx={{padding: 1}} variant="outlined">
                   <Typography variant='h6' sx={{fontWeight:600}}>Most wins! ({stats.most_wins_players[0].wins} wins)</Typography>
-                  {stats.most_wins_players.map( (player,index) => (
-                        <>
+                  {stats.most_wins_players.map( (player: any, index: number) => (
+                        <React.Fragment key={index}>
                           <Typography>{player.name}</Typography>
-                        </>
+                        </React.Fragment>
                       ))}
-                  
+
                 </Card>
               </Grid2>)}
             </Grid2>)
@@ -258,7 +259,7 @@ function EventPage() {
           <Typography variant={"h4"} sx={{textAlign: "center", mb: 1}}> All Games</Typography>
             {Game_table(
               game_columns,
-              completeGames, 
+              completeGames,
               page2,
               rowsPerPage2,
               handleChangePage2,
@@ -271,7 +272,7 @@ function EventPage() {
   );
 }
 else {
-  <Typography>Loading...</Typography>
+  return <Typography>Loading...</Typography>
 }
 }
 

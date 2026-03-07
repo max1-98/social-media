@@ -13,14 +13,14 @@ const AddressForm = () => {
         postcode: '',
     });
 
-    const handleChange = (event) => {
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAddressFields({
         ...addressFields,
         [event.target.name]: event.target.value,
         });
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
 
         const fullAddress = [
@@ -28,7 +28,7 @@ const AddressForm = () => {
         addressFields.town,
         addressFields.county,
         addressFields.postcode,
-        ].filter(Boolean).join(','); 
+        ].filter(Boolean).join(',');
 
         try {
         const response = await axios.post(
@@ -41,7 +41,7 @@ const AddressForm = () => {
         );
         navigate(`/club/${clubId}`);
 
-        
+
         } catch (error) {
         }
     };
@@ -49,18 +49,18 @@ const AddressForm = () => {
   return (
     <Paper sx={{width:"100%", p:1, height:"100vh"}}>
       <Grid2 container spacing={2} alignItems="center">
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <Typography variant="h6" gutterBottom>
             Enter club session address
           </Typography>
         </Grid2>
-        <Grid2 item>
+        <Grid2>
         <Alert severity="info">
           <AlertTitle>Entering an address</AlertTitle>
           We use Google Maps API. Enter as much info about the address that you know and then click submit, it should handle the rest. If it finds the wrong address then find the address using Google Maps and re-enter.
         </Alert>
         </Grid2>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <TextField
             label="Street"
             name="street"
@@ -69,7 +69,7 @@ const AddressForm = () => {
             fullWidth
           />
         </Grid2>
-        <Grid2 item size={{xs:12,sm:6}}>
+        <Grid2 size={{xs:12,sm:6}}>
           <TextField
             label="Town"
             name="town"
@@ -78,7 +78,7 @@ const AddressForm = () => {
             fullWidth
           />
         </Grid2>
-        <Grid2 item size={{xs:12,sm:6}}>
+        <Grid2 size={{xs:12,sm:6}}>
           <TextField
             label="County"
             name="county"
@@ -87,7 +87,7 @@ const AddressForm = () => {
             fullWidth
           />
         </Grid2>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <TextField
             label="Postcode"
             name="postcode"
@@ -96,14 +96,14 @@ const AddressForm = () => {
             fullWidth
           />
         </Grid2>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <Button color="secondary" variant="contained" onClick={handleSubmit}>
             Submit Address
           </Button>
         </Grid2>
       </Grid2>
     </Paper>
-    
+
   );
 };
 

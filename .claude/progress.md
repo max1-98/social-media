@@ -39,7 +39,7 @@
 | 3.1 | Split clubs/views.py (658 lines) | DONE | claude-opus | 2026-03-07T21:15 |
 | 3.2 | Extract service layer (backend) | DONE | claude-opus | 2026-03-07T22:30 |
 | 3.3 | Add error boundaries (frontend) | DONE | claude-opus | 2026-03-07 |
-| 3.4 | Start TypeScript migration (frontend) | IN-PROGRESS | claude-opus | 2026-03-07T23:00 |
+| 3.4 | Start TypeScript migration (frontend) | DONE | claude-opus | 2026-03-07 |
 | 3.5 | Extract React contexts | DONE | claude-opus | 2026-03-07T23:55 |
 | 3.6 | Consistent error responses (backend) | DONE | claude-opus | 2026-03-07 |
 
@@ -47,10 +47,10 @@
 
 | Task | Description | Status | Agent | Updated |
 |------|-------------|--------|-------|---------|
-| 4.1 | Fix N+1 queries (backend) | OPEN | — | — |
-| 4.2 | Optimize serializers (backend) | OPEN | — | — |
-| 4.3 | Add lazy loading (frontend) | OPEN | — | — |
-| 4.4 | Continue TypeScript migration (frontend) | OPEN | — | — |
+| 4.1 | Fix N+1 queries (backend) | DONE | claude-opus | 2026-03-07 |
+| 4.2 | Optimize serializers (backend) | DONE | claude-opus | 2026-03-07 |
+| 4.3 | Add lazy loading (frontend) | IN-PROGRESS | claude-opus | 2026-03-07T23:00 |
+| 4.4 | Continue TypeScript migration (frontend) | DONE | claude-opus | 2026-03-07T10:30 |
 | 4.5 | Memoize expensive renders (frontend) | OPEN | — | — |
 | 4.6 | Add database indexes (backend) | OPEN | — | — |
 

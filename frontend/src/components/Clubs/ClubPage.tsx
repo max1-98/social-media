@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   Typography,
   Button,
-  Link,
   Stack,
   Paper,
   Card,
@@ -28,28 +27,25 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import {MapContainer, Marker, Popup} from 'react-leaflet'
 import { TileLayer } from 'react-leaflet/TileLayer'
-import ImageUploadCrop from '../functions/image_crop';
 import EventComponent from '../Events/EventComponent/EventComponent';
 import { fetchClub, fetchClubEvents, fetchSocials } from '../functions/fetch_functions';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import CloseIcon from '@mui/icons-material/Close';
 import SocialIcon from '../Iconizer/SocialIcon';
+import type { Club, Event } from '../../types';
 
 function ClubPage() {
-  const [club, setClub] = useState(null);
+  const [club, setClub] = useState<Club | null>(null);
   const { clubId } = useParams();
   const navigate = useNavigate();
-  const [image, setImage] = useState(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 });
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [croppedImage, setCroppedImage] = useState(null);
-  const [open, setOpen] = useState(false); 
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [activeEvents, setActiveEvents] = useState([]);
-  const [completedEvents, setCompletedEvents] = useState([]);
-  const [error, setError] = useState('');
+  const [image, setImage] = useState<File | null>(null);
+  const [open, setOpen] = useState(false);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
+  const [completedEvents, setCompletedEvents] = useState<Event[]>([]);
+  const [error, setError] = useState<unknown>('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [socials, setSocials] = useState([]);
+  const [socials, setSocials] = useState<any>({ socials: [] });
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -62,7 +58,7 @@ function ClubPage() {
     setImage(null);
   };
 
-  useEffect(() => {    
+  useEffect(() => {
     if (clubId) {
       fetchClub(clubId, setClub);
       fetchClubEvents({club_id: clubId, setUpcomingEvents: setUpcomingEvents, setActiveEvents: setActiveEvents, setCompletedEvents: setCompletedEvents, setError: setError});
@@ -78,20 +74,20 @@ function ClubPage() {
     setDrawerOpen(false);
   };
 
-  
-  const handleLeave = async (club_id) => {
+
+  const handleLeave = async (club_id: string) => {
     try {
       await axios.delete(
         `http://127.0.0.1:8000/club/member/${club_id}/`
       );
-      fetchClub(club_id);
-      
+      fetchClub(club_id, setClub);
+
     } catch (error) {
     }
 
   };
 
-  const createMemberRequest = async (clubId) => {
+  const createMemberRequest = async (clubId: string) => {
     try {
       await axios.post(
         'http://127.0.0.1:8000/club/request/create/',
@@ -103,7 +99,7 @@ function ClubPage() {
     }
   };
 
-  const cancelMemberRequest = async (clubId) => {
+  const cancelMemberRequest = async (clubId: string) => {
     try {
       await axios.post(
         'http://127.0.0.1:8000/club/request/cancel/',
@@ -114,7 +110,7 @@ function ClubPage() {
     }
   };
 
-  const handleDelete = async (event) => {
+  const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
     try {
@@ -128,24 +124,28 @@ function ClubPage() {
   };
 
   const formData = new FormData();
-  const handleImageChange = (e) => {
-    setImage(e.target.files[0]); // Set the selected file to the image state
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImage(e.target.files[0]);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    formData.append('logo', image);
-    await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-    )
+
+    if (image) {
+      formData.append('logo', image);
+      await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+    }
     handleClose();
   };
 
   if (!club) {
     return <div>Loading...</div>;
   }
-  
+
   return (
     <>
       { isSmallScreen ? (
@@ -161,7 +161,7 @@ function ClubPage() {
             {club.is_club_admin && (
               <>
                 <Button
-                  color={"common"}
+                  color={"common" as any}
                   onClick={() => navigate('/club/edit/' + clubId)}
                 >
                   Edit Club
@@ -169,7 +169,7 @@ function ClubPage() {
                 <Box sx={{alignContent: "center"}}>
                   <Badge badgeContent={club.member_requests} color="secondary">
                     <Button
-                      color={"common"}
+                      color={"common" as any}
                       onClick={() => navigate(`/club/requests/${clubId}`)}
                     >
                       Member Requests
@@ -177,56 +177,56 @@ function ClubPage() {
                   </Badge>
                 </Box>
                 <Button
-                  color={"common"}
+                  color={"common" as any}
                   onClick={() => navigate(`/club/members/${clubId}`)}
                 >
                   Members
                 </Button>
                 <Button
-                  color={"common"}
+                  color={"common" as any}
                   onClick={() => navigate(`/club/attendance/${clubId}`)}
                 >
                   Attendance
                 </Button>
-                <Button 
-                  onClick={()=>navigate(`/club/events/create/${clubId}`)} 
-                  color="common"
+                <Button
+                  onClick={()=>navigate(`/club/events/create/${clubId}`)}
+                  color={"common" as any}
                 >
                   Create event
                 </Button>
-                <Button color={"common"} onClick={handleClickOpen}>
+                <Button color={"common" as any} onClick={handleClickOpen}>
                   Update Club Logo
                 </Button>
               </>
             )}
-            
+
             {/* Request to join / cancel / leave and member actions */}
             {club.membership_status === 0 && (
               <Button
-              color={"common"}
-                onClick={() => createMemberRequest(clubId)}
+              color={"common" as any}
+                onClick={() => createMemberRequest(clubId!)}
               >
                 Request to Join
               </Button>
             )}
             {club.membership_status === 1 && (
               <Button
-                color={"common"}
-                onClick={() => cancelMemberRequest(clubId)}
+                color={"common" as any}
+                onClick={() => cancelMemberRequest(clubId!)}
               >
                 Cancel Request
               </Button>
-            )} 
+            )}
             {club.membership_status === 2 && (
               <>
-                <Button 
-                  color={"common"}
-                  onClick={()=> handleLeave(clubId)}
+                <Button
+                  color={"common" as any}
+                  onClick={()=> handleLeave(clubId!)}
                 >
                   Leave
                 </Button>
               </>
-            )}  
+            )}
 
             {/* President Actions (if not already an admin) */}
             {club.is_club_president && (
@@ -244,84 +244,84 @@ function ClubPage() {
       (
         <AppBar position="static" color={"primary"}>
           <Toolbar>
-          
+
             {/* Admin Actions */}
             {club.is_club_admin && (
                 <>
                   <Button
-                    color={"common"}
+                    color={"common" as any}
                     onClick={() => navigate('/club/edit/' + clubId)}
                   >
                     Edit Club
                   </Button>
                   <Badge badgeContent={club.member_requests} color="secondary">
                     <Button
-                      color={"common"}
+                      color={"common" as any}
                       onClick={() => navigate(`/club/requests/${clubId}`)}
                     >
                       Member Requests
                     </Button>
                   </Badge>
                   <Button
-                    color={"common"}
+                    color={"common" as any}
                     onClick={() => navigate(`/club/members/${clubId}`)}
                   >
                     Members
                   </Button>
                   <Button
-                    color={"common"}
+                    color={"common" as any}
                     onClick={() => navigate(`/club/attendance/${clubId}`)}
                   >
                     Attendance
                   </Button>
-                  <Button 
-                    onClick={()=>navigate(`/club/events/create/${clubId}`)} 
-                    color="common"
+                  <Button
+                    onClick={()=>navigate(`/club/events/create/${clubId}`)}
+                    color={"common" as any}
                   >
                     Create event
                   </Button>
-                  <Button color={"common"} onClick={handleClickOpen}>
+                  <Button color={"common" as any} onClick={handleClickOpen}>
                     Update Club Logo
                   </Button>
                 </>
               )}
-            
+
             {/* Request to join / cancel / leave and member actions */}
             {club.membership_status === 0 && (
               <Button
-              color={"common"}
-                onClick={() => createMemberRequest(clubId)}
+              color={"common" as any}
+                onClick={() => createMemberRequest(clubId!)}
               >
                 Request to Join
               </Button>
             )}
             {club.membership_status === 1 && (
               <Button
-                color={"common"}
-                onClick={() => cancelMemberRequest(clubId)}
+                color={"common" as any}
+                onClick={() => cancelMemberRequest(clubId!)}
               >
                 Cancel Request
               </Button>
-            )} 
+            )}
             {club.membership_status === 2 && (
               <>
-                <Button 
-                  color={"common"}
-                  onClick={()=> handleLeave(clubId)}
+                <Button
+                  color={"common" as any}
+                  onClick={()=> handleLeave(clubId!)}
                 >
                   Leave
                 </Button>
-                
+
               </>
-            )}  
+            )}
 
             {/* President Actions (if not already an admin) */}
               {club.is_club_president && (
                 <Button color="error" onClick={handleDelete}>
                   Delete Club
                 </Button>
-              )}   
-             
+              )}
+
           </Toolbar>
         </AppBar>
     )}
@@ -336,7 +336,7 @@ function ClubPage() {
     )}
     <Paper sx={{p:1, height: (club.membership_status === 2) ? "100%": "100vh"}}>
       <Grid2 container spacing={1}>
-        <Grid2 item size={{xs: 12, lg: 6}}>
+        <Grid2 size={{xs: 12, lg: 6}}>
           <Box sx={{p:1}}>
 
             <Typography variant="h4" gutterBottom>
@@ -345,7 +345,7 @@ function ClubPage() {
 
             <Stack spacing={2}>
               <Typography variant="body1">
-                Sport: { club.sport_type ? 
+                Sport: { club.sport_type ?
                 (
                   club.sport_type.name
                 )
@@ -358,10 +358,10 @@ function ClubPage() {
                 }
                   {club.is_club_admin && (
                     <IconButton
-                      color={"common"}
+                      color={"common" as any}
                       onClick={() => navigate(`/club/add-sport/${clubId}`)}
                     >
-                    <EditIcon /> 
+                    <EditIcon />
                     </IconButton>
                   )}
               </Typography>
@@ -378,21 +378,21 @@ function ClubPage() {
                   Club location: {club.address}
                   {club.is_club_admin &&(
                     <IconButton
-                      color={"common"}
+                      color={"common" as any}
                       onClick={() => navigate(`/club/address/${clubId}`)}
-                          
+
                       >
-                    <EditIcon /> 
+                    <EditIcon />
                     </IconButton>
                   )}
                 </Typography>
-                
+
                 { socials.socials.length > 0 ? (
                   <>
-                  <Typography variant="body1" sx={{fontWeight: 700}}>Socials</Typography>                 
+                  <Typography variant="body1" sx={{fontWeight: 700}}>Socials</Typography>
                   <Stack direction="row">
-                  
-                    {socials.socials.map((social) => (
+
+                    {socials.socials.map((social: any) => (
                         <Tooltip key={social.platform} title={social.url} placement="top">
                           <a key={social.platform} href={social.url}>
                             <IconButton>
@@ -401,27 +401,27 @@ function ClubPage() {
                           </a>
                         </Tooltip>
                       )
-                        
+
                     )}
                     {club.is_club_admin &&(
                       <IconButton
-                        color={"common"}
+                        color={"common" as any}
                         onClick={() => navigate(`/club/add-socials/${clubId}`)}
-                            
+
                         >
-                      <EditIcon /> 
+                      <EditIcon />
                       </IconButton>
                     )}
                   </Stack>
                 </>):
-                ( 
+                (
                 club.is_club_admin ? (<Alert severity='warning'>
-                  <AlertTitle> This club has no social links.</AlertTitle> 
+                  <AlertTitle> This club has no social links.</AlertTitle>
                   <Button color="warning" onClick={()=> navigate(`/club/add-socials/${clubId}`)}>Add social links.</Button>
-        
+
                 </Alert>)
                 :
-                ( 
+                (
                   <>
                   <Typography variant="body1" sx={{fontWeight: 700}}>Socials</Typography>
                   <Typography>This club has no external social medias.</Typography>
@@ -430,7 +430,7 @@ function ClubPage() {
                 }
             </Stack>
           </Box>
-            
+
           </Grid2>
           <Grid2 size={{xs: 12, lg: 6}}>
             <Box>
@@ -456,14 +456,11 @@ function ClubPage() {
           <Dialog open={open} onClose={handleClose}>
             <DialogTitle>Update Club Logo</DialogTitle>
             <DialogContent>
-              {/*
-              <ImageUploadCrop clubId={clubId} handleClose={handleClose} image={image} setImage={setImage} crop={crop} setCrop={setCrop} croppedAreaPixels={croppedAreaPixels} setCroppedAreaPixels={setCroppedAreaPixels} croppedImage={croppedImage} setCroppedImage /> 
-              */}
               <form onSubmit={handleSubmit}>
-                <input type="file" onChange={handleImageChange} /> {/* Add the input field */}
-                <button type="submit">Submit</button> {/* Or your submit mechanism */}
+                <input type="file" onChange={handleImageChange} />
+                <button type="submit">Submit</button>
               </form>
-              
+
             </DialogContent>
             <DialogActions>
               <Button color="secondary" variant="contained" onClick={handleClose}>Cancel</Button>
@@ -471,7 +468,7 @@ function ClubPage() {
           </Dialog>
       </Grid2>
       { club.membership_status === 2 && (
-      <>         
+      <>
       {/* Only display an Active Events part if there are active events */}
       {activeEvents && activeEvents.length > 0 &&
         (
@@ -480,6 +477,7 @@ function ClubPage() {
             <Grid2 container spacing={1}>
               {activeEvents.map( (event) =>
                 <EventComponent
+                  key={event.id}
                   event = {event}
                 />
               )}
@@ -491,25 +489,24 @@ function ClubPage() {
       {(
       <Box sx={{ mt: 1, p: 2, width: '100%', overflow: 'hidden' }}>
       <Typography variant="h6" sx={{fontWeight: 800}}>Upcoming events</Typography>
-    
+
         <Grid2 container spacing={1}>
-          {upcomingEvents && upcomingEvents.length > 0 ? 
+          {upcomingEvents && upcomingEvents.length > 0 ?
           (
             upcomingEvents.map( (event) =>
-              <>
-                <EventComponent
-                  event = {event}
-                />
-              </>
+              <EventComponent
+                key={event.id}
+                event = {event}
+              />
             )
-          ) 
-            : 
-            ( 
-              <Grid2 item>
+          )
+            :
+            (
+              <Grid2>
                 <Typography variant="h4" sx={{fontWeight: 200}}> No upcoming events.</Typography>
-              </Grid2> 
+              </Grid2>
             )}
-          
+
         </Grid2>
       </Box>)}
 
@@ -519,24 +516,23 @@ function ClubPage() {
               Past events
         </Typography>
         <Grid2 container spacing={1}>
-          {completedEvents && completedEvents.length > 0 ? 
+          {completedEvents && completedEvents.length > 0 ?
           (
             completedEvents.map( (event) =>
-              <>
-                <EventComponent
-                  event = {event}
-                />
-              </>
+              <EventComponent
+                key={event.id}
+                event = {event}
+              />
             )
-          ) 
-            : 
+          )
+            :
             (
-              <Typography variant="h4" sx={{textAlign:"center", fontWeight: 200}}> No past events.</Typography> 
+              <Typography variant="h4" sx={{textAlign:"center", fontWeight: 200}}> No past events.</Typography>
             )}
-          
+
         </Grid2>
       </Box>
-      
+
       </>)}
     </Paper>
     </>

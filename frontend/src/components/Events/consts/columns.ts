@@ -1,4 +1,11 @@
-export const eventcolumns = [
+export interface Column {
+    id: string;
+    label: string;
+    minWidth: number;
+    align?: string;
+}
+
+export const eventcolumns: Column[] = [
     { id: 'sport', label: 'Sport', minWidth: 130 },
     { id: 'date', label: 'Date', minWidth: 80 },
     { id: 'start_time', label: 'Start Time', minWidth: 80 },
@@ -10,14 +17,14 @@ export const eventcolumns = [
   ];
 
 
-export const membercolumns = [
+export const membercolumns: Column[] = [
   { id: 'name', label: 'Name', minWidth: 70},
   { id: 'username', label: 'Username', minWidth: 70},
   { id: 'elo', label: 'Elo', minWidth: 60},
   { id: 'de/activate', label: '', minWidth: 130},
 ]
 
-export const game_columns = [
+export const game_columns: Column[] = [
   { id: 'start_time', label: 'Start time', minWidth: 130},
   { id: 'team1', label: 'Team 1', minWidth: 130},
   { id: 'team2', label: 'Team 2', minWidth: 130},

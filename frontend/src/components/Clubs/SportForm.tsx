@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Button,
@@ -10,23 +10,22 @@ import {
   Stack,
   Alert,
   Paper,
-  Card,
 } from '@mui/material';
 import { fetchSports } from '../functions/fetch_functions';
+import type { Sport } from '../../types';
 
 function SportForm() {
 
     const navigate = useNavigate();
     const { clubId } = useParams();
-    const [sports, setSports] = useState([]);
-    const [sport_name, setSportName] = useState(null);
-    const [error, setError] = useState('');
+    const [sports, setSports] = useState<Sport[]>([]);
+    const [sport_name, setSportName] = useState<string | null>(null);
+    const [error, setError] = useState<string | unknown>('');
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-        
 
         const response = await axios.post(
             'http://127.0.0.1:8000/club/add-sport/',
@@ -36,7 +35,11 @@ function SportForm() {
 
         navigate(`/club/${clubId}`);
     } catch (error) {
-        setError(error.response.data.detail || 'Error creating club.');
+        if (error instanceof AxiosError && error.response) {
+            setError(error.response.data.detail || 'Error creating club.');
+        } else {
+            setError('Error creating club.');
+        }
     }
   };
 
@@ -48,13 +51,13 @@ function SportForm() {
   return (
     <Paper sx={{p:3}}>
       <Grid2 container sx={{height:"100vh"}}>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <Typography variant="h4" gutterBottom align="center">
             Select sport
           </Typography>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {String(error)}
             </Alert>
           )}
           <form onSubmit={handleSubmit}>
@@ -62,7 +65,7 @@ function SportForm() {
                   <Select
                   label="Sport"
                   value={sport_name}
-                  onChange={(e) => setSportName(e.target.value)}
+                  onChange={(e) => setSportName(e.target.value as string)}
                   fullWidth
                   required
                   >

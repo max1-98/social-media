@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
   TextField,
@@ -16,10 +16,10 @@ function CreateClub() {
   const [name, setName] = useState('');
   const [clubUsername, setCUsername] = useState('');
   const [info, setInfo] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
@@ -36,14 +36,18 @@ function CreateClub() {
 
       navigate('/club/' + response.data.id);
     } catch (error) {
-      setError(error.response.data.detail || 'Error creating club.');
+      if (error instanceof AxiosError && error.response) {
+        setError(error.response.data.detail || 'Error creating club.');
+      } else {
+        setError('Error creating club.');
+      }
     }
   };
 
   return (
     <Paper sx={{p:4, height: "100vh"}}>
       <Grid2 container sx={{justifyContent:"center", alignItems:"center"}}>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <Card
             sx={{
               padding: 4,
@@ -65,7 +69,7 @@ function CreateClub() {
                   fullWidth
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  color={"common"}
+                  color={"common" as any}
                   required
                 />
                 <TextField
@@ -73,7 +77,7 @@ function CreateClub() {
                   fullWidth
                   value={clubUsername}
                   onChange={(e) => setCUsername(e.target.value)}
-                  color={"common"}
+                  color={"common" as any}
                   required
                 />
                 <TextField
@@ -82,10 +86,10 @@ function CreateClub() {
                   multiline
                   rows={4}
                   value={info}
-                  color={"common"}
+                  color={"common" as any}
                   onChange={(e) => setInfo(e.target.value)}
                 />
-                
+
                 <Button type="submit" variant="contained" color="secondary" fullWidth>
                   Create Club
                 </Button>

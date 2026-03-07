@@ -11,9 +11,7 @@ import {
   MenuItem,
   Checkbox,
   FormControlLabel,
-  FormHelperText,
   Grid2,
-  Box,
   Paper,
 } from '@mui/material';
 
@@ -23,13 +21,13 @@ function CreateEvent() {
   const [date, setDate] = useState('');
   const [start_time, setST] = useState('');
   const [finish_time, setFT] = useState('');
-  const [number_of_courts, setNOC] = useState('1');
+  const [number_of_courts, setNOC] = useState<number | string>('1');
   const [sbmm, setSBMM] = useState(true);
   const [guests_allowed, setGA] = useState(false);
   const [over_18_under_18_mixed, setOUM] = useState('all ages');
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
@@ -60,13 +58,13 @@ function CreateEvent() {
         Create a New Event
       </Typography>
       <Grid2 container spacing={2}>
-        <Grid2 item size={{xs: 12, md: 6}}>
-          <FormControl fullWidth color="common">
-            <InputLabel htmlFor="sport" color="common">Sport</InputLabel>
+        <Grid2 size={{xs: 12, md: 6}}>
+          <FormControl fullWidth color={"common" as any}>
+            <InputLabel htmlFor="sport" color={"common" as any}>Sport</InputLabel>
             <Select
               id="sport"
               value={sport}
-              onChange={(e) => setSport(e.target.value)}
+              onChange={(e) => setSport(e.target.value as string)}
             >
               <MenuItem value="badminton singles">Badminton Singles</MenuItem>
               <MenuItem value="badminton doubles">Badminton Doubles</MenuItem>
@@ -77,7 +75,7 @@ function CreateEvent() {
             </Select>
           </FormControl>
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <TextField
             fullWidth
             id="date"
@@ -85,14 +83,14 @@ function CreateEvent() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            color="common"
+            color={"common" as any}
             required
             InputLabelProps={{
               shrink: true,
             }}
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <TextField
             fullWidth
             id="start_time"
@@ -100,14 +98,14 @@ function CreateEvent() {
             type="time"
             value={start_time}
             onChange={(e) => setST(e.target.value)}
-            color="common"
+            color={"common" as any}
             required
             InputLabelProps={{
               shrink: true,
             }}
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <TextField
             fullWidth
             id="finish_time"
@@ -115,14 +113,14 @@ function CreateEvent() {
             type="time"
             value={finish_time}
             onChange={(e) => setFT(e.target.value)}
-            color="common"
+            color={"common" as any}
             required
             InputLabelProps={{
               shrink: true,
             }}
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <TextField
             fullWidth
             id="number_of_courts"
@@ -130,12 +128,11 @@ function CreateEvent() {
             type="number"
             value={number_of_courts}
             onChange={(e) => setNOC(parseInt(e.target.value, 10))}
-            color="common"
-            min="1"
+            color={"common" as any}
             required
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <FormControlLabel
             control={
               <Checkbox
@@ -148,7 +145,7 @@ function CreateEvent() {
             label="Skill Based Match-making"
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
+        <Grid2 size={{xs: 12, md: 6}}>
           <FormControlLabel
             control={
               <Checkbox
@@ -161,21 +158,18 @@ function CreateEvent() {
             label="Guests Allowed"
           />
         </Grid2>
-        <Grid2 item size={{xs: 12, md: 6}}>
-          <FormControl fullWidth color="common">
-            <InputLabel 
-              htmlFor="over_18_under_18_mixed" 
-              color="common"
-              InputLabelProps={{
-                shrink: true,
-              }}
+        <Grid2 size={{xs: 12, md: 6}}>
+          <FormControl fullWidth color={"common" as any}>
+            <InputLabel
+              htmlFor="over_18_under_18_mixed"
+              color={"common" as any}
               >
               Age Groups Allowed
             </InputLabel>
             <Select
               id="over_18_under_18_mixed"
               value={over_18_under_18_mixed}
-              onChange={(e) => setOUM(e.target.value)}
+              onChange={(e) => setOUM(e.target.value as string)}
             >
               <MenuItem value="over_18">Over 18</MenuItem>
               <MenuItem value="under_18">Under 18</MenuItem>
@@ -183,7 +177,7 @@ function CreateEvent() {
             </Select>
           </FormControl>
         </Grid2>
-        <Grid2 item size={12}>
+        <Grid2 size={12}>
           <Button type="submit" variant="contained" fullWidth color={"secondary"}>
             Create Event
           </Button>

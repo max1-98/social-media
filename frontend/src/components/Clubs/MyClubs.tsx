@@ -10,10 +10,11 @@ import {
   Card,
 } from '@mui/material';
 import { fetchMyClubs } from '../functions/fetch_functions';
+import type { MyClub } from '../../types';
 
 function MyClubsList() {
-  const [clubs, setClubs] = useState([]);
-  const [error, setError] = useState(null);
+  const [clubs, setClubs] = useState<MyClub[]>([]);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     fetchMyClubs({setClubs: setClubs, setError: setError});
@@ -21,13 +22,13 @@ function MyClubsList() {
 
 
   if (error) {
-    return <Typography variant="body1" color="error">{error}</Typography>;
+    return <Typography variant="body1" color="error">{String(error)}</Typography>;
   }
 
   return (
     <Paper sx={{p:2}}>
-      <Grid2 container justifyContent="flex-start" alignItems="flex-start"> 
-        <Grid2 item size={12}> {/* Add margin top */}
+      <Grid2 container justifyContent="flex-start" alignItems="flex-start">
+        <Grid2 size={12}>
           <Typography variant="h5" gutterBottom textAlign={"center"} sx={{fontWeight: 700, mb:2}}>
             My Clubs
           </Typography>

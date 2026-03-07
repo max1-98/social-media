@@ -16,25 +16,25 @@ import { useNavigate } from 'react-router-dom';
 import UpcomingEvents from '../Events/MyEvents';
 import { fetchMyClubs, fetchUserData, fetchUserElos } from '../functions/fetch_functions';
 import SportIcon from '../Iconizer/SportIcon';
+import type { User, MyClub, Elo, Event } from '../../types';
 
 
-// , backgroundImage: `url(${CardSvg})`
 function UserProfile() {
-  const [userData, setUserData] = useState(null);
-  const [elos, setElos] = useState([]);
-  const [error, setError] = useState('');
+  const [userData, setUserData] = useState<User | null>(null);
+  const [elos, setElos] = useState<Elo[]>([]);
+  const [error, setError] = useState<unknown>('');
   const [openDialog, setOpenDialog] = useState(false);
-  const [elo, setElo] = useState({});
-  const [clubs, setClubs] = useState([]);
+  const [elo, setElo] = useState<Partial<Elo>>({});
+  const [clubs, setClubs] = useState<MyClub[]>([]);
   const navigate = useNavigate();
   const theme = useTheme();
 
   // For events tables
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [activeEvents, setActiveEvents] = useState([]);
-  const [completedEvents, setCompletedEvents] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
+  const [completedEvents, setCompletedEvents] = useState<Event[]>([]);
 
-  const handleOpen = (i) => {
+  const handleOpen = (i: number) => {
     setElo(elos[i]);
     setOpenDialog(true);
   };
@@ -74,10 +74,10 @@ function UserProfile() {
         <Grid2 container justifyContent="flex-start" alignItems="flex-start" sx={{display: "flex"}} spacing={1}>
 
           {/* User info */}
-          <Grid2 item size={12} sx={{width:"92vw"}}>
-            <Card sx={{width: "100%", p:2, backgroundColor: theme.palette.userprofile.paper, color: theme.palette.userprofile.paperContrastText}}>
+          <Grid2 size={12} sx={{width:"92vw"}}>
+            <Card sx={{width: "100%", p:2, backgroundColor: (theme.palette as any).userprofile.paper, color: (theme.palette as any).userprofile.paperContrastText}}>
               <Grid2 container>
-                <Grid2 item size={2} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign:"center"}}>
+                <Grid2 size={2} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign:"center"}}>
                   <Box>
                     <Avatar sx={{height:75, width: 75}}></Avatar>
                     <Typography variant="subtitle1" sx={{fontWeight:900}}>
@@ -85,12 +85,12 @@ function UserProfile() {
                     </Typography>
                   </Box>
                 </Grid2>
-                <Grid2 item size={10}>
+                <Grid2 size={10}>
                   <Typography variant="h6" sx={{fontWeight: 800}} >My clubs</Typography>
                   { clubs.length > 0 ? (
                   <Stack direction="row" spacing={1}>
                     {clubs.map((club) => (
-                      <Card sx={{p:2, textAlign: "center", justifyItems: "center", width: "300em"}} onClick={()=>navigate(`/club/${club.id}`)}>
+                      <Card key={club.id} sx={{p:2, textAlign: "center", justifyItems: "center", width: "300em"}} onClick={()=>navigate(`/club/${club.id}`)}>
                         <Avatar src={club.logo}/>
                         <Typography variant="subtitle2" sx={{fontWeight:300, height: 35}}>{club.name}</Typography>
                         {club.sport_type && (
@@ -103,7 +103,7 @@ function UserProfile() {
                   :
                   (
                     <>
-                      <Typography>You are not a member of any clubs.</Typography> <Button variant="outlined" color="secondary.contrastText" onClick={()=>navigate("/")}>Find clubs.</Button> <Button variant="outlined" color="secondary.contrastText" onClick={()=>navigate("/club/create")}>Create a club.</Button>
+                      <Typography>You are not a member of any clubs.</Typography> <Button variant="outlined" color={"secondary" as any} onClick={()=>navigate("/")}>Find clubs.</Button> <Button variant="outlined" color={"secondary" as any} onClick={()=>navigate("/club/create")}>Create a club.</Button>
                     </>
                   )
                 }
@@ -113,31 +113,31 @@ function UserProfile() {
           </Grid2>
 
           {/* Elo list */}
-          <Grid2 item size={12} sx={{p:2}}> 
+          <Grid2 size={12} sx={{p:2}}>
               <Typography variant="h6" sx={{ml:3}} gutterBottom align="left">
                 Elo List
               </Typography>
-              <Grid2 container spacing={1} justifyContent="left"> 
+              <Grid2 container spacing={1} justifyContent="left">
                 { elos.length > 0 ? (
                 elos.map((elo, index) => (
-                  <Grid2 key={index} item sx={{ml:2}} size={4}> 
-                    <Card mt={1} sx={{p:2, textAlign: "center", backgroundColor: theme.palette.userprofile.card, color: theme.palette.userprofile.cardContrastText}} onClick={()=>handleOpen(index)}>
+                  <Grid2 key={index} sx={{ml:2}} size={4}>
+                    <Card sx={{mt:1, p:2, textAlign: "center", backgroundColor: (theme.palette as any).userprofile.card, color: (theme.palette as any).userprofile.cardContrastText}} onClick={()=>handleOpen(index)}>
                       <SportIcon sport={elo.sport}/>
-                      <Typography variant={"subtitle1"} align="center" sx={{fontWeight: 300}}>{elo.style}</Typography> 
+                      <Typography variant={"subtitle1"} align="center" sx={{fontWeight: 300}}>{elo.style}</Typography>
                       <Typography variant={"h4"} sx={{fontWeight: 800}} align="left" m={1}>{elo.elo}</Typography>
                     </Card>
                   </Grid2>
                 )))
                 :
                 (
-                  <Grid2 item sx={{ml:2}}> 
+                  <Grid2 sx={{ml:2}}>
                   <Typography>You have no sports stats. Participate in a club event to add sports stats.</Typography>
                   </Grid2>)}
-              
+
               </Grid2>
-          </Grid2> 
+          </Grid2>
         </Grid2>
-        
+
         <UpcomingEvents
           upcomingEvent={upcomingEvents}
           setUpcomingEvents={setUpcomingEvents}
@@ -152,29 +152,29 @@ function UserProfile() {
           onClose={handleClose}
         >
           <Grid2 container sx={{p:3}} spacing={3} >
-            <Grid2 item size={6} sx={{textAlign:"left"}}>
+            <Grid2 size={6} sx={{textAlign:"left"}}>
               <SportIcon sport={elo.sport}/>
               <Typography variant={"subtitle1"} sx={{fontWeight: 300}}>{elo.style}</Typography>
             </Grid2>
-            <Grid2 item size={6}>
+            <Grid2 size={6}>
               <Typography variant={"h4"} sx={{fontWeight: 800}}>Elo: {elo.elo}</Typography>
             </Grid2>
-            <Grid2 item size={6} sx={{textAlign:"left"}}>
+            <Grid2 size={6} sx={{textAlign:"left"}}>
               <Typography>Total games: {elo.total_games}</Typography>
               <Typography>Current winstreak: {elo.winstreak}</Typography>
-              <Typography>Win/loss ratio: {Math.ceil(elo.winrate*100)/100}</Typography>
+              <Typography>Win/loss ratio: {elo.winrate !== undefined ? Math.ceil(elo.winrate*100)/100 : '-'}</Typography>
             </Grid2>
-            <Grid2 item size={6} sx={{textAlign:"left"}}>
+            <Grid2 size={6} sx={{textAlign:"left"}}>
               <Typography>Wins: {elo.wins}</Typography>
               <Typography>Best winstreak: {elo.best_winstreak}</Typography>
               <Typography>Last played: {elo.last_game}</Typography>
             </Grid2>
             <Button sx={{width:"100%"}} color="secondary" variant="contained" onClick={()=>handleClose()}>Close</Button>
           </Grid2>
-          
-            
+
+
           </Dialog>
-          
+
       </Paper>
     </>
   );
