@@ -2,7 +2,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import get_user_model
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model, authenticate
+from django.conf import settings
 from tasks.tasks import send_password_reset_email, send_verify_email_email, send_verify_complete_email
 from django.utils.crypto import get_random_string
 from .models import PasswordReset, EmailVerify
@@ -12,6 +14,11 @@ from datetime import datetime, timedelta
 from backend.settings import EMAIL_HOST_USER
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from oauth2_provider.models import get_application_model, AccessToken, RefreshToken
+from oauthlib.common import generate_token
+import logging
+
+logger = logging.getLogger(__name__)
 
 # View for making a request to reset password (Step 1)
 class PasswordResetRequestView(APIView):
@@ -181,4 +188,169 @@ class EmailVerifyView(APIView):
         email_verify.delete()
 
         return Response({'detail': 'Email successfully verified.'}, status=status.HTTP_200_OK)
-        
+
+
+def _set_token_cookies(response, access_token, refresh_token):
+    """Set httpOnly cookies for access and refresh tokens."""
+    access_max_age = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+    refresh_max_age = settings.OAUTH2_PROVIDER.get('REFRESH_TOKEN_EXPIRE_SECONDS', 2592000)
+    secure = not settings.DEBUG
+
+    response.set_cookie(
+        'access_token',
+        access_token,
+        max_age=access_max_age,
+        httponly=True,
+        secure=secure,
+        samesite='Lax',
+        path='/',
+    )
+    response.set_cookie(
+        'refresh_token',
+        refresh_token,
+        max_age=refresh_max_age,
+        httponly=True,
+        secure=secure,
+        samesite='Lax',
+        path='/',
+    )
+    return response
+
+
+def _get_oauth_application():
+    """Get the OAuth application using configured client_id."""
+    Application = get_application_model()
+    return Application.objects.get(client_id=settings.OAUTH_CLIENT_ID)
+
+
+class AuthProxyLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response(
+                {'error': 'Username and password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = authenticate(request=request, username=username, password=password)
+        if not user:
+            return Response(
+                {'error': 'Invalid credentials.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            app = _get_oauth_application()
+        except get_application_model().DoesNotExist:
+            logger.error('OAuth application not found for client_id: %s', settings.OAUTH_CLIENT_ID)
+            return Response(
+                {'error': 'Authentication service unavailable.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        access_expire = timezone.now() + timedelta(
+            seconds=settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+        )
+        access_token = AccessToken.objects.create(
+            user=user,
+            application=app,
+            token=generate_token(),
+            expires=access_expire,
+            scope='read write',
+        )
+        refresh_token = RefreshToken.objects.create(
+            user=user,
+            application=app,
+            token=generate_token(),
+            access_token=access_token,
+        )
+
+        response = Response({
+            'user': {'id': user.id, 'username': user.username},
+        })
+        return _set_token_cookies(response, access_token.token, refresh_token.token)
+
+
+class AuthProxyLogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        access_token_str = request.COOKIES.get('access_token')
+
+        if access_token_str:
+            try:
+                token = AccessToken.objects.get(token=access_token_str)
+                # Delete associated refresh tokens first
+                RefreshToken.objects.filter(access_token=token).delete()
+                token.delete()
+            except AccessToken.DoesNotExist:
+                pass
+
+        response = Response({'detail': 'Logged out.'})
+        response.delete_cookie('access_token', path='/')
+        response.delete_cookie('refresh_token', path='/')
+        return response
+
+
+class AuthProxyRefreshView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token_str = request.COOKIES.get('refresh_token')
+
+        if not refresh_token_str:
+            return Response(
+                {'error': 'No refresh token provided.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            refresh_token = RefreshToken.objects.select_related(
+                'user', 'application'
+            ).get(token=refresh_token_str, revoked__isnull=True)
+        except RefreshToken.DoesNotExist:
+            return Response(
+                {'error': 'Invalid or expired refresh token.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Revoke old access token
+        old_access = refresh_token.access_token
+        if old_access:
+            old_access.delete()
+
+        # Create new access token
+        access_expire = timezone.now() + timedelta(
+            seconds=settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+        )
+        new_access_token = AccessToken.objects.create(
+            user=refresh_token.user,
+            application=refresh_token.application,
+            token=generate_token(),
+            expires=access_expire,
+            scope='read write',
+        )
+
+        # Update refresh token to point to new access token
+        refresh_token.access_token = new_access_token
+        refresh_token.save()
+
+        response = Response({
+            'user': {'id': refresh_token.user.id, 'username': refresh_token.user.username},
+        })
+        secure = not settings.DEBUG
+        access_max_age = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+        response.set_cookie(
+            'access_token',
+            new_access_token.token,
+            max_age=access_max_age,
+            httponly=True,
+            secure=secure,
+            samesite='Lax',
+            path='/',
+        )
+        return response
