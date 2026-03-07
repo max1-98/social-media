@@ -60,21 +60,8 @@ function SideNav(props) {
     };
 
     const request_verify = async () => {
-       
-
         try {
-            const token = localStorage.getItem('access_token');
-    
-            const headers_post = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            };
-            
-            const response = await axios.post(`http://127.0.0.1:8000/authorization/request_verify/`, 
-            {},
-            {headers: headers_post}
-            );
+            const response = await axios.post(`http://127.0.0.1:8000/authorization/request_verify/`, {});
             setTaskId(response.data);
             console.log(response.data);
         } catch (error) {
@@ -84,17 +71,8 @@ function SideNav(props) {
 
     const fetchNavUserInfo =  async () => {
         try {
-            const token = localStorage.getItem('access_token');
-            const headers_get =   {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            }
-            const response = await axios.get(`http://127.0.0.1:8000/account/navbar_info/`, {
-            headers: headers_get
-        });
+            const response = await axios.get(`http://127.0.0.1:8000/account/navbar_info/`);
             setUserInfo(response.data);
-        
         } catch (error) {
             console.error('Error fetching event:', error);
         }

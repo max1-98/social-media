@@ -58,21 +58,13 @@ function ActiveEvent(
     const handleUpdateEventSettings = async (event_id, data) => {
       try {
         console.log(data)
-        const token = localStorage.getItem('access_token');
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-        };
-    
-        const response = await axios.put(
-          `http://127.0.0.1:8000/club/event/settings/${event_id}/`, 
+        await axios.put(
+          `http://127.0.0.1:8000/club/event/settings/${event_id}/`,
           {
             sbmm: data.sbmm,
             mode: data.mode,
             even_teams: data.evenTeams,
-          }, 
-          { headers }
+          }
         );
         
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
@@ -92,19 +84,11 @@ function ActiveEvent(
     };
     
     const handlePegStart = async (event_id) => {
-      try { 
-        const token = localStorage.getItem('access_token');
-
-        const headers_post = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.post(`http://127.0.0.1:8000/game/get-player_1/`, 
+      try {
+        const response = await axios.post(`http://127.0.0.1:8000/game/get-player_1/`,
           {
               event_id: event_id,
-          },
-          {headers: headers_post}
+          }
         );
           setplayer1Id(response.data);
           setSelectedMembers([]);
@@ -130,17 +114,10 @@ function ActiveEvent(
 
     const handleCreateSBMMGame = async(event_id) => {
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-              Authorization: 'Bearer ' + token,
-              'Content-Type': 'application/json',
-              accept: 'application/json',
-          }
-          const response = await axios.post(`http://127.0.0.1:8000/game/create-sbmm/`, 
+          await axios.post(`http://127.0.0.1:8000/game/create-sbmm/`,
           {
               event_id: event_id,
-          },
-          {headers}
+          }
         );
         fetchGames(event_id, setGames);
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
@@ -173,18 +150,10 @@ function ActiveEvent(
 
     const handleCreateSocialGame = async(event_id) => {
       try {
-        
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.post(`http://127.0.0.1:8000/game/create-social/`, 
+        await axios.post(`http://127.0.0.1:8000/game/create-social/`,
         {
             event_id: event_id,
-        },
-        {headers}
+        }
       );
 
       fetchGames(event_id, setGames);
@@ -207,19 +176,12 @@ function ActiveEvent(
     };
 
     const handleComplete = async(event_id) => {
-    
+
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-              Authorization: 'Bearer ' + token,
-              'Content-Type': 'application/json',
-              accept: 'application/json',
-          }
-          const response = await axios.post(`http://127.0.0.1:8000/club/event/complete/`, 
+          await axios.post(`http://127.0.0.1:8000/club/event/complete/`,
           {
               event_id: event_id,
-          },
-          {headers}
+          }
         );
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
         } catch (error) {

@@ -28,16 +28,10 @@ function SportForm() {
     try {
         
 
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'multipart/form-data',
-            accept: 'application/json',
-        };
         const response = await axios.post(
             'http://127.0.0.1:8000/club/add-sport/',
             { sport_name: sport_name, club_id: clubId },
-            { headers }
+            { headers: { 'Content-Type': 'multipart/form-data' } }
         );
 
         navigate(`/club/${clubId}`);

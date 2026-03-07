@@ -31,19 +31,13 @@ const AddressForm = () => {
         ].filter(Boolean).join(','); 
 
         try {
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'multipart/form-data',
-            accept: 'application/json',
-        };
         const response = await axios.post(
             'http://127.0.0.1:8000/club/add-address/',
             {
                 club_id: clubId,
                 address: fullAddress
             },
-            { headers }
+            { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         navigate(`/club/${clubId}`);
 

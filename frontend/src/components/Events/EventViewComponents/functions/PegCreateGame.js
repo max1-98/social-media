@@ -31,18 +31,11 @@ function SelectTeamDialog({ open, handleClose, player1Id, activeMembers, selecte
   const onTeamSelect = async (event_id, selectedMembers, player1) => {
     try {
         selectedMembers.push(player1.id)
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.post(`http://127.0.0.1:8000/game/create-peg/`, 
+        await axios.post(`http://127.0.0.1:8000/game/create-peg/`,
         {
             event_id: event_id,
             member_ids: selectedMembers,
-        },
-        {headers}
+        }
       );
         fetchGames(event_id, setGames);
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);

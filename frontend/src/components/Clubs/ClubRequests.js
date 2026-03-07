@@ -39,17 +39,7 @@ function ClubRequests() {
 
     const handleAccept = async (requestId) => {
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            };
-
-            // Send a GET request to the backend to remove the member request
-            await axios.get(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`, 
-                { headers }
-            );
+            await axios.get(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`);
 
 
             // Update the memberRequests state (you'll need to refetch from the backend)
@@ -60,15 +50,7 @@ function ClubRequests() {
     };
     const handleDelete = async (requestId) => {
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                accept: 'application/json',
-            };
-
-            // Send a GET request to the backend to remove the member request
-            await axios.delete(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`, { headers });
+            await axios.delete(`http://127.0.0.1:8000/club/request-accept/${requestId}/${clubId}/`);
 
             // Update the memberRequests state (you'll need to refetch from the backend)
             fetchMemberRequests(clubId);

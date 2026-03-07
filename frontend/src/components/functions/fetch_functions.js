@@ -5,20 +5,12 @@ import axios from 'axios';
 export const fetchEvent = async (event_id, setEvent, setAMembers, setInGameMembers) => {
 
     try {
-        const token = localStorage.getItem('access_token');
-        const headers_get =   {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-      const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/`, {
-      headers: headers_get
-    });
+      const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/`);
         setEvent(response.data);
         console.log(response.data);
         setAMembers(response.data.active_members);
         setInGameMembers(response.data.in_game_members);
-    
+
     } catch (error) {
         console.error('Error fetching event:', error);
     }
@@ -34,13 +26,7 @@ export const fetchClubEvents = async (props) => {
       - setError
   */
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/club/events/${props.club_id}/`, {
-        headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      }); 
+      const response = await axios.get(`http://127.0.0.1:8000/club/events/${props.club_id}/`); 
 
       
       props.setUpcomingEvents(response.data.filter(event => !event.event_active)
@@ -58,15 +44,7 @@ export const fetchClubEvents = async (props) => {
 export const fetchCompleteEventGames = async (event_id, setGames) => {
 
     try {
-        const token = localStorage.getItem('access_token');
-        const headers_get =   {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-      const response = await axios.get(`http://127.0.0.1:8000/game/event/games/${event_id}/`, {
-      headers: headers_get
-    });
+      const response = await axios.get(`http://127.0.0.1:8000/game/event/games/${event_id}/`);
         setGames(response.data);
     } catch (error) {
         console.error('Error fetching event:', error);
@@ -76,15 +54,7 @@ export const fetchCompleteEventGames = async (event_id, setGames) => {
 export const fetchClub = async (club_id, setClub) => {
 
     try {
-        const token = localStorage.getItem('access_token');
-        const headers_get =   {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.get(`http://127.0.0.1:8000/club/${club_id}/`, {
-        headers: headers_get
-    });
+        const response = await axios.get(`http://127.0.0.1:8000/club/${club_id}/`);
 
         setClub(response.data);
     } catch (error) {
@@ -95,15 +65,7 @@ export const fetchClub = async (club_id, setClub) => {
 export const fetchGames = async (event_id, setGames) => {
 
     try {
-        const token = localStorage.getItem('access_token');
-        const headers_get =   {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.get(`http://127.0.0.1:8000/game/games/${event_id}`, {
-        headers: headers_get
-    });
+        const response = await axios.get(`http://127.0.0.1:8000/game/games/${event_id}`);
 
         setGames(response.data);
     } catch (error) {
@@ -114,15 +76,7 @@ export const fetchGames = async (event_id, setGames) => {
 export const fetchSocials = async (club_id, setSocials, setError) => {
 
   try {
-    const token = localStorage.getItem('access_token');
-    const headers_get =   {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-    };
-    const response = await axios.get(`http://127.0.0.1:8000/clubs/${club_id}/socials/`, {
-      headers: headers_get
-    });
+    const response = await axios.get(`http://127.0.0.1:8000/clubs/${club_id}/socials/`);
 
     setSocials(response.data);
   } catch (error) {
@@ -138,13 +92,7 @@ export const fetchMyClubs = async (props) => {
       - setError
   */
   try {
-    const token = localStorage.getItem('access_token');
-    const headers = {
-      Authorization: 'Bearer ' + token,
-      'Content-Type': 'application/json',
-      accept: 'application/json',
-    };
-    const response = await axios.get('http://127.0.0.1:8000/club/my-clubs/', { headers });
+    const response = await axios.get('http://127.0.0.1:8000/club/my-clubs/');
     props.setClubs(response.data);
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -161,14 +109,7 @@ export const fetchClubMembers = async (props) => {
   */
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/club/members/${props.club_id}/`,
-        {
-          headers: {
-            Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
+        `http://127.0.0.1:8000/club/members/${props.club_id}/`
       );
       props.setMembers(response.data);
     } catch (error) {
@@ -179,15 +120,7 @@ export const fetchClubMembers = async (props) => {
 export const fetchMembers = async (event_id, setMembers) => {
 
     try {
-        const token = localStorage.getItem('access_token');
-        const headers_get =   {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-        }
-        const response = await axios.get(`http://127.0.0.1:8000/club/members/event/${event_id}/`, {
-            headers: headers_get
-        }); 
+        const response = await axios.get(`http://127.0.0.1:8000/club/members/event/${event_id}/`); 
 
         setMembers(response.data);
     } catch (error) {
@@ -197,15 +130,7 @@ export const fetchMembers = async (event_id, setMembers) => {
 
 export const fetchStats = async (event_id, setStats) => {
   try {
-      const token = localStorage.getItem('access_token');
-      const headers_get =   {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/stats/`, {
-          headers: headers_get
-      }); 
+      const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/stats/`); 
       console.log(response.data);
       setStats(response.data);
   } catch (error) {
@@ -222,15 +147,7 @@ export const fetchUserGames = async (props) => {
   */
 
   try {
-    const token = localStorage.getItem('access_token');
-    const headers =   {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-    }
-    const response = await axios.get(`http://127.0.0.1:8000/game/users/games/`, {
-    headers: headers
-    });
+    const response = await axios.get(`http://127.0.0.1:8000/game/users/games/`);
     props.setGames(response.data);
     console.log(response.data);
   
@@ -243,15 +160,7 @@ export const fetchUserGames = async (props) => {
 export const fetchUserGames_game_type = async (setGames, game_type) => {
 
     try {
-      const token = localStorage.getItem('access_token');
-      const headers =   {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      const response = await axios.get(`http://127.0.0.1:8000/game/users/games/?game_type=${game_type}`, {
-      headers: headers
-    });
+      const response = await axios.get(`http://127.0.0.1:8000/game/users/games/?game_type=${game_type}`);
         setGames(response.data);
     } catch (error) {
         console.error('Error fetching games:', error);
@@ -265,20 +174,8 @@ export const fetchUserData = async (props) => {
       - setError
   */
   try {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      const response = await axios.get(
-        'http://127.0.0.1:8000/account/profile/',
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
-      );
-      props.setUserData(response.data);
-    }
+    const response = await axios.get('http://127.0.0.1:8000/account/profile/');
+    props.setUserData(response.data);
   } catch (error) {
     console.error('Error fetching user data:', error);
     props.setError(error);
@@ -293,20 +190,10 @@ export const fetchUserElos = async (props) => {
       - setError
   */
   try {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/elo/elos/${props.username}/`,
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
-      );
-      props.setElos(response.data);
-    }
+    const response = await axios.get(
+      `http://127.0.0.1:8000/elo/elos/${props.username}/`
+    );
+    props.setElos(response.data);
   } catch (error) {
     props.setError(error);
   }
@@ -320,13 +207,7 @@ export const fetchMemberRequests = async (props) => {
       - setError
   */
   try {
-  const response = await axios.get(`http://127.0.0.1:8000/club/requests/` + props.club_id, {
-      headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-  });
+  const response = await axios.get(`http://127.0.0.1:8000/club/requests/` + props.club_id);
 
   // You can now access the member requests in `response.data`
   props.setMemberRequests(response.data);
@@ -343,16 +224,8 @@ export const fetchSports = async (props) => {
       - setError
   */
   try {
-    const token = localStorage.getItem('access_token');
     const response = await axios.get(
-      `http://127.0.0.1:8000/club/add-sport/`,
-      {
-        headers: {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-        },
-      }
+      `http://127.0.0.1:8000/club/add-sport/`
     );
     props.setSports(response.data);
   } catch (error) {
@@ -380,13 +253,7 @@ export const fetchClubs = async (props) => {
         props.setCoordUrl(`?southwest_lat=${props.sw.lat}&southwest_lng=${props.sw.lng}&northeast_lat=${props.ne.lat}&northeast_lng=${props.ne.lng}`);
       }
     }
-    const response = await axios.get(`http://127.0.0.1:8000/clubs/${props.sport}${props.CoordUrl}`, {
-      headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      },
-    });
+    const response = await axios.get(`http://127.0.0.1:8000/clubs/${props.sport}${props.CoordUrl}`);
     props.setClubs(response.data);
     
   } catch (error) {

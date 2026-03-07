@@ -32,21 +32,13 @@ function DummyMemberCreateDialog(props) {
 
       const handleCreateMember = async () => {
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          };
-      
-          const response = await axios.post(
-            `http://127.0.0.1:8000/club/dummy-user/create/${clubId}/`, 
+          await axios.post(
+            `http://127.0.0.1:8000/club/dummy-user/create/${clubId}/`,
             {
               first_name: memberInfo.firstName,
               surname: memberInfo.surname,
               biological_gender: memberInfo.gender
-            }, 
-            { headers }
+            }
           );
           
           if (is_club_admin){

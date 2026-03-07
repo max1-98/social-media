@@ -21,13 +21,7 @@ function EventsDetail() { // Remove the props argument
 
   const fetchEvents = async (club_id) => {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/club/events/${club_id}/`, {
-        headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      }); 
+      const response = await axios.get(`http://127.0.0.1:8000/club/events/${club_id}/`); 
 
       
       setUpcomingEvents(response.data.filter(event => !event.event_active)

@@ -81,16 +81,8 @@ function ClubPage() {
   
   const handleLeave = async (club_id) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.delete(
-        `http://127.0.0.1:8000/club/member/${club_id}/`,
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
+      await axios.delete(
+        `http://127.0.0.1:8000/club/member/${club_id}/`
       );
       fetchClub(club_id);
       
@@ -102,17 +94,9 @@ function ClubPage() {
 
   const createMemberRequest = async (clubId) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.post(
+      await axios.post(
         'http://127.0.0.1:8000/club/request/create/',
-        { club: clubId },
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
+        { club: clubId }
       );
 
       console.log('Member request sent successfully');
@@ -124,17 +108,9 @@ function ClubPage() {
 
   const cancelMemberRequest = async (clubId) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.post(
+      await axios.post(
         'http://127.0.0.1:8000/club/request/cancel/',
-        { club: clubId },
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
+        { club: clubId }
       );
       fetchClub(clubId, setClub);
     } catch (error) {
@@ -146,16 +122,8 @@ function ClubPage() {
     event.preventDefault();
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.delete(
-        `http://127.0.0.1:8000/club/${clubId}/`,
-        {
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          },
-        }
+      await axios.delete(
+        `http://127.0.0.1:8000/club/${clubId}/`
       );
 
       console.log('Club deleted');
@@ -174,14 +142,8 @@ function ClubPage() {
     e.preventDefault();
     
     formData.append('logo', image);
-    const token = localStorage.getItem('access_token');
-    const headers = {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'multipart/form-data',
-        accept: 'application/json',
-    };
-    await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData, 
-        {headers},
+    await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
     )
     handleClose();
   };

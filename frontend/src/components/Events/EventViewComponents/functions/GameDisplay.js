@@ -21,18 +21,11 @@ function GameDisplay(props) {
 
     const handleDeleteGame = async(event_id, game_id) => {
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-              Authorization: 'Bearer ' + token,
-              'Content-Type': 'application/json',
-              accept: 'application/json',
-          }
-          const response = await axios.post(`http://127.0.0.1:8000/game/delete/`, 
+          await axios.post(`http://127.0.0.1:8000/game/delete/`,
           {
               event_id: event_id,
               game_id: game_id,
-          },
-          {headers}
+          }
         );
         fetchGames(event_id, setGames);
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
@@ -43,18 +36,11 @@ function GameDisplay(props) {
 
     const handlePause = async(event_id, game_id, player_id) => {
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-              Authorization: 'Bearer ' + token,
-              'Content-Type': 'application/json',
-              accept: 'application/json',
-          }
-          const response = await axios.post(`http://127.0.0.1:8000/game/delete/`, 
+          await axios.post(`http://127.0.0.1:8000/game/delete/`,
           {
               event_id: event_id,
               game_id: game_id,
-          },
-          {headers}
+          }
         );
         handleDeactivate(player_id, event_id, setMembers, setEvent, setAMembers, setInGameMembers)
         fetchGames(event_id, setGames);
@@ -69,25 +55,17 @@ function GameDisplay(props) {
         
       
         try {
-          const token = localStorage.getItem('access_token');
-          const headers = {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-          };
-          
           // Validate score before submitting
           if (team1Score >= 21 || team2Score >= 21) {
-            const scoreString = `${team1Score},${team2Score}`; 
-            
+            const scoreString = `${team1Score},${team2Score}`;
+
             await axios.post(
               `http://127.0.0.1:8000/game/complete/`,
-              { 
-                game_id: game_id, 
-                event_id: event_id, 
-                score: scoreString 
-              }, 
-              { headers }
+              {
+                game_id: game_id,
+                event_id: event_id,
+                score: scoreString
+              }
             );
             fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
             fetchGames(event_id, setGames);

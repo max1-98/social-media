@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+axios.defaults.withCredentials = true;
+
 const API_BASE = 'http://localhost:8000';
 
 export const handleLogin = async (props) => {

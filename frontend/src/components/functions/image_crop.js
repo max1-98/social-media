@@ -74,14 +74,8 @@ function ImageUploadCrop(props) {
         const croppedImg = await getCroppedImg(image, croppedAreaPixels);
         const formData = new FormData();
         formData.append('logo', image);
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'multipart/form-data',
-            accept: 'application/json',
-        };
-        await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData, 
-            {headers},
+        await axios.patch(`http://127.0.0.1:8000/club/${clubId}/logo/`, formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
         )
         handleClose();
     };

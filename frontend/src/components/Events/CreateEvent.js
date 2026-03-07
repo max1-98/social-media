@@ -45,16 +45,9 @@ function CreateEvent() {
       };
 
       console.log(data);
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      };
       const response = await axios.post(
         `http://127.0.0.1:8000/club/event/create/${clubId}/`,
-        data,
-        { headers: headers }
+        data
       );
 
       navigate(`/club/event/${clubId}/${response.data.id}`);

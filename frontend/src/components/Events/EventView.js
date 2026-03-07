@@ -81,17 +81,10 @@ function EventPage() {
   const handleComplete = async(event_id) => {
     
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      const response = await axios.post(`http://127.0.0.1:8000/club/event/complete/`, 
+      await axios.post(`http://127.0.0.1:8000/club/event/complete/`,
       {
           event_id: event_id,
-      },
-      {headers}
+      }
     );
     fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
     } catch (error) {

@@ -15,13 +15,7 @@ function UpcomingEvents(props) {
 
   const fetchMyEvents = async () => {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/club/events/`, {
-        headers: {
-          Authorization: 'Bearer ' + localStorage.getItem('access_token'),
-          'Content-Type': 'application/json',
-          accept: 'application/json',
-      }
-      }); 
+      const response = await axios.get(`http://127.0.0.1:8000/club/events/`); 
 
       props.setUpcomingEvents(response.data.filter(event => !event.event_active)
         .sort((a, b) => new Date(a.date) - new Date(b.date))); // Sort upcoming by soonest

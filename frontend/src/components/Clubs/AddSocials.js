@@ -34,21 +34,15 @@ function SocialForm() {
         event.preventDefault();
 
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'multipart/form-data',
-                accept: 'application/json',
-            };
             const response = await axios.post(
                 `http://127.0.0.1:8000/club/edit/socials/${clubId}/`,
-                { 
+                {
                     "facebook": socialsDict.facebook ? socialsDict.facebook : "",
                     "whatsapp": socialsDict.whatsapp ? socialsDict.whatsapp : "",
                     "instagram": socialsDict.instagram ? socialsDict.instagram : "",
                     "website": socialsDict.website ? socialsDict.website: "",
                 },
-                { headers }
+                { headers: { 'Content-Type': 'multipart/form-data' } }
             );
 
             navigate(`/club/${clubId}`);

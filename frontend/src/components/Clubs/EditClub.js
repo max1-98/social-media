@@ -53,16 +53,10 @@ function EditClub() {
       if (data.logo) {
         formData.append('logo', data.logo);
       }
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-        accept: 'application/json',
-      };
       const response = await axios.put(
         `http://127.0.0.1:8000/club/edit/${clubId}/`,
         formData,
-        {headers}
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       );
 
       navigate('/club/' + response.data.id);

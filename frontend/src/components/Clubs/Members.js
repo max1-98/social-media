@@ -48,16 +48,8 @@ function MemberDetail() {
 
   const handleDelete = async (memberId) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      };
-
       await axios.delete(
-        `http://127.0.0.1:8000/club/member/${memberId}/${clubId}/`,
-        { headers }
+        `http://127.0.0.1:8000/club/member/${memberId}/${clubId}/`
       );
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       
@@ -67,16 +59,8 @@ function MemberDetail() {
   };
   const handleAddAdmin = async (club_id, member_id) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      };
-
-      const response = await axios.get(
-        `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
-        { headers }
+      await axios.get(
+        `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`
       );
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
@@ -87,16 +71,8 @@ function MemberDetail() {
 
   const handleRemoveAdmin = async (club_id, member_id) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      };
-
-      const response = await axios.delete(
-        `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`, 
-        { headers }
+      await axios.delete(
+        `http://127.0.0.1:8000/club/make-admin/${member_id}/${club_id}/`
       );
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
@@ -107,21 +83,13 @@ function MemberDetail() {
 
   const handleCreateMember = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        accept: 'application/json',
-      };
-
-      const response = await axios.post(
-        `http://127.0.0.1:8000/club/dummy-user/create/${clubId}/`, 
+      await axios.post(
+        `http://127.0.0.1:8000/club/dummy-user/create/${clubId}/`,
         {
           first_name: firstName,
           surname,
-          biological_gender: gender // Include gender in the request
-        }, 
-        { headers }
+          biological_gender: gender
+        }
       );
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       handleClose(); // Close the dialog

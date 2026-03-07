@@ -23,20 +23,13 @@ function MemberAttendanceComponent() {
   const fetchAttendanceData = async () => {
     setTryFetch(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = {
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            accept: 'application/json',
-      };
       const response = await axios.post(
-        `http://127.0.0.1:8000/member-attendance/`, 
+        `http://127.0.0.1:8000/member-attendance/`,
         {
           start_date: startDate,
           finish_date: endDate,
           club_id: clubId
-        }, 
-        { headers }
+        }
       );
       setAttendanceData(response.data);
     } catch (error) {
