@@ -8,7 +8,6 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@fontsource/roboto": "^5.1.0",
-    "@mantine/core": "^7.13.1",
     "@mui/icons-material": "^6.1.1",
     "@mui/material": "^6.1.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -24,8 +23,7 @@
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^6.26.2",
     "react-scripts": "^5.0.1",
-    "react-use-websocket": "^4.11.1",
-    "web-vitals": "^2.1.4"
+    "react-use-websocket": "^4.11.1"
   },
   "scripts": {
     "start": "react-scripts start",

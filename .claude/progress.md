@@ -28,7 +28,7 @@
 | 2.2 | Fix bare excepts (backend) | DONE | claude-opus | 2026-03-07 |
 | 2.3 | Remove unused dependencies (backend) | DONE | claude-opus | 2026-03-07 |
 | 2.4 | Remove console.log (frontend) | IN-PROGRESS | claude-opus | 2026-03-07T20:00 |
-| 2.5 | Remove unused dependencies (frontend) | OPEN | — | — |
+| 2.5 | Remove unused dependencies (frontend) | DONE | claude-opus | 2026-03-07 |
 | 2.6 | Remove CRA boilerplate (frontend) | OPEN | — | — |
 | 2.7 | Clean up backend files | OPEN | — | — |
 
