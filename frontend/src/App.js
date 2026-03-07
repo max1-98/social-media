@@ -25,6 +25,7 @@ import AddressForm from './components/Clubs/AddressForm';
 import SportForm from './components/Clubs/SportForm';
 import PasswordReset from './components/Account/ResetPassword';
 import VerifyEmail from './components/Account/VerifyEmail';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Theme
 import { ThemeProvider } from '@mui/material/styles';
@@ -67,24 +68,24 @@ function App() {
             
             <Box style={{ width: "100%" }}>
               <Routes>
-                <Route path="/" element={isAuthenticated ? <ClubDetail /> : <Navigate to="/account/login" />} />
+                <Route path="/" element={isAuthenticated ? <ErrorBoundary><ClubDetail /></ErrorBoundary> : <Navigate to="/account/login" />} />
 
                 {/* Club components */}
-                <Route path="/club/:clubId" element={isAuthenticated ? <ClubPage/> : <Navigate to="/account/login" />} /> 
-                <Route path="/club/edit/:clubId" element={isAuthenticated ? <EditClub/> : <Navigate to="/account/login" />} />
-                <Route path="/club/attendance/:clubId" element={isAuthenticated ? <MemberAttendanceComponent/> : <Navigate to="/account/login" />} />
-                <Route path="/club/create" element={isAuthenticated ? <CreateClub/> : <Navigate to="/account/login" />} />
-                <Route path="/club/requests/:clubId" element={isAuthenticated ? <ClubRequests/> : <Navigate to="/account/login" />} />
-                <Route path="/club/members/:clubId" element={isAuthenticated ? <MemberDetail/> : <Navigate to="/account/login" />} />
-                <Route path="/club/events/create/:clubId" element={isAuthenticated ? <CreateEvent/> : <Navigate to="/account/login" />} />
-                <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <EventPage/> : <Navigate to="/account/login" />} />
-                <Route path="/club/address/:clubId" element={isAuthenticated ? <AddressForm/> : <Navigate to="/account/login"/>}/>
-                <Route path="/club/add-sport/:clubId" element={isAuthenticated ? <SportForm/>: <Navigate to="/account/login"/>}/>
-                <Route path="/club/add-socials/:clubId" element={isAuthenticated ? <SocialForm/>: <Navigate to="/account/login"/>}/>
-                
+                <Route path="/club/:clubId" element={isAuthenticated ? <ErrorBoundary><ClubPage/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/edit/:clubId" element={isAuthenticated ? <ErrorBoundary><EditClub/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/attendance/:clubId" element={isAuthenticated ? <ErrorBoundary><MemberAttendanceComponent/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/create" element={isAuthenticated ? <ErrorBoundary><CreateClub/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/requests/:clubId" element={isAuthenticated ? <ErrorBoundary><ClubRequests/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/members/:clubId" element={isAuthenticated ? <ErrorBoundary><MemberDetail/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/events/create/:clubId" element={isAuthenticated ? <ErrorBoundary><CreateEvent/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/event/:clubId/:eventId" element={isAuthenticated ? <ErrorBoundary><EventPage/></ErrorBoundary> : <Navigate to="/account/login" />} />
+                <Route path="/club/address/:clubId" element={isAuthenticated ? <ErrorBoundary><AddressForm/></ErrorBoundary> : <Navigate to="/account/login"/>}/>
+                <Route path="/club/add-sport/:clubId" element={isAuthenticated ? <ErrorBoundary><SportForm/></ErrorBoundary> : <Navigate to="/account/login"/>}/>
+                <Route path="/club/add-socials/:clubId" element={isAuthenticated ? <ErrorBoundary><SocialForm/></ErrorBoundary> : <Navigate to="/account/login"/>}/>
+
                 {/* Account components */}
-                <Route path="/account/past-games" element={isAuthenticated ? < PastGames/> : <Navigate to="/account/login"/>}/>
-                <Route path="/account/profile" element={isAuthenticated ? <UserProfile/> : <Navigate to="/account/login" />} />
+                <Route path="/account/past-games" element={isAuthenticated ? <ErrorBoundary><PastGames/></ErrorBoundary> : <Navigate to="/account/login"/>}/>
+                <Route path="/account/profile" element={isAuthenticated ? <ErrorBoundary><UserProfile/></ErrorBoundary> : <Navigate to="/account/login" />} />
                 <Route path="/account/login" element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
                 <Route path="/account/register" element={!isAuthenticated ? <Register/> : <Navigate to="/" />} />
                 <Route path="/account/reset-password/:token" element={<PasswordReset/>} />
