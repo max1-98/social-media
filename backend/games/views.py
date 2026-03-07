@@ -1,6 +1,7 @@
 # Django imports
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
+from django.db import DatabaseError
 
 # REST imports
 from rest_framework.views import APIView
@@ -297,20 +298,20 @@ class DeleteGameView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        game = get_object_or_404(Game, pk=game_id)
+        event = get_object_or_404(Event, pk=event_id)
+
+        # Check if the game belongs to the event
+        if game not in event.games.all():
+            return Response(
+                {"error": "Game does not belong to this event"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get players from the game
+        players = list(game.team1.all()) + list(game.team2.all())
+
         try:
-            game = get_object_or_404(Game, pk=game_id)
-            event = get_object_or_404(Event, pk=event_id)
-
-            # Check if the game belongs to the event
-            if game not in event.games.all():
-                return Response(
-                    {"error": "Game does not belong to this event"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Get players from the game
-            players = list(game.team1.all()) + list(game.team2.all())
-
             # Re-activate players in the event
             event.active_members.add(*players)
             event.in_game_members.remove(*players)
@@ -325,19 +326,7 @@ class DeleteGameView(APIView):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        except Game.DoesNotExist:
-            return Response(
-                {"error": "Game not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        except Event.DoesNotExist:
-            return Response(
-                {"error": "Event not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        except Exception as e:
+        except DatabaseError as e:
             return Response(
                 {"error": "An error occurred while deleting the game"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -369,19 +358,25 @@ class CompleteGameView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            
-            event = get_object_or_404(Event, pk=event_id)
-            game = get_object_or_404(Game, pk=game_id)
+        event = get_object_or_404(Event, pk=event_id)
+        game = get_object_or_404(Game, pk=game_id)
 
-            # Validate score
+        # Validate score
+        try:
             team1_score, team2_score = map(int, score.split(","))
-            if not (team1_score >= 21 or team2_score >= 21):
-                return Response(
-                    {"error": "Invalid score. Winning team must have 21 or more points."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
+        except ValueError:
+            return Response(
+                {"error": "Invalid score format. Expected 'score1,score2'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not (team1_score >= 21 or team2_score >= 21):
+            return Response(
+                {"error": "Invalid score. Winning team must have 21 or more points."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
             # Set the game score
             game.score = score
             game.save()
@@ -402,13 +397,7 @@ class CompleteGameView(APIView):
 
             return Response({"message": "Game completed successfully"}, status=status.HTTP_200_OK)
 
-        except (Event.DoesNotExist, Game.DoesNotExist):
-            return Response(
-                {"error": "Event or game not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        except Exception as e:
+        except DatabaseError as e:
             return Response(
                 {"error": "An error occurred while completing the game"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

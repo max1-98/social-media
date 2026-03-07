@@ -62,7 +62,7 @@ def standardize_url(url):
         # Reconstruct the standardized URL
         standardized_url = urlunparse(parsed)
         return standardized_url
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         print(f"Error standardizing URL '{url}': {e}")
         return None
 
@@ -94,12 +94,13 @@ class AddressToLngLatView(APIView):
         if not address or not club_id:
             return Response({"error": "Address is required"}, status=400)
 
+        club = get_object_or_404(ClubModel, pk=club_id)
+
         try:
             info = gmaps.geocode(address)[0]  # Get geocoding info
             lat_lng = info["geometry"]["location"]
             formatted_address = info["formatted_address"]
-            
-            club = get_object_or_404(ClubModel, pk=club_id)
+
             club.coordinates = lat_lng
             club.address = formatted_address
             club.save()

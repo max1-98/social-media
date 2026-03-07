@@ -43,7 +43,7 @@ class MemberSerializer(serializers.ModelSerializer):
         try: 
             
             game_type = GameType.objects.get(name=game_type)
-        except:
+        except GameType.DoesNotExist:
             return None
             
         if game_type:

@@ -10,6 +10,7 @@ from django.utils.crypto import get_random_string
 from .models import PasswordReset, EmailVerify
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError, DatabaseError
 from datetime import datetime, timedelta
 from backend.settings import EMAIL_HOST_USER
 from django.contrib.auth.password_validation import validate_password
@@ -44,7 +45,7 @@ class PasswordResetRequestView(APIView):
                 token=token,
                 creation_time=timezone.now(),
             )
-        except Exception as e:
+        except (IntegrityError, ValidationError) as e:
             return Response({'detail': f'Error creating password reset entry: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -88,7 +89,7 @@ class PasswordResetView(APIView):
         # Tries to collect the PasswordReset object, returns expiration response if it doesn't exist.
         try:
             password_reset = PasswordReset.objects.get(token=token)
-        except:
+        except PasswordReset.DoesNotExist:
             return Response({'detail': 'Password reset has expired. Please request again.'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -110,7 +111,7 @@ class PasswordResetView(APIView):
             password_reset.user.save()
             password_reset.delete()
             return Response({'detail': 'Password successfully updated.'}, status=status.HTTP_200_OK)
-        except Exception as e:
+        except (IntegrityError, DatabaseError) as e:
             return Response({'detail': 'An error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Request to send a verification email (Step 1)
@@ -139,7 +140,7 @@ class EmailVerifyRequestView(APIView):
                 token=token,
                 creation_time=timezone.now(),
             )
-        except Exception as e:
+        except (IntegrityError, ValidationError) as e:
             return Response({'detail': f'Error creating verify email entry: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         task = send_verify_email_email.delay(
@@ -165,7 +166,7 @@ class EmailVerifyView(APIView):
         # Tries to collect the EmailVerify object, returns expiration response if it doesn't exist.
         try:
             email_verify = EmailVerify.objects.get(token=token)
-        except:
+        except EmailVerify.DoesNotExist:
             return Response({'detail': 'Email verify has expired. Please request again.'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Check whether the EmailVerify object has expired (3 hours expiration time)
