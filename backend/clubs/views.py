@@ -27,12 +27,6 @@ import validators
 import googlemaps
 
 
-### Complete this
-class CreateSports(APIView):
-    def get(self, request):
-        new_sport = Sport.objects.create(name="badminton")
-
-
 def standardize_url(url):
     """Standardizes a URL to the format 'http://www.[url]'."""
     try:

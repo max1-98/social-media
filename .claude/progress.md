@@ -15,7 +15,7 @@
 |------|-------------|--------|-------|---------|
 | 1.1 | Backend secrets (settings.py) | DONE | claude-opus | 2026-03-07 |
 | 1.2 | Docker secrets (docker-compose.yml) | DONE | claude-opus | 2026-03-07 |
-| 1.3 | Frontend OAuth secrets (auth_functions.js) | IN-PROGRESS | claude-opus | 2026-03-07T18:00 |
+| 1.3 | Frontend OAuth secrets (auth_functions.js) | DONE | claude-opus | 2026-03-07T18:10 |
 | 1.4 | Token storage (localStorage to httpOnly) | OPEN | — | — |
 | 1.5 | Create backend auth proxy | DONE | claude-opus | 2026-03-07 |
 | 1.6 | Create .env.example | DONE | claude-opus | 2026-03-07 |
@@ -24,7 +24,7 @@
 
 | Task | Description | Status | Agent | Updated |
 |------|-------------|--------|-------|---------|
-| 2.1 | Remove dead code (backend) | IN-PROGRESS | claude-opus | 2026-03-07T15:00 |
+| 2.1 | Remove dead code (backend) | DONE | claude-opus | 2026-03-07 |
 | 2.2 | Fix bare excepts (backend) | OPEN | — | — |
 | 2.3 | Remove unused dependencies (backend) | OPEN | — | — |
 | 2.4 | Remove console.log (frontend) | OPEN | — | — |

@@ -9,7 +9,7 @@ from .views import AllClubView, ClubDetailView, ClubUpdateView, ClubCreateView
 from .views import MembersListEventView, MemberAcceptView, MemberDeleteView, MemberRequestCreateView, MemberRequestDeleteView, MemberRequestListView
 from .views import MemberAttendanceListView, CreateDummyUserView, MembersListView, MyClubsListView, AdminUpdateView
 
-from .views import AddressToLngLatView, CreateSports, AddSport, ClubImageView, UpdateClubSocials, ClubSocialRetrieveView
+from .views import AddressToLngLatView, AddSport, ClubImageView, UpdateClubSocials, ClubSocialRetrieveView
 urlpatterns = [
     # Club views
     path('clubs/', AllClubView.as_view()),
@@ -40,5 +40,4 @@ urlpatterns = [
     path('club/edit/socials/<int:pk>/', UpdateClubSocials.as_view(), name='club-edit-socials'),
     path('clubs/<int:pk>/socials/', ClubSocialRetrieveView.as_view(), name='club-socials-detail'),
 
-    path("test/", CreateSports.as_view()),
 ]

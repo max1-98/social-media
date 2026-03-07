@@ -37,30 +37,19 @@ import { ProSidebarProvider } from 'react-pro-sidebar';
 
 function App() {
   
-  const token = localStorage.getItem('access_token');
-  const [isAuthenticated, setIsAuthenticated] = useState(!!token);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('user'));
   const [collapsed, setCollapsed] = React.useState(false);
   const [theme, colorMode] = useMode();
 
   useEffect(() => {
-
-    const initialToken = localStorage.getItem('access_token');
-    if (initialToken) {
-      setIsAuthenticated(true)
-    } else {
-      setIsAuthenticated(false);
-    }
+    const user = localStorage.getItem('user');
+    setIsAuthenticated(!!user);
 
     const handleStorageChange = () => {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
+      setIsAuthenticated(!!localStorage.getItem('user'));
     };
     window.addEventListener('storage', handleStorageChange);
-  
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
