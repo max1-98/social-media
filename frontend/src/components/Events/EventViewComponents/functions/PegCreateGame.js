@@ -41,7 +41,6 @@ function SelectTeamDialog({ open, handleClose, player1Id, activeMembers, selecte
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
         setSelectedMembers([]);
       } catch (error) {
-        console.error('Error fetching event:', error);
         setSelectedMembers([]);
       }
   };

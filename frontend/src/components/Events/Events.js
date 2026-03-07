@@ -31,11 +31,7 @@ function EventsDetail() { // Remove the props argument
       setCompletedEvents(response.data.filter(event => event.event_active && event.event_complete)
         .sort((a, b) => new Date(b.date) - new Date(a.date))); // Sort completed by most recent
 
-      console.log(activeEvents)
-      console.log(response.data)
-      
     } catch (error) {
-      console.error('Error fetching events:', error);
     }
   };
 

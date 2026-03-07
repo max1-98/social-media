@@ -45,7 +45,6 @@ function ClubRequests() {
             // Update the memberRequests state (you'll need to refetch from the backend)
             fetchMemberRequests({club_id: clubId, setMemberRequests: setMemberRequests, setError: setError});
         } catch (error) {
-            console.error('Error accepting member request:', error);
         }
     };
     const handleDelete = async (requestId) => {
@@ -56,7 +55,6 @@ function ClubRequests() {
             fetchMemberRequests(clubId);
         }
         catch (error) {
-            console.error('Error deleting member request:', error);
         }
     }
 

@@ -44,7 +44,6 @@ function CreateEvent() {
         over_18_under_18_mixed: over_18_under_18_mixed,
       };
 
-      console.log(data);
       const response = await axios.post(
         `http://127.0.0.1:8000/club/event/create/${clubId}/`,
         data
@@ -52,7 +51,6 @@ function CreateEvent() {
 
       navigate(`/club/event/${clubId}/${response.data.id}`);
     } catch (error) {
-      console.error('Error creating club:', error);
     }
   };
 

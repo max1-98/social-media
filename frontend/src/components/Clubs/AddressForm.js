@@ -43,7 +43,6 @@ const AddressForm = () => {
 
         
         } catch (error) {
-        console.error('Error during API request:', error);
         }
     };
 

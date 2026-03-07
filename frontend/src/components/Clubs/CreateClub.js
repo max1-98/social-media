@@ -37,7 +37,6 @@ function CreateClub() {
       navigate('/club/' + response.data.id);
     } catch (error) {
       setError(error.response.data.detail || 'Error creating club.');
-      console.error('Error creating club:', error);
     }
   };
 

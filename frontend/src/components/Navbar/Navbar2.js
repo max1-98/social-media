@@ -63,9 +63,7 @@ function SideNav(props) {
         try {
             const response = await axios.post(`http://127.0.0.1:8000/authorization/request_verify/`, {});
             setTaskId(response.data);
-            console.log(response.data);
         } catch (error) {
-            console.error('Error fetching event:', error);
         }
     };
 
@@ -74,7 +72,6 @@ function SideNav(props) {
             const response = await axios.get(`http://127.0.0.1:8000/account/navbar_info/`);
             setUserInfo(response.data);
         } catch (error) {
-            console.error('Error fetching event:', error);
         }
     };
 

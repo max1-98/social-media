@@ -88,7 +88,6 @@ function EventPage() {
     );
     fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
     } catch (error) {
-      console.error('Error fetching event:', error);
     }
   };
   useEffect(() => {
@@ -110,7 +109,6 @@ function EventPage() {
         await fetchCompleteEventGames(eventId, setCGames);
         
       } catch (error) {
-        console.error('Error fetching data:', error);
       }
     };
 

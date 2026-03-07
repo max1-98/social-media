@@ -16,7 +16,6 @@ export const handleActivate = async (member_id, event_id, setMembers, setEvent, 
       fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
 
     } catch (error) {
-      console.error('Error fetching event:', error);
     }
   };
 
@@ -33,6 +32,5 @@ export const handleDeactivate = async (member_id, event_id, setMembers, setEvent
       fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
 
     } catch (error) {
-      console.error('Error fetching event:', error);
     }
   };

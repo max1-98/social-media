@@ -30,7 +30,6 @@ function GameDisplay(props) {
         fetchGames(event_id, setGames);
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
         } catch (error) {
-          console.error('Error fetching event:', error);
         }
       };
 
@@ -46,7 +45,6 @@ function GameDisplay(props) {
         fetchGames(event_id, setGames);
       
         } catch (error) {
-          console.error('Error fetching event:', error);
         }
        };
 
@@ -71,11 +69,8 @@ function GameDisplay(props) {
             fetchGames(event_id, setGames);
             setTeam1Score(0)
             setTeam2Score(0)
-          } else {
-            console.error('Invalid score. Winning team must have 21 or more points.');
           }
         } catch (error) {
-          console.error('Error saving score:', error);
         }
       };
 

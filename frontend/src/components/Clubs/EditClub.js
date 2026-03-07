@@ -61,7 +61,6 @@ function EditClub() {
 
       navigate('/club/' + response.data.id);
     } catch (error) {
-      console.error('Error updating club:', error);
     }
   };
 

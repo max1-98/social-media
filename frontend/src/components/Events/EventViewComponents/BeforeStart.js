@@ -15,7 +15,6 @@ function BeforeStart(event, setEvent, setAMembers, setInGameMembers) {
         );
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
         } catch (error) {
-          console.error('Error fetching event:', error);
         }
       };
 return (

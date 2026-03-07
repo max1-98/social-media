@@ -53,7 +53,6 @@ function ImageUploadCrop(props) {
             const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     
             if (!allowedTypes.includes(fileType)) {
-                console.error("Invalid file type. Please select a JPG, JPEG or PNG image.");
                 return;
             }
     

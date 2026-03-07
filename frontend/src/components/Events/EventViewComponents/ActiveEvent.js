@@ -57,7 +57,6 @@ function ActiveEvent(
       
     const handleUpdateEventSettings = async (event_id, data) => {
       try {
-        console.log(data)
         await axios.put(
           `http://127.0.0.1:8000/club/event/settings/${event_id}/`,
           {
@@ -71,7 +70,6 @@ function ActiveEvent(
         handleCloseSettingsDialog();
       } catch (error) {
         setError(error.response.data.detail || 'Error changing mode.');
-        console.error('Error changing mode:', error);
       }
     };
 
@@ -95,7 +93,6 @@ function ActiveEvent(
           setOpenPegDialog(true);
           
       } catch (error) {
-        console.error('Error fetching event:', error);
       }
     };
 
@@ -185,7 +182,6 @@ function ActiveEvent(
         );
         fetchEvent(event_id, setEvent, setAMembers, setInGameMembers);
         } catch (error) {
-          console.error('Error fetching event:', error);
         }
     };
 

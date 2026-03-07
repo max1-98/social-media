@@ -33,7 +33,6 @@ function MemberAttendanceComponent() {
       );
       setAttendanceData(response.data);
     } catch (error) {
-      console.error('Error fetching attendance data:', error);
     }
   };
 

@@ -87,7 +87,6 @@ function ClubPage() {
       fetchClub(club_id);
       
     } catch (error) {
-      console.error('Error leaving:', error);
     }
 
   };
@@ -99,10 +98,8 @@ function ClubPage() {
         { club: clubId }
       );
 
-      console.log('Member request sent successfully');
       fetchClub(clubId, setClub);
     } catch (error) {
-      console.error('Error creating member request:', error);
     }
   };
 
@@ -114,7 +111,6 @@ function ClubPage() {
       );
       fetchClub(clubId, setClub);
     } catch (error) {
-      console.error('Error deleting member request:', error);
     }
   };
 
@@ -126,10 +122,8 @@ function ClubPage() {
         `http://127.0.0.1:8000/club/${clubId}/`
       );
 
-      console.log('Club deleted');
       navigate('/');
     } catch (error) {
-      console.error('Error deleting club: ', error);
     }
   };
 

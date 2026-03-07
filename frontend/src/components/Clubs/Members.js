@@ -54,7 +54,6 @@ function MemberDetail() {
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
       
     } catch (error) {
-      console.error('Error deleting member:', error);
     }
   };
   const handleAddAdmin = async (club_id, member_id) => {
@@ -65,7 +64,6 @@ function MemberDetail() {
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
     } catch (error) {
-      console.error('Error making user an admin:', error);
     }
   };
 
@@ -77,7 +75,6 @@ function MemberDetail() {
       fetchClubMembers({club_id: clubId, setError: setError, setMembers: setMembers});
   
     } catch (error) {
-      console.error('Error making user an admin:', error);
     }
   };
 
@@ -95,7 +92,6 @@ function MemberDetail() {
       handleClose(); // Close the dialog
     } catch (error) {
       setError(error.response.data.detail || 'Error creating dummy user.');
-      console.error('Error creating dummy user:', error);
     }
   };
 

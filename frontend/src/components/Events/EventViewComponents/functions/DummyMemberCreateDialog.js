@@ -47,7 +47,6 @@ function DummyMemberCreateDialog(props) {
           handleClose(); // Close the dialog
         } catch (error) {
           setError(error.response.data.detail || 'Error creating dummy user.');
-          console.error('Error creating dummy user:', error);
         }
       };
 

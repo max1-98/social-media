@@ -22,8 +22,7 @@ function EventSettingsDialog(props) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        await handleUpdateEventSettings(eventId, eventSettings); 
-        console.log(eventSettings)
+        await handleUpdateEventSettings(eventId, eventSettings);
         onClose();
     };
   

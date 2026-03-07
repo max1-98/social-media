@@ -26,7 +26,6 @@ function UpcomingEvents(props) {
       
       
     } catch (error) {
-      console.error('Error fetching events:', error);
     }
   };
 

@@ -7,12 +7,10 @@ export const fetchEvent = async (event_id, setEvent, setAMembers, setInGameMembe
     try {
       const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/`);
         setEvent(response.data);
-        console.log(response.data);
         setAMembers(response.data.active_members);
         setInGameMembers(response.data.in_game_members);
 
     } catch (error) {
-        console.error('Error fetching event:', error);
     }
   };
 
@@ -47,10 +45,9 @@ export const fetchCompleteEventGames = async (event_id, setGames) => {
       const response = await axios.get(`http://127.0.0.1:8000/game/event/games/${event_id}/`);
         setGames(response.data);
     } catch (error) {
-        console.error('Error fetching event:', error);
     }
   };
-  
+
 export const fetchClub = async (club_id, setClub) => {
 
     try {
@@ -58,7 +55,6 @@ export const fetchClub = async (club_id, setClub) => {
 
         setClub(response.data);
     } catch (error) {
-      console.error('Error fetching club:', error);
     }
   };
 
@@ -69,7 +65,6 @@ export const fetchGames = async (event_id, setGames) => {
 
         setGames(response.data);
     } catch (error) {
-      console.error('Error fetching club:', error);
     }
   };
 
@@ -80,7 +75,6 @@ export const fetchSocials = async (club_id, setSocials, setError) => {
 
     setSocials(response.data);
   } catch (error) {
-    console.error('Error fetching club:', error);
     setError(error);
   }
 };
@@ -95,7 +89,6 @@ export const fetchMyClubs = async (props) => {
     const response = await axios.get('http://127.0.0.1:8000/club/my-clubs/');
     props.setClubs(response.data);
   } catch (error) {
-    console.error('Error fetching data:', error);
     props.setError(error);
   }
 };
@@ -124,17 +117,14 @@ export const fetchMembers = async (event_id, setMembers) => {
 
         setMembers(response.data);
     } catch (error) {
-      console.error('Error fetching clubs:', error);
     }
   };
 
 export const fetchStats = async (event_id, setStats) => {
   try {
       const response = await axios.get(`http://127.0.0.1:8000/club/event/${event_id}/stats/`); 
-      console.log(response.data);
       setStats(response.data);
   } catch (error) {
-    console.error('Error fetching clubs:', error);
   }
 
   };
@@ -149,10 +139,8 @@ export const fetchUserGames = async (props) => {
   try {
     const response = await axios.get(`http://127.0.0.1:8000/game/users/games/`);
     props.setGames(response.data);
-    console.log(response.data);
-  
+
   } catch (error) {
-    console.error('Error fetching games:', error);
     props.setError(error);
   }
 };
@@ -163,7 +151,6 @@ export const fetchUserGames_game_type = async (setGames, game_type) => {
       const response = await axios.get(`http://127.0.0.1:8000/game/users/games/?game_type=${game_type}`);
         setGames(response.data);
     } catch (error) {
-        console.error('Error fetching games:', error);
     }
   };
 
@@ -177,7 +164,6 @@ export const fetchUserData = async (props) => {
     const response = await axios.get('http://127.0.0.1:8000/account/profile/');
     props.setUserData(response.data);
   } catch (error) {
-    console.error('Error fetching user data:', error);
     props.setError(error);
   }
 };

@@ -37,7 +37,6 @@ function SportForm() {
         navigate(`/club/${clubId}`);
     } catch (error) {
         setError(error.response.data.detail || 'Error creating club.');
-        console.error('Error creating club:', error);
     }
   };
 

@@ -46,11 +46,9 @@ function Register() {
         password,
       });
 
-      console.log('Registration successful:', response.data);
-      navigate('/account/login'); // Redirect to login after successful registration 
+      navigate('/account/login'); // Redirect to login after successful registration
     } catch (error) {
       setError(error.response.data.detail || 'Registration failed.');
-      console.error('Registration error:', error);
     }
   };
 
