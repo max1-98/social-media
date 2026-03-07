@@ -1,66 +1,9 @@
 import pytest
-from factory.django import DjangoModelFactory
-from factory import SubFactory, LazyAttribute
-from django.utils import timezone
-
 from accounts.tests.conftest import UserFactory
-from clubs.models import ClubModel, Member, Sport
-from games.models import Game, GameType
-from events.models import Event
-
-
-class SportFactory(DjangoModelFactory):
-    class Meta:
-        model = Sport
-
-    name = "badminton"
-
-
-class GameTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = GameType
-
-    name = "badminton doubles"
-    description = "Doubles badminton"
-    sport = SubFactory(SportFactory)
-
-
-class ClubFactory(DjangoModelFactory):
-    class Meta:
-        model = ClubModel
-
-    club_username = LazyAttribute(lambda o: f"club_{o.president.username}")
-    name = "Test Club"
-    president = SubFactory(UserFactory)
-
-
-class MemberFactory(DjangoModelFactory):
-    class Meta:
-        model = Member
-
-    user = SubFactory(UserFactory)
-    club = SubFactory(ClubFactory)
-    is_admin = True
-
-
-class EventFactory(DjangoModelFactory):
-    class Meta:
-        model = Event
-
-    game_type = SubFactory(GameTypeFactory)
-    date = timezone.now().date()
-    start_time = timezone.now().time()
-    finish_time = timezone.now().time()
-    number_of_courts = 4
-    club = SubFactory(ClubFactory)
-
-
-class GameFactory(DjangoModelFactory):
-    class Meta:
-        model = Game
-
-    game_type = SubFactory(GameTypeFactory)
-    event = SubFactory(EventFactory)
+from factories import (
+    SportFactory, GameTypeFactory, ClubFactory,
+    MemberFactory, EventFactory, GameFactory,
+)
 
 
 @pytest.fixture

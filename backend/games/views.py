@@ -1,7 +1,5 @@
 # Django imports
 from django.shortcuts import get_object_or_404
-from django.core.cache import cache
-from django.db import DatabaseError
 
 # REST imports
 from rest_framework.views import APIView
@@ -13,18 +11,12 @@ from rest_framework.permissions import IsAuthenticated
 from events.models import Event
 from .serializers import GameSerializer, CompleteGameSerializer, GameMembersSerializer, SimpleMemberSerializer
 from .models import Game, GameType
-from accounts.models import CustomUser
-from elo.models import Elo
-from events.models import Event
 from clubs.models import Member
 from clubs.permissions import IsClubAdmin, IsClubMember
 
 from .fetch_games import get_user_last_games
 from .game_creation import sbmm, mixed_sbmm, social, even_teams
-
-
-# Elo functions
-from elo.elo_functions import update_elo
+from .services import complete_game, delete_game
 
 # Other python libraries
 import random
@@ -301,36 +293,12 @@ class DeleteGameView(APIView):
         game = get_object_or_404(Game, pk=game_id)
         event = get_object_or_404(Event, pk=event_id)
 
-        # Check if the game belongs to the event
-        if game not in event.games.all():
-            return Response(
-                {"error": "Game does not belong to this event"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Get players from the game
-        players = list(game.team1.all()) + list(game.team2.all())
-
         try:
-            # Re-activate players in the event
-            event.active_members.add(*players)
-            event.in_game_members.remove(*players)
+            delete_game(game, event)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Remove the game from the event's game set
-            event.games.remove(game)
-
-            event.save()
-
-            # Delete the game
-            game.delete()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except DatabaseError as e:
-            return Response(
-                {"error": "An error occurred while deleting the game"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
         
 """
 In this view we will process the scores from a game. Mark the game as complete. Add users to completed 1 game field.
@@ -345,12 +313,9 @@ class CompleteGameView(APIView):
     permission_classes = [IsAuthenticated, IsClubAdmin]
 
     def post(self, request):
-
-
         game_id = request.data.get('game_id')
         event_id = request.data.get('event_id')
         score = request.data.get('score')
-        
 
         if not game_id or not score:
             return Response(
@@ -361,47 +326,12 @@ class CompleteGameView(APIView):
         event = get_object_or_404(Event, pk=event_id)
         game = get_object_or_404(Game, pk=game_id)
 
-        # Validate score
         try:
-            team1_score, team2_score = map(int, score.split(","))
-        except ValueError:
-            return Response(
-                {"error": "Invalid score format. Expected 'score1,score2'."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            complete_game(game, event, score)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not (team1_score >= 21 or team2_score >= 21):
-            return Response(
-                {"error": "Invalid score. Winning team must have 21 or more points."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # Set the game score
-            game.score = score
-            game.save()
-
-            update_elo(score, game, event.sbmm)
-            # Re-add players to active members
-            event.active_members.add(*game.all_users.all())
-            event.in_game_members.remove(*game.all_users.all())
-            # Add members to playedonematch if they haven't been added already
-            for player in game.all_users.all():
-                if not player in event.played_one_match.all():
-                    event.played_one_match.add(player)
-            # Update player match counts
-            event.update_player_match_counts(game)
-            event.update_player_win_counts(game)
-            event.update_player_social_counts(game)
-            event.save()
-
-            return Response({"message": "Game completed successfully"}, status=status.HTTP_200_OK)
-
-        except DatabaseError as e:
-            return Response(
-                {"error": "An error occurred while completing the game"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        return Response({"message": "Game completed successfully"}, status=status.HTTP_200_OK)
 
 ### COME BACK TO THIS VIEW, THE GET_SERIALIZER_CONTEXT FUNCTION SPECIFICALLY
 class GameListView(generics.ListAPIView):

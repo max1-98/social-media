@@ -1,7 +1,7 @@
 from django.db import models
 from clubs.models import ClubModel, Member
 from games.models import Game, GameType
-from elo.elo_functions import team1Win
+from elo.services import team1Win
 
 # Create your models here.
 MODE_CHOICES = (
