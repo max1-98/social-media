@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'authorization',
     'channels',
     'django_celery_beat',
-    'djangoviz',
 ]
 
 MIDDLEWARE = [

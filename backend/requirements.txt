@@ -21,6 +21,7 @@ googlemaps==4.10.0
 gunicorn==21.2.0
 idna==3.8
 jwcrypto==1.5.6
+mysql-connector-python
 mysqlclient>=2.0
 oauthlib==3.2.2
 pillow==10.4.0
