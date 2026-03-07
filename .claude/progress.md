@@ -17,8 +17,8 @@
 | 1.2 | Docker secrets (docker-compose.yml) | DONE | claude-opus | 2026-03-07 |
 | 1.3 | Frontend OAuth secrets (auth_functions.js) | OPEN | — | — |
 | 1.4 | Token storage (localStorage to httpOnly) | OPEN | — | — |
-| 1.5 | Create backend auth proxy | OPEN | — | — |
-| 1.6 | Create .env.example | OPEN | — | — |
+| 1.5 | Create backend auth proxy | IN-PROGRESS | claude-opus | 2026-03-07 |
+| 1.6 | Create .env.example | DONE | claude-opus | 2026-03-07 |
 
 ## Phase 2: Cleanup
 
