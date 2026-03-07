@@ -31,7 +31,7 @@ services:
     image: mysql:8
     environment:
       MYSQL_DATABASE: 'django-app-db'
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - ./backend/data/mysql/dbb:/var/lib/mysql
 
