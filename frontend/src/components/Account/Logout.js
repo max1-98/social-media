@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Button, Typography } from '@mui/material';
-import { handleLogout } from '../functions/auth_functions';
+import { useAuth } from '../../contexts/AuthContext';
 
-function Logout(props) {
+function Logout() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const { logout } = useAuth();
 
   const handleSubmit = async () => {
-    if (handleLogout({setIsAuthenticated:props.setIsAuthenticated, setError: setError})){
+    if (await logout({setError})){
       navigate('/account/login');
     }
   };

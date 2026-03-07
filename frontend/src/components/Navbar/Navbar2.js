@@ -18,7 +18,8 @@ import InfoIcon from '@mui/icons-material/Info';
 import VerifiedIcon from '@mui/icons-material/Verified';
 
 // Local imports
-import { handleLogout, handleRefresh } from "../functions/auth_functions";
+import { handleRefresh } from "../functions/auth_functions";
+import { useAuth } from "../../contexts/AuthContext";
 import { navitems } from "./navbaritems";
 
 import * as React from 'react';
@@ -30,7 +31,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-function SideNav(props) {
+function SideNav() {
     const theme = useTheme();
     const { collapseSidebar, toggleSidebar, broken} = useProSidebar()
     const location = useLocation();
@@ -42,9 +43,10 @@ function SideNav(props) {
     const [userInfo, setUserInfo] = useState({});
     const [sent, setSent] = useState(false);
     const [taskId, setTaskId] = useState({});
+    const { logout } = useAuth();
 
     const handleSubmit = async () => {
-        if (handleLogout({setIsAuthenticated:props.setIsAuthenticated, setError: setError})){
+        if (await logout({setError})){
             handleClose();
             navigate('/account/login');
         }

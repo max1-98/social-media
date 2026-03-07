@@ -13,12 +13,12 @@ import {
     DialogActions,
     DialogContent,
   } from '@mui/material';
-import { handleLogin } from '../functions/auth_functions';
+import { useAuth } from '../../contexts/AuthContext';
 import loginBackground from './login_background2.gif';
 import axios from 'axios';
 
 
-function Login(props) {
+function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
@@ -27,6 +27,7 @@ function Login(props) {
     const [good, setGood] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { login } = useAuth();
     
 
     const handleSubmitEmail = async (e) => {
@@ -64,7 +65,7 @@ function Login(props) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        handleLogin({username:username, password:password, setError:setError, setIsAuthenticated:props.setIsAuthenticated, navigate: navigate});
+        login({username, password, setError, navigate});
     };
 
     return (
