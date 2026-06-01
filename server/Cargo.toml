@@ -1,0 +1,32 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+description = "Lightweight single-binary backend for the sports social network (Axum). Serves the JSON API, static frontend, and media proxy from one process."
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs", "trace"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# NOTE: persistence (sqlx + SQLite), auth (argon2 + jwt), media (R2/S3),
+# email (Resend), and geocoding (Nominatim) dependencies are added in their
+# respective phases (3+) to keep the Phase 1 scaffold build fast and green.
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+[profile.release]
+# Optimize for the small fixed-price EU VM target: prioritise a tiny binary /
+# low RSS over raw throughput.
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
