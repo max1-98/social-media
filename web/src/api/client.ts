@@ -8,7 +8,7 @@ const API_BASE = "/api";
 
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`GET ${path} failed: ${String(res.status)}`);
   return (await res.json()) as T;
 }
 

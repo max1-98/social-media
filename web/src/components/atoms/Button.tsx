@@ -1,15 +1,15 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactElement, ReactNode } from "react";
 
 /**
  * Atom: the lowest-level button primitive. In Phase 6 this wraps the MUI
- * primitive. Atoms must not import molecules/organisms (enforced by ESLint
- * `boundaries` in Phase 2).
+ * primitive. Atoms import nothing internal except shared types — consumers
+ * import it via the layer barrel (`../atoms`), never the deep path.
  */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export function Button({ children, ...props }: ButtonProps) {
+export function Button({ children, ...props }: ButtonProps): ReactElement {
   return (
     <button type="button" {...props}>
       {children}
