@@ -7,8 +7,16 @@ across multiple future sessions to **rebuild the current app from scratch** as a
 *lightweight, predictably near-zero-cost, ad-funded, GDPR-compliant* sports social
 network at **full feature parity**. Execution is deliberately sequenced:
 
-> **Plan (this session) → create a brand-new repo → set up standards (`.claude/`
-> config + linters/formatters/CI) → only then implement features.**
+> **Plan → scaffold the rebuild in this repo (on the `rebuild` branch) → set up
+> standards (`.claude/` config + linters/formatters/CI) → only then implement
+> features.**
+
+> **Repo decision (updated):** keep the existing repo rather than create a new
+> one. The rebuild is a parity port, so the old code (`backend/`, `frontend/`) is
+> a constant reference and is most useful living alongside the new code
+> (`server/`, `web/`). One set of CI secrets, branch protection, MCP scope, and
+> deploy wiring. Old code is removed at cutover (Phase 7), which also clears the
+> inherited Dependabot alerts from the default branch.
 
 Standards come first so every line of feature code is written to a fixed bar.
 This session does **not** write feature code; it locks the architecture, the
@@ -34,7 +42,8 @@ User constraints (confirmed): **cost is the overriding priority** and must be
 Vercel/Cloudflare bills). Complexity is acceptable; rewriting into Rust is
 acceptable if much cheaper to run. Full feature parity. AdSense now, Club+ ad-free
 tier later. **GDPR compliance required.** Frontend to be reorganized into
-**Atomic Design**. New code lives in a **brand-new git repo**.
+**Atomic Design**. New code lives in **this repo** on the `rebuild` branch,
+alongside the old code which stays as a reference until cutover.
 
 ---
 
@@ -94,13 +103,12 @@ static pages + free tooling.
 
 ## Execution phases & requirements (definition of done)
 
-### Phase 1 — New repo + scaffold
-- Create a **brand-new git repository** (name/owner TBD — propose e.g.
-  `max1-98/<name>`; old repo kept untouched as read-only reference).
-- Monorepo layout: `server/` (Rust crate), `web/` (React app), `docs/`,
-  `.github/workflows/`, `.claude/`.
-- **DoD:** repo exists; `cargo build` and `web` build run; CI skeleton green;
-  README explains layout and the cost/GDPR goals.
+### Phase 1 — Scaffold (in this repo, `rebuild` branch)
+- Add the new monorepo dirs alongside the existing code:
+  `server/` (Rust crate), `web/` (React app), `.github/workflows/`, `.claude/`.
+  Keep `backend/` + `frontend/` as read-only reference until cutover (Phase 7).
+- **DoD:** `cargo build` and the `web` build run; CI skeleton green; README
+  explains the layout, the cost/GDPR goals, and the old→new migration intent.
 
 ### Phase 2 — Standards first (this is the first real work)
 **`.claude/` configuration**
@@ -205,7 +213,6 @@ web/src/
 - **Footprint:** confirm single-process, low-RSS, zero queue/broker services.
 
 ## Open items to confirm at execution time
-- New repo **name/owner** (needed in Phase 1).
 - Final **age-of-consent threshold** and parental-consent vs block decision.
 - Email provider (Resend vs Brevo) and ad account/AdSense publisher ID.
 - Privacy/cookie policy copy (needs human/legal sign-off).
