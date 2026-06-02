@@ -16,7 +16,7 @@ use serde_json::{json, Value};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::domain::auth;
+use crate::domain::{auth, elo};
 use crate::state::AppState;
 
 /// Directory the frontend is built into (`web/dist`). Overridable for deploys.
@@ -39,10 +39,14 @@ pub fn router(state: AppState) -> Router {
         .route("/consent", post(auth::consent))
         .route("/me", get(auth::me));
 
+    // ELO: a user's rating rows. Mirrors backend/elo (EloListView).
+    let elo = Router::new().route("/elos/:username", get(elo::list_for_user));
+
     let api = Router::new()
         .route("/health", get(health))
         .route("/hello", get(hello))
-        .nest("/auth", auth);
+        .nest("/auth", auth)
+        .nest("/elo", elo);
 
     // Real files (JS/CSS/assets) are served by ServeDir; anything it can't find
     // falls back to the SPA shell so deep links / client routes resolve. If the
@@ -443,5 +447,65 @@ mod tests {
                 .await
                 .unwrap();
         assert_eq!(row, ("ads".to_string(), "accept".to_string()));
+    }
+
+    #[tokio::test]
+    async fn elo_list_returns_parity_shape() {
+        let (app, pool) = test_app().await;
+        // Register + log in so the protected route accepts the request.
+        app.clone()
+            .oneshot(post(
+                "/api/auth/register",
+                register_body("elouser", "elo@example.com", "1995-01-01"),
+            ))
+            .await
+            .unwrap();
+        let login = app
+            .clone()
+            .oneshot(post(
+                "/api/auth/login",
+                json!({ "username": "elouser", "password": "123ThisPasswordRocks!" }),
+            ))
+            .await
+            .unwrap();
+        let cookies = cookies_from(&login);
+
+        // Seed a badminton-singles (game_type 1) rating row linked to user 1.
+        let elo_id: i64 = sqlx::query_scalar(
+            "INSERT INTO elo (game_type_id, elo, last_game, winstreak, best_winstreak)
+             VALUES (1, 1120, '2026-05-01', 2, 5) RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        sqlx::query("INSERT INTO user_elos (user_id, elo_id) VALUES (1, ?)")
+            .bind(elo_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/elo/elos/elouser")
+                    .header(header::COOKIE, &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = body_json(res).await;
+        let row = &body[0];
+        assert_eq!(row["game_type"], "badminton singles");
+        assert_eq!(row["style"], "singles");
+        assert_eq!(row["sport"], "badminton");
+        assert_eq!(row["elo"], 1120);
+        assert_eq!(row["winstreak"], 2);
+        assert_eq!(row["best_winstreak"], 5);
+        assert_eq!(row["last_game"], "2026-05-01");
+        assert_eq!(row["wins"], 0);
+        assert_eq!(row["total_games"], 0);
+        assert_eq!(row["winrate"], 1);
     }
 }
