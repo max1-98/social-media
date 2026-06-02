@@ -110,6 +110,15 @@ export async function patchJson<T>(path: string, body?: unknown): Promise<T> {
   );
 }
 
+/**
+ * PATCH `form` as `multipart/form-data` to `path` (the browser sets the boundary
+ * Content-Type automatically), parsing the JSON response into `T`. Used for
+ * file uploads such as a club logo where a JSON body cannot carry the bytes.
+ */
+export async function patchForm<T>(path: string, form: FormData): Promise<T> {
+  return parse<T>(await request(path, { method: "PATCH", body: form }));
+}
+
 /** DELETE `path` (optional JSON `body`), parsing the JSON response into `T`. */
 export async function del<T>(path: string, body?: unknown): Promise<T> {
   return parse<T>(

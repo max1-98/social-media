@@ -4,7 +4,7 @@
 // resource is re-exported as a namespace (`authApi.login(...)`) so call sites
 // read clearly and short verbs like `me`/`profile` never collide across modules.
 
-export { getJson, postJson, patchJson, del, ApiRequestError } from "./http";
+export { getJson, postJson, patchJson, patchForm, del, ApiRequestError } from "./http";
 
 export * as accountApi from "./account";
 export * as authApi from "./auth";
@@ -23,6 +23,15 @@ export type {
   ExportPost,
 } from "./account";
 export type { ConsentChoice, ConsentType, ConsentPayload } from "./consent";
-export type { AddressPayload, AddressResponse, CreateClubPayload, EditClubPayload } from "./clubs";
+export type {
+  AddressPayload,
+  AddressResponse,
+  AddSportPayload,
+  ClubBounds,
+  CreateClubPayload,
+  EditClubPayload,
+  MessageResponse,
+  SocialLinksPayload,
+} from "./clubs";
 export type { CreateEventPayload, EventSettingsPayload, EventStats } from "./events";
 export type { CompleteGamePayload } from "./games";

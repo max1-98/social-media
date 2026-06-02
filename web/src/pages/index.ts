@@ -1,15 +1,21 @@
 // Barrel for route-level screens. Cross-layer imports come through this file.
-export { ConsentBannerContainer } from "./ConsentBannerContainer";
+export { AllClubsPage } from "./AllClubsPage";
+export { ClubDetailPage } from "./ClubDetailPage";
 export { ClubEventsPage } from "./ClubEventsPage";
+export { ConsentBannerContainer } from "./ConsentBannerContainer";
 export { CookiePolicy } from "./CookiePolicy";
+export { CreateClubPage } from "./CreateClubPage";
 export { CreateEventPage } from "./CreateEventPage";
+export { DiscoverClubsPage } from "./DiscoverClubsPage";
+export { EditClubPage } from "./EditClubPage";
 export { EventViewPage } from "./EventViewPage";
+export { GameTypeElosPage } from "./GameTypeElosPage";
 export { HomePage } from "./HomePage";
 export { LoginPage } from "./LoginPage";
+export { MyClubsPage } from "./MyClubsPage";
 export { MyEventsPage } from "./MyEventsPage";
-export { PrivacyPolicy } from "./PrivacyPolicy";
-export { GameTypeElosPage } from "./GameTypeElosPage";
 export { PastGamesPage } from "./PastGamesPage";
+export { PrivacyPolicy } from "./PrivacyPolicy";
 export { ProfilePage } from "./ProfilePage";
 export { RegisterPage } from "./RegisterPage";
 export { ResetPasswordPage } from "./ResetPasswordPage";
