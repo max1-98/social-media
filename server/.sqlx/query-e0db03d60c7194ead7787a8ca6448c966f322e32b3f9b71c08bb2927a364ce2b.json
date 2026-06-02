@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT u.first_name, u.surname\n           FROM members m JOIN users u ON u.id = m.user_id WHERE m.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "first_name",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "surname",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "e0db03d60c7194ead7787a8ca6448c966f322e32b3f9b71c08bb2927a364ce2b"
+}

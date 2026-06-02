@@ -23,6 +23,8 @@ pub enum AppError {
     NotFound(String),
     /// 409 — uniqueness/state conflict (duplicate email/username).
     Conflict(String),
+    /// 501 — endpoint deprecated / not implemented (parity with legacy stubs).
+    NotImplemented(String),
     /// 500 — unexpected internal error (DB, etc.). Detail is logged, not exposed.
     Internal(String),
 }
@@ -35,6 +37,7 @@ impl AppError {
             AppError::Forbidden(m) => (StatusCode::FORBIDDEN, "forbidden", m),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, "not_found", m),
             AppError::Conflict(m) => (StatusCode::CONFLICT, "conflict", m),
+            AppError::NotImplemented(m) => (StatusCode::NOT_IMPLEMENTED, "not_implemented", m),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", m),
         }
     }

@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT game_type_id AS \"game_type_id?: i64\",\n                  initial_elo, player_match_counts\n           FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "game_type_id?: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "initial_elo",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "player_match_counts",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "cc8a5601c1ce8adb2c37f10d949bad9092fbecdbaad658f0e60b37956fd924c4"
+}

@@ -47,3 +47,11 @@ CREATE TABLE event_played_one_match (
     member_id INTEGER NOT NULL REFERENCES members (id) ON DELETE CASCADE,
     PRIMARY KEY (event_id, member_id)
 );
+
+-- M2M: events.games <-> games (legacy events_event_games). Used by
+-- auto_manage_events to decide whether a completed event is empty.
+CREATE TABLE event_games (
+    event_id INTEGER NOT NULL REFERENCES events (id) ON DELETE CASCADE,
+    game_id  INTEGER NOT NULL REFERENCES games (id) ON DELETE CASCADE,
+    PRIMARY KEY (event_id, game_id)
+);

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT event_active AS \"a!: i64\" FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "a!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d277d67aeed77aee98dbe60bc81bb22d2403421ad11f09b552a20128943b4775"
+}
