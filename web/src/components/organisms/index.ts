@@ -1,3 +1,4 @@
 // Barrel for the organisms layer. May re-export modules composed from atoms +
-// molecules. Empty until the first organism lands (Phase 6).
-export {};
+// molecules. Consumers import organisms through this entry point only.
+export { ConsentBanner } from "./ConsentBanner";
+export type { ConsentBannerProps } from "./ConsentBanner";

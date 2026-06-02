@@ -4,6 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sports Social</title>
+
+    <!--
+      Consent Mode v2 bootstrap (GDPR — .claude/rules/gdpr.md).
+      Defines gtag + sets EVERY consent signal to "denied" BEFORE any
+      ad/analytics script. The AdSense tag and the Google certified CMP are
+      NOT loaded here; ConsentContext injects them from JS only after the user
+      accepts, then pushes gtag("consent","update",{...:"granted"}).
+    -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      window.gtag = gtag;
+      gtag("consent", "default", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "denied",
+        wait_for_update: 500,
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
