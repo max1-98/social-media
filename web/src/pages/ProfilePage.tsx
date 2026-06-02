@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { accountApi, ApiRequestError } from "../api";
 import { Alert, Avatar, Button, Spinner, Text } from "../components/atoms";
 import { PasswordField } from "../components/molecules";
-import { PageLayout } from "../components/templates";
 import { useAuth } from "../hooks";
 
 /**
@@ -76,28 +75,18 @@ export function ProfilePage(): ReactElement {
   }
 
   if (loading) {
-    return (
-      <PageLayout>
-        <Spinner />
-      </PageLayout>
-    );
+    return <Spinner />;
   }
 
   if (user === null) {
-    return (
-      <PageLayout>
-        <Alert severity="warning">You must be signed in to view your profile.</Alert>
-      </PageLayout>
-    );
+    return <Alert severity="warning">You must be signed in to view your profile.</Alert>;
   }
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        My profile
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">My profile</Text>
 
-      <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center" }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
         <Avatar>{user.username.charAt(0).toUpperCase()}</Avatar>
         <Box>
           <Text variant="h6">
@@ -109,7 +98,7 @@ export function ProfilePage(): ReactElement {
         </Box>
       </Stack>
 
-      <Stack spacing={0.5} sx={{ mb: 3 }}>
+      <Stack spacing={0.5}>
         <Text>Email: {user.email ?? "—"}</Text>
         <Text>Date of birth: {user.date_of_birth ?? "—"}</Text>
         <Text>Email verified: {user.email_verified ? "Yes" : "No"}</Text>
@@ -118,15 +107,15 @@ export function ProfilePage(): ReactElement {
         ) : null}
       </Stack>
 
-      <Button disabled aria-label="Edit profile (coming soon)">
-        Edit profile (coming soon)
-      </Button>
+      <Box>
+        <Button disabled aria-label="Edit profile (coming soon)">
+          Edit profile (coming soon)
+        </Button>
+      </Box>
 
-      <Divider sx={{ my: 3 }} />
+      <Divider />
 
-      <Text variant="h2" gutterBottom>
-        Your data &amp; privacy
-      </Text>
+      <Text variant="h2">Your data &amp; privacy</Text>
       <Stack spacing={2} sx={{ maxWidth: 520 }}>
         <Box>
           <Text gutterBottom>Download a copy of your personal data (GDPR data portability).</Text>
@@ -196,6 +185,6 @@ export function ProfilePage(): ReactElement {
           </Button>
         </DialogActions>
       </Dialog>
-    </PageLayout>
+    </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +9,6 @@ import { ApiRequestError, clubsApi } from "../api";
 import type { SocialLinksPayload } from "../api";
 import { Alert, Button, Input, Spinner, Text } from "../components/atoms";
 import { SportForm } from "../components/molecules";
-import { PageLayout } from "../components/templates";
 import type { Club, Social, Sport } from "../types";
 
 const SOCIAL_PLATFORMS: readonly (keyof SocialLinksPayload)[] = [
@@ -90,26 +90,16 @@ export function EditClubPage(): ReactElement {
   );
 
   if (clubId === undefined) {
-    return (
-      <PageLayout>
-        <Alert severity="error">No club specified.</Alert>
-      </PageLayout>
-    );
+    return <Alert severity="error">No club specified.</Alert>;
   }
 
   if (club === null) {
-    return (
-      <PageLayout>
-        {error !== null ? <Alert severity="error">{error}</Alert> : <Spinner />}
-      </PageLayout>
-    );
+    return error !== null ? <Alert severity="error">{error}</Alert> : <Spinner />;
   }
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Edit {club.name}
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Edit {club.name}</Text>
       <form
         onSubmit={(event) => {
           void handleSave(event);
@@ -150,19 +140,19 @@ export function EditClubPage(): ReactElement {
           </Button>
         </Stack>
       </form>
-      <Divider sx={{ my: 3 }} />
-      <Text variant="h2" gutterBottom>
-        Sport
-      </Text>
+      <Divider />
+      <Text variant="h2">Sport</Text>
       <SportForm sports={sports} initialSport={club.sport_type.name} onSubmit={handleAddSport} />
-      <Divider sx={{ my: 3 }} />
-      <Button
-        onClick={() => {
-          void navigate(`/club/${clubId}`);
-        }}
-      >
-        Back to club
-      </Button>
-    </PageLayout>
+      <Divider />
+      <Box>
+        <Button
+          onClick={() => {
+            void navigate(`/club/${clubId}`);
+          }}
+        >
+          Back to club
+        </Button>
+      </Box>
+    </Stack>
   );
 }

@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +9,6 @@ import type { ClubBounds } from "../api";
 import { Alert, Text } from "../components/atoms";
 import { MapView } from "../components/organisms";
 import type { MapBounds, MapClubMarker } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import { useUserLocation } from "../hooks";
 import type { ManyClub } from "../types";
 
@@ -89,10 +89,8 @@ export function DiscoverClubsPage(): ReactElement {
   );
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Discover clubs
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Discover clubs</Text>
       {error !== null && <Alert severity="error">{error}</Alert>}
       <Box sx={{ height: "70vh", width: "100%" }}>
         <MapView
@@ -105,6 +103,6 @@ export function DiscoverClubsPage(): ReactElement {
           ariaLabel="Club discovery map"
         />
       </Box>
-    </PageLayout>
+    </Stack>
   );
 }

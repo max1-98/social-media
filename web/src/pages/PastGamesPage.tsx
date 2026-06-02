@@ -1,3 +1,4 @@
+import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -9,7 +10,6 @@ import type { ReactElement } from "react";
 
 import { ApiRequestError, gamesApi } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
-import { PageLayout } from "../components/templates";
 import type { CompleteGame, MemberEvent } from "../types";
 
 /**
@@ -46,10 +46,8 @@ export function PastGamesPage(): ReactElement {
     members.map((m) => m.username).join(", ") || "—";
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Past games
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Past games</Text>
       {loading ? (
         <Spinner />
       ) : error !== null ? (
@@ -80,6 +78,6 @@ export function PastGamesPage(): ReactElement {
           </Table>
         </TableContainer>
       )}
-    </PageLayout>
+    </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import Stack from "@mui/material/Stack";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useParams } from "react-router-dom";
@@ -5,7 +6,6 @@ import { useParams } from "react-router-dom";
 import { clubsApi, eventsApi, gamesApi, ApiRequestError } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
 import { EventComplete, EventPending, MatchmakingPanel } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import type { CompleteGame, EventDetail, EventStatsResult, Game, Member } from "../types";
 
 function messageOf(err: unknown, fallback: string): string {
@@ -99,28 +99,18 @@ export function EventViewPage(): ReactElement {
   }
 
   if (loading) {
-    return (
-      <PageLayout>
-        <Spinner />
-      </PageLayout>
-    );
+    return <Spinner />;
   }
 
   if (event === null) {
-    return (
-      <PageLayout>
-        <Alert severity="error">{error ?? "Event not found."}</Alert>
-      </PageLayout>
-    );
+    return <Alert severity="error">{error ?? "Event not found."}</Alert>;
   }
 
   const numericEventId = event.id;
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        {event.game_type.name}
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">{event.game_type.name}</Text>
       {error !== null ? <Alert severity="error">{error}</Alert> : null}
 
       {!event.event_active ? (
@@ -198,6 +188,6 @@ export function EventViewPage(): ReactElement {
           }}
         />
       ) : null}
-    </PageLayout>
+    </Stack>
   );
 }

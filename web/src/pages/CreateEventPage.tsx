@@ -9,7 +9,6 @@ import { eventsApi, ApiRequestError } from "../api";
 import type { CreateEventPayload } from "../api";
 import { Alert, Button, Input, Select, Text } from "../components/atoms";
 import type { SelectOption } from "../components/atoms";
-import { PageLayout } from "../components/templates";
 
 const GAME_TYPES: SelectOption[] = [
   { value: "badminton singles", label: "Badminton Singles" },
@@ -72,10 +71,8 @@ export function CreateEventPage(): ReactElement {
   }
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Create event
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Create event</Text>
       <form
         onSubmit={(event) => {
           void onSubmit(event);
@@ -167,6 +164,6 @@ export function CreateEventPage(): ReactElement {
           </Button>
         </Stack>
       </form>
-    </PageLayout>
+    </Stack>
   );
 }

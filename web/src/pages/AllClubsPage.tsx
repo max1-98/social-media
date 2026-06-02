@@ -1,4 +1,5 @@
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { ApiRequestError, clubsApi } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
 import { ClubCard } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import type { ManyClub } from "../types";
 
 /**
@@ -48,10 +48,8 @@ export function AllClubsPage(): ReactElement {
   );
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        All clubs
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">All clubs</Text>
       {error !== null && <Alert severity="error">{error}</Alert>}
       {loading ? (
         <Spinner />
@@ -64,6 +62,6 @@ export function AllClubsPage(): ReactElement {
           ))}
         </Grid>
       )}
-    </PageLayout>
+    </Stack>
   );
 }
