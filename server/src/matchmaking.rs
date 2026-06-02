@@ -10,10 +10,6 @@
 //! oracle-tested, and the stochastic fns are checked for invariants (team sizes,
 //! every player placed exactly once, mixed-gender constraints).
 
-// Consumers land in a later Phase 4 step (`domain::games`); until then the entry
-// points have no non-test caller. Remove once wired.
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 
 use rand::seq::SliceRandom;

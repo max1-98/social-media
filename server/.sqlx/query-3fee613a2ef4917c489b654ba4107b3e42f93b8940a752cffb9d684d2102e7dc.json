@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE events SET player_match_counts = ?, wins = ?, winstreaks = ?,\n                           best_winstreak = ?, played_with = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "3fee613a2ef4917c489b654ba4107b3e42f93b8940a752cffb9d684d2102e7dc"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT played_with FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "played_with",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d8e2ed372de9f6ef82ccb5d56a080c24101e78392e2a6e3328f9e9a3621dbbbb"
+}

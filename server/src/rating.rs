@@ -7,10 +7,6 @@
 //! math pure by *returning* the new values ([`apply_elo_update`]). The DB load /
 //! save lives in `domain::games` / `domain::elo`.
 
-// Consumers land in later Phase 4 steps (`domain::elo`, `domain::games`); until
-// then the pure entry points have no non-test caller. Remove once wired.
-#![allow(dead_code)]
-
 use crate::error::AppError;
 
 /// Fixed K-factor (Django `update_elo`: `k = 40`).

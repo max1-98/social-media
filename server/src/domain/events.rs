@@ -31,13 +31,10 @@ use crate::state::AppState;
 // ===========================================================================
 
 // These pure stat transforms are the parity-ported `Event` stat methods,
-// consumed by `domain::games` on game completion (the next Phase-4 step). Until
-// that handler lands they're exercised only by the unit tests below, hence the
-// `dead_code` allowance on the reuse surface.
+// consumed by `domain::games` on game completion.
 
 /// A single game's teams, used by the stat transforms. `team1`/`team2` are the
 /// member ids on each side; `team1_won` mirrors `elo.services.team1Win`.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct GameResult {
     pub team1: Vec<i64>,
@@ -45,7 +42,6 @@ pub struct GameResult {
     pub team1_won: bool,
 }
 
-#[allow(dead_code)]
 impl GameResult {
     /// All members across both teams (mirrors `game.all_users`).
     fn all_members(&self) -> Vec<i64> {
@@ -57,6 +53,9 @@ impl GameResult {
 
 /// Mirror of `elo.services.team1Win`: parse a `"t1,t2"` score; team 1 wins when
 /// its score is strictly greater. Returns `None` on a malformed score.
+///
+/// `domain::games` determines winners via `crate::rating::team1_win`; this
+/// variant remains as the unit-tested parity reference for the stat path.
 #[allow(dead_code)]
 pub fn team1_win(score: &str) -> Option<bool> {
     let (a, b) = score.split_once(',')?;
@@ -66,7 +65,6 @@ pub fn team1_win(score: &str) -> Option<bool> {
 }
 
 /// Port of `Event.update_player_match_counts`: +1 for every member who played.
-#[allow(dead_code)]
 pub fn update_player_match_counts(counts: &mut BTreeMap<String, i64>, game: &GameResult) {
     for member in game.all_members() {
         let key = member.to_string();
@@ -81,7 +79,6 @@ pub fn update_player_match_counts(counts: &mut BTreeMap<String, i64>, game: &Gam
 /// from `wins` (not the prior winstreak), and the `best_winstreak` update only
 /// triggers when `best_winstreak` is already non-empty (a first-ever team-2 win
 /// leaves `best_winstreak` untouched) — see `events/models.py`.
-#[allow(dead_code)]
 pub fn update_player_win_counts(
     wins: &mut BTreeMap<String, i64>,
     winstreaks: &mut BTreeMap<String, i64>,
@@ -114,7 +111,6 @@ pub fn update_player_win_counts(
 }
 
 /// Increment and return a player's winstreak (team-1 path).
-#[allow(dead_code)]
 fn winstreak_increment(winstreaks: &mut BTreeMap<String, i64>, key: &str) -> i64 {
     let streak = winstreaks.get(key).copied().unwrap_or(0) + 1;
     winstreaks.insert(key.to_string(), streak);
@@ -123,7 +119,6 @@ fn winstreak_increment(winstreaks: &mut BTreeMap<String, i64>, key: &str) -> i64
 
 /// Best-winstreak update. `seed_when_empty` matches the legacy asymmetry: the
 /// team-1 branch seeds `best_winstreak` when empty, the team-2 branch does not.
-#[allow(dead_code)]
 fn update_best_winstreak(
     best: &mut BTreeMap<String, i64>,
     key: &str,
@@ -147,7 +142,6 @@ fn update_best_winstreak(
 
 /// Port of `Event.update_player_social_counts`: accumulate co-play counts. For
 /// each player, every other player in the game gets +1 in that player's map.
-#[allow(dead_code)]
 pub fn update_player_social_counts(
     played_with: &mut BTreeMap<String, BTreeMap<String, i64>>,
     game: &GameResult,

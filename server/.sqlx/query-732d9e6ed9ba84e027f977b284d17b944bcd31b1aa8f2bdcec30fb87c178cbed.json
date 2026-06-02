@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT player_match_counts, wins, winstreaks, best_winstreak, played_with\n         FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "player_match_counts",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "wins",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "winstreaks",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "best_winstreak",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "played_with",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "732d9e6ed9ba84e027f977b284d17b944bcd31b1aa8f2bdcec30fb87c178cbed"
+}

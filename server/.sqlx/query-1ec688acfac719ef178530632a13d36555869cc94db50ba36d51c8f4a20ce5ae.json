@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT 1 AS \"x!: i64\" FROM event_games WHERE event_id = ? AND game_id = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "x!: i64",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "1ec688acfac719ef178530632a13d36555869cc94db50ba36d51c8f4a20ce5ae"
+}

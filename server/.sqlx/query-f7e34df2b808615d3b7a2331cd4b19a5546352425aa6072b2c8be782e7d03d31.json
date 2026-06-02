@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO game_team2 (game_id, member_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "f7e34df2b808615d3b7a2331cd4b19a5546352425aa6072b2c8be782e7d03d31"
+}

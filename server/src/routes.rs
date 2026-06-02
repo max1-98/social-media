@@ -16,7 +16,7 @@ use serde_json::{json, Value};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::domain::{auth, clubs, elo, events};
+use crate::domain::{auth, clubs, elo, events, games};
 use crate::state::AppState;
 
 /// Directory the frontend is built into (`web/dist`). Overridable for deploys.
@@ -103,13 +103,27 @@ pub fn router(state: AppState) -> Router {
         .route("/event/settings/:pk1", patch(events::update_settings))
         .route("/event/:pk1/stats", get(events::event_stats));
 
+    // Games: mirrors backend/games/urls.py. The legacy app is mounted at `game/`,
+    // so each path keeps that prefix and the routes are merged under /api.
+    let games = Router::new()
+        .route("/game/create-sbmm", post(games::create_sbmm))
+        .route("/game/create-social", post(games::create_social))
+        .route("/game/get-player_1", post(games::get_player_1))
+        .route("/game/create-peg", post(games::create_peg))
+        .route("/game/delete", post(games::delete_game))
+        .route("/game/complete", post(games::complete_game))
+        .route("/game/games/:pk1", get(games::event_incomplete_games))
+        .route("/game/event/games/:pk1", get(games::event_complete_games))
+        .route("/game/users/games", get(games::user_games));
+
     let api = Router::new()
         .route("/health", get(health))
         .route("/hello", get(hello))
         .nest("/auth", auth)
         .nest("/elo", elo)
         .merge(clubs)
-        .merge(events);
+        .merge(events)
+        .merge(games);
 
     // Real files (JS/CSS/assets) are served by ServeDir; anything it can't find
     // falls back to the SPA shell so deep links / client routes resolve. If the
@@ -1407,5 +1421,430 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    // -----------------------------------------------------------------------
+    // Games domain
+    // -----------------------------------------------------------------------
+
+    /// Register a user, add them as an active member of `event_id` in `club_id`
+    /// with a seeded badminton-singles (game_type 1) rating row at `elo`/`streak`,
+    /// and return the new member id.
+    async fn seed_active_member(
+        pool: &SqlitePool,
+        club_id: i64,
+        event_id: i64,
+        username: &str,
+        gender: &str,
+        elo: i64,
+        streak: i64,
+    ) -> i64 {
+        sqlx::query(
+            "INSERT INTO users (username, email, password_hash, first_name, surname,
+                                date_of_birth, biological_gender, is_active, date_joined)
+             VALUES (?, ?, 'x', 'F', 'L', '1995-01-01', ?, 1, '2026-01-01T00:00:00Z')",
+        )
+        .bind(username)
+        .bind(format!("{username}@example.com"))
+        .bind(gender)
+        .execute(pool)
+        .await
+        .unwrap();
+        let user_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = ?")
+            .bind(username)
+            .fetch_one(pool)
+            .await
+            .unwrap();
+
+        sqlx::query(
+            "INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
+             VALUES (?, ?, 1, 0, '2026-01-01T00:00:00Z')",
+        )
+        .bind(club_id)
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .unwrap();
+        let member_id: i64 =
+            sqlx::query_scalar("SELECT id FROM members WHERE user_id = ? AND club_id = ?")
+                .bind(user_id)
+                .bind(club_id)
+                .fetch_one(pool)
+                .await
+                .unwrap();
+
+        let elo_id: i64 = sqlx::query_scalar(
+            "INSERT INTO elo (game_type_id, elo, last_game, winstreak, best_winstreak)
+             VALUES (1, ?, '2026-05-01', ?, ?) RETURNING id",
+        )
+        .bind(elo)
+        .bind(streak)
+        .bind(streak)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+        sqlx::query("INSERT INTO user_elos (user_id, elo_id) VALUES (?, ?)")
+            .bind(user_id)
+            .bind(elo_id)
+            .execute(pool)
+            .await
+            .unwrap();
+
+        sqlx::query("INSERT INTO event_active_members (event_id, member_id) VALUES (?, ?)")
+            .bind(event_id)
+            .bind(member_id)
+            .execute(pool)
+            .await
+            .unwrap();
+        member_id
+    }
+
+    #[tokio::test]
+    async fn peg_create_complete_updates_elo_and_stats() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "gameadmin").await;
+        let club_id = create_test_club(&app, &cookies, "gamec", "Game Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+
+        // Two equal-rated singles players, both active.
+        let m1 = seed_active_member(&pool, club_id, event_id, "p_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, club_id, event_id, "p_two", "male", 1000, 0).await;
+
+        // Peg the teams: m1 vs m2 (singles -> team_size 1).
+        let create = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-peg",
+                &cookies,
+                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::CREATED);
+        let game = body_json(create).await;
+        let game_id = game["id"].as_i64().unwrap();
+        assert_eq!(game["team1"].as_array().unwrap().len(), 1);
+        assert_eq!(game["team2"].as_array().unwrap().len(), 1);
+        assert_eq!(game["team1"][0]["id"], m1);
+        assert_eq!(game["team1"][0]["elo"], 1000);
+
+        // Members moved active -> in_game.
+        let active_after: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
+                .bind(event_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(active_after, 0);
+
+        // Complete with team1 winning 21-15 (diff 6). Equal teams + sbmm on:
+        // g(6)=0.8, p=0.5 -> winner +0.3*40 = +12, loser -12 (rating oracle).
+        let complete = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/complete",
+                &cookies,
+                json!({ "game_id": game_id, "event_id": event_id, "score": "21,15" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(complete.status(), StatusCode::OK);
+        assert_eq!(
+            body_json(complete).await["message"],
+            "Game completed successfully"
+        );
+
+        // Deterministic elo deltas via the oracle.
+        let elo1: i64 = sqlx::query_scalar(
+            "SELECT e.elo FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
+             JOIN members m ON m.user_id = ue.user_id WHERE m.id = ? AND e.game_type_id = 1",
+        )
+        .bind(m1)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        let elo2: i64 = sqlx::query_scalar(
+            "SELECT e.elo FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
+             JOIN members m ON m.user_id = ue.user_id WHERE m.id = ? AND e.game_type_id = 1",
+        )
+        .bind(m2)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(elo1, 1012);
+        assert_eq!(elo2, 988);
+
+        // Players reactivated; win/match stat maps updated.
+        let active_now: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
+                .bind(event_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(active_now, 2);
+        let wins: String = sqlx::query_scalar("SELECT wins FROM events WHERE id = ?")
+            .bind(event_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert!(wins.contains(&format!("\"{m1}\":1")) || wins.contains(&format!("\"{m1}\": 1")));
+
+        // Completed game appears in the event's completed list.
+        let listed = app
+            .clone()
+            .oneshot(get_with(
+                &format!("/api/game/event/games/{event_id}"),
+                &cookies,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(listed.status(), StatusCode::OK);
+        let body = body_json(listed).await;
+        assert_eq!(body.as_array().unwrap().len(), 1);
+        assert_eq!(body[0]["score"], "21,15");
+    }
+
+    #[tokio::test]
+    async fn complete_rejects_score_below_21() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "scoreadmin").await;
+        let club_id = create_test_club(&app, &cookies, "scorec", "Score Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let m1 = seed_active_member(&pool, club_id, event_id, "s_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, club_id, event_id, "s_two", "male", 1000, 0).await;
+
+        let create = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-peg",
+                &cookies,
+                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+            ))
+            .await
+            .unwrap();
+        let game_id = body_json(create).await["id"].as_i64().unwrap();
+
+        // No team reached 21 -> validation error.
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/complete",
+                &cookies,
+                json!({ "game_id": game_id, "event_id": event_id, "score": "15,18" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+
+        // Malformed score -> validation error.
+        let bad = app
+            .oneshot(json_with(
+                "POST",
+                "/api/game/complete",
+                &cookies,
+                json!({ "game_id": game_id, "event_id": event_id, "score": "nonsense" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(bad.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn delete_game_reverts_players() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "deladmin").await;
+        let club_id = create_test_club(&app, &cookies, "delc", "Del Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let m1 = seed_active_member(&pool, club_id, event_id, "d_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, club_id, event_id, "d_two", "male", 1000, 0).await;
+
+        let create = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-peg",
+                &cookies,
+                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+            ))
+            .await
+            .unwrap();
+        let game_id = body_json(create).await["id"].as_i64().unwrap();
+
+        let del = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/delete",
+                &cookies,
+                json!({ "game_id": game_id, "event_id": event_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(del.status(), StatusCode::NO_CONTENT);
+
+        // Game gone, players back to active.
+        let games: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM games WHERE id = ?")
+            .bind(game_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(games, 0);
+        let active: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
+                .bind(event_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(active, 2);
+    }
+
+    #[tokio::test]
+    async fn sbmm_create_builds_singles_game() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "sbmmadmin").await;
+        let club_id = create_test_club(&app, &cookies, "sbmmc", "SBMM Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        seed_active_member(&pool, club_id, event_id, "sb_one", "male", 1000, 0).await;
+        seed_active_member(&pool, club_id, event_id, "sb_two", "male", 1010, 0).await;
+
+        let create = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-sbmm",
+                &cookies,
+                json!({ "event_id": event_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::CREATED);
+        let game = body_json(create).await;
+        // Singles: one player each side, distinct, both moved out of active.
+        assert_eq!(game["team1"].as_array().unwrap().len(), 1);
+        assert_eq!(game["team2"].as_array().unwrap().len(), 1);
+        assert_ne!(game["team1"][0]["id"], game["team2"][0]["id"]);
+        let active: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
+                .bind(event_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(active, 0);
+    }
+
+    #[tokio::test]
+    async fn create_game_requires_enough_players() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "fewadmin").await;
+        let club_id = create_test_club(&app, &cookies, "fewc", "Few Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        // Only one active member: not enough for singles (needs 2).
+        seed_active_member(&pool, club_id, event_id, "f_one", "male", 1000, 0).await;
+
+        let res = app
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-sbmm",
+                &cookies,
+                json!({ "event_id": event_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn peg_get_player_1_returns_simple_member() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "pegadmin").await;
+        let club_id = create_test_club(&app, &cookies, "pegc", "Peg Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let m1 = seed_active_member(&pool, club_id, event_id, "pg_one", "male", 1000, 0).await;
+        seed_active_member(&pool, club_id, event_id, "pg_two", "male", 1000, 0).await;
+
+        let res = app
+            .oneshot(json_with(
+                "POST",
+                "/api/game/get-player_1",
+                &cookies,
+                json!({ "event_id": event_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = body_json(res).await;
+        // SimpleMemberSerializer has no elo field; id is one of the active members.
+        assert!(body.get("elo").is_none());
+        let id = body["id"].as_i64().unwrap();
+        assert!(id == m1 || id == m1 + 1);
+    }
+
+    #[tokio::test]
+    async fn user_games_lists_completed_for_user() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "ugadmin").await;
+        let club_id = create_test_club(&app, &cookies, "ugc", "UG Club").await;
+        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let m1 = seed_active_member(&pool, club_id, event_id, "ug_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, club_id, event_id, "ug_two", "male", 1000, 0).await;
+
+        let create = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/create-peg",
+                &cookies,
+                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+            ))
+            .await
+            .unwrap();
+        let game_id = body_json(create).await["id"].as_i64().unwrap();
+        app.clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/game/complete",
+                &cookies,
+                json!({ "game_id": game_id, "event_id": event_id, "score": "21,15" }),
+            ))
+            .await
+            .unwrap();
+
+        // The seeded player's password is a placeholder, so copy a real argon2
+        // hash from the admin (registered with the standard test password) onto
+        // `ug_one`, then log in as them and fetch their recent games.
+        let argon_hash = sqlx::query_scalar::<_, String>(
+            "SELECT password_hash FROM users WHERE username = 'ugadmin'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        sqlx::query("UPDATE users SET password_hash = ? WHERE username = 'ug_one'")
+            .bind(&argon_hash)
+            .execute(&pool)
+            .await
+            .unwrap();
+        let login = app
+            .clone()
+            .oneshot(post(
+                "/api/auth/login",
+                json!({ "username": "ug_one", "password": "123ThisPasswordRocks!" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(login.status(), StatusCode::OK);
+        let player_cookies = cookies_from(&login);
+
+        let res = app
+            .oneshot(get_with("/api/game/users/games", &player_cookies))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = body_json(res).await;
+        assert_eq!(body.as_array().unwrap().len(), 1);
+        assert_eq!(body[0]["score"], "21,15");
     }
 }
