@@ -1,3 +1,4 @@
-// Barrel for the templates layer. May re-export page-level layouts composed from
-// organisms. Empty until the first template lands (Phase 6).
-export {};
+// Barrel for the templates layer. Re-exports page-level layouts composed from
+// organisms. Cross-layer imports come through this file.
+export { PageLayout } from "./PageLayout";
+export type { PageLayoutProps } from "./PageLayout";
