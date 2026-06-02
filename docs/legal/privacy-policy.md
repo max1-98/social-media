@@ -39,8 +39,9 @@ We minimise `biological_gender` — it is only read by mixed-gender matchmaking.
 ## 4. Sharing & processors
 
 We use EU-region processors under signed DPAs/SCCs: `[Resend]` (email),
-`[Google]` (ads/CMP), `[Cloudflare]` (CDN/R2 media), `[host]`. A current
-sub-processor list is kept in our RoPA. We do not sell personal data.
+`[Google]` (ads/CMP), `[Cloudflare]` (CDN/R2 media), `[host]`. See our
+[sub-processor list](sub-processors.md) and [RoPA](ropa.md). We do not sell
+personal data.
 
 ## 5. Retention
 

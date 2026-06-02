@@ -1,9 +1,3 @@
 .env
-__pycache__
-*.pyc
-/backend/data
-.venv/
-celery.log
-celerybeat-schedule
 # Claude agent worktrees (transient)
 .claude/worktrees/

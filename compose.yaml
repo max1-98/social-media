@@ -3,7 +3,8 @@
 #
 #   docker compose up --build
 #
-# (The legacy Django stack still lives in ./docker-compose.yml and is untouched.)
+# For production deployment (EU VM, systemd, Litestream→R2, Caddy) see deploy/
+# and docs/rebuild/05-deploy.md.
 
 services:
   app:

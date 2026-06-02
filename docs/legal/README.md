@@ -11,6 +11,12 @@ the data-subject-rights endpoints (`GET /account/export`,
 - [Cookie Policy](cookie-policy.md) — essential vs non-essential cookies, the
   CMP + Consent Mode v2 gate, and the `consent_log`.
 
+Processor paperwork (Art. 30 + transfers), maintained for Phase 7 go-live:
+
+- [RoPA](ropa.md) — Records of Processing Activities (purpose, basis, retention).
+- [Sub-processor list](sub-processors.md) — third parties + EU residency + role.
+- [DPA register](dpa-register.md) — signature tracking for processor agreements.
+
 > **Not legal advice.** Copy, the controller's legal name, retention windows,
 > and the digital-consent age threshold need human/legal sign-off before these
 > pages are published. Each file stays under the repo's 150-line markdown rule.

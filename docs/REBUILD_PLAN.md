@@ -32,3 +32,5 @@ This plan is split so each file stays scannable (and under the 150-line rule):
   definition of done for each.
 - **[Verification, Open Items & Deferred](rebuild/04-verification-deferred.md)** —
   cross-phase verification, decisions to confirm, and post-parity roadmap.
+- **[Deployment & Operations Runbook](rebuild/05-deploy.md)** — Phase 7: EU VM,
+  systemd, Litestream→R2 backup/restore, Caddy TLS, footprint check.

@@ -34,18 +34,15 @@ gate, EU data residency) — see the plan for detail.
 
 ## Repository layout
 
-The rebuild lives **alongside** the legacy code; the old code stays as a parity
-reference until cutover (Phase 7), then is removed.
+The legacy Django/CRA code was removed at cutover (Phase 7); the rebuild is the
+whole app now.
 
 ```
-server/    NEW backend — Rust + Axum single binary (this is the future)
-web/       NEW frontend — Vite + React + TypeScript, Atomic Design
+server/    Backend — Rust + Axum single binary (API + static SPA + media proxy)
+web/       Frontend — Vite + React + TypeScript, Atomic Design
+deploy/    Production host config — systemd, Litestream→R2, Caddy
+docs/      Rebuild plan, GDPR design, legal/policy docs, deploy runbook
 .github/   CI workflows
-
-backend/   LEGACY Django + DRF app  (reference only, removed at cutover)
-frontend/  LEGACY Create-React-App  (reference only, removed at cutover)
-compose/   LEGACY docker stack      (reference only, removed at cutover)
-docs/      Rebuild plan, requirements, and (later) GDPR policy docs
 ```
 
 ### `server/` — Rust backend
@@ -96,20 +93,20 @@ docker compose up --build      # app at http://localhost:8080
 ```
 
 The SQLite db and uploaded media persist in the `appdata` volume across restarts.
-This uses `compose.yaml` (the rebuild); the legacy `docker-compose.yml` (old
-Django stack) is left untouched until cutover. See the `run-with-docker` skill.
+See the `run-with-docker` skill for local dev.
+
+## Production deployment
+
+The app runs as one binary on a fixed-price **EU VM**: systemd supervises it
+under **Litestream** (SQLite → EU R2 backups), and **Caddy** terminates TLS
+(auto-HTTPS). Host config is in [`deploy/`](deploy/README.md); step-by-step
+bring-up + the backup/restore drill are in the
+[deployment runbook](docs/rebuild/05-deploy.md). GDPR processor paperwork lives in
+[`docs/legal/`](docs/legal/README.md) (RoPA, sub-processors, DPA register).
 
 ## Rebuild status
 
-Phase 1 (**scaffold**) is done: `server/` and `web/` build, test, and run; CI
-gates both. Next is **Phase 2 — standards** (`.claude/` config, SessionStart
-hook, `CLAUDE.md`, linters/formatters, lint-staged, branch protection). See
-[`docs/REBUILD_PLAN.md`](docs/REBUILD_PLAN.md) for the full phased plan and the
+Parity rebuild complete through **Phase 7 — deploy & decommission**: the legacy
+Django/CRA stack has been removed, and production runs as a single Axum binary.
+See [`docs/REBUILD_PLAN.md`](docs/REBUILD_PLAN.md) for the full phased plan and the
 definition of done for each phase.
-
-## Legacy app
-
-The legacy Django + React app and its Docker stack still live in `backend/`,
-`frontend/`, and `compose/` for reference during the parity port. They are not
-built in CI and will be removed at cutover. Their original run instructions are
-preserved in `frontend/README.md` and `docs/`.

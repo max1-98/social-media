@@ -5,7 +5,7 @@
 //   - agents/skills carry required frontmatter
 //   - every atomic-design layer has a complete barrel (index.ts)
 // Zero dependencies; runs identically in CI, the Stop hook, and the .md PostToolUse
-// hook. Excludes legacy backend/ + frontend/ (removed at cutover).
+// hook.
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,12 +16,12 @@ import { frontmatter } from "./checks/frontmatter.mjs";
 import { barrelComplete } from "./checks/barrel-complete.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const IGNORE = ["backend/", "frontend/", "node_modules/", "target/", "dist/", "coverage/"];
+const IGNORE = ["node_modules/", "target/", "dist/", "coverage/"];
 
 function trackedFiles() {
   // Tracked + untracked-but-not-gitignored, so a new (uncommitted) long .md is
   // caught before it is committed. Gitignored trees (node_modules/target/dist)
-  // are excluded automatically; legacy backend/frontend are excluded explicitly.
+  // are excluded automatically.
   const out = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
     cwd: root,
     encoding: "utf8",
