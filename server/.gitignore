@@ -1,4 +1,11 @@
 /target
+
+# Local SQLite database files (the schema lives in migrations/).
+/data
 *.db
 *.db-shm
 *.db-wal
+
+# Local env overrides. The compile-time sqlx query cache (.sqlx/) IS committed
+# so CI builds offline; .env is not.
+.env

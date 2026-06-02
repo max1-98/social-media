@@ -20,6 +20,10 @@ jobs:
   server:
     name: server (rust)
     runs-on: ubuntu-latest
+    # Build/check the compile-time-checked sqlx queries against the committed
+    # `.sqlx` offline cache (server/.sqlx) instead of a live database.
+    env:
+      SQLX_OFFLINE: "true"
     defaults:
       run:
         working-directory: server

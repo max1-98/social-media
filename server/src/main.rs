@@ -11,6 +11,12 @@
 
 mod routes;
 
+// Infrastructure: config, database pool, shared state, and the app error type.
+mod config;
+mod db;
+mod error;
+mod state;
+
 // Domain modules — placeholders that map 1:1 onto the existing Django apps so
 // the parity port (Phase 4) is auditable. Implemented in later phases.
 mod domain;
@@ -24,6 +30,9 @@ use std::net::SocketAddr;
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
+use crate::config::Config;
+use crate::state::AppState;
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -31,7 +40,11 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = routes::router();
+    let config = Config::from_env();
+    let pool = db::init_pool(&config.database_url)
+        .await
+        .expect("failed to initialise database");
+    let app = routes::router(AppState::new(pool, config));
 
     let port: u16 = std::env::var("PORT")
         .ok()
