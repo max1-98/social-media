@@ -5,3 +5,5 @@ __pycache__
 .venv/
 celery.log
 celerybeat-schedule
+# Claude agent worktrees (transient)
+.claude/worktrees/
