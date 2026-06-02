@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE clubs SET logo = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "daad349af3dbc0ecf1b1b8d44a9541a73bbf3ae98a69e9f3f5715d99eab4b886"
+}

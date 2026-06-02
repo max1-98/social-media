@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT e.elo AS \"elo!: i64\"\n               FROM user_elos ue JOIN elo e ON e.id = ue.elo_id\n               WHERE ue.user_id = ? AND e.game_type_id = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "elo!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "04b22931c6ec0a9cd11106595c6da601cce59d686840bb5dcfe41ebf62141c4b"
+}

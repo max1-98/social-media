@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE members SET is_member = 0, is_admin = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "56975f5603e0834b0d617d3179fa23e77c0e969ecf2ec1994aa641682fe7d60a"
+}

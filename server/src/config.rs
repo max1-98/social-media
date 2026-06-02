@@ -27,6 +27,15 @@ pub struct Config {
     pub short_token_ttl: Duration,
     /// Whether to set the `Secure` flag on auth cookies (off for local HTTP).
     pub cookie_secure: bool,
+    /// Local media root dir for `LocalDiskStorage` (club logos etc.).
+    pub media_dir: String,
+    /// Public base URL media is served under (signed URLs prepend this).
+    pub media_base_url: String,
+    /// HMAC secret for signing expiring media URLs.
+    pub media_secret: String,
+    /// Identifying `User-Agent` for the Nominatim geocoder (their policy
+    /// requires a contactable UA).
+    pub geocoder_user_agent: String,
 }
 
 impl Config {
@@ -64,6 +73,11 @@ impl Config {
             cookie_secure: var("COOKIE_SECURE")
                 .map(|v| v != "false" && v != "0")
                 .unwrap_or(true),
+            media_dir: var("MEDIA_DIR").unwrap_or_else(|| "data/media".into()),
+            media_base_url: var("MEDIA_BASE_URL").unwrap_or_else(|| "/media".into()),
+            media_secret: var("MEDIA_SECRET").unwrap_or_else(|| "dev-insecure-media-secret".into()),
+            geocoder_user_agent: var("GEOCODER_USER_AGENT")
+                .unwrap_or_else(|| "social-media-rebuild/0.1 (contact@example.com)".into()),
         }
     }
 }

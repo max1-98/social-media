@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO member_requests (club_id, user_id, date_requested) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "4ba04a161fb64075601cd61e737327494e19eb49b5b76b00bf61ff31add4f0ee"
+}

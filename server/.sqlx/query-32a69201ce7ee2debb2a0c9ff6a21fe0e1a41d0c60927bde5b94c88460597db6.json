@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT sbmm AS \"sbmm!: i64\", mode, even_teams AS \"even_teams!: i64\"\n           FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "sbmm!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "mode",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "even_teams!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "32a69201ce7ee2debb2a0c9ff6a21fe0e1a41d0c60927bde5b94c88460597db6"
+}

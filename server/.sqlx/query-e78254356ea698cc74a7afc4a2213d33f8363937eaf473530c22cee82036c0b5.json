@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT g.id AS \"id!: i64\" FROM event_games eg\n           JOIN games g ON g.id = eg.game_id\n           WHERE eg.event_id = ? AND g.score IS NULL ORDER BY g.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e78254356ea698cc74a7afc4a2213d33f8363937eaf473530c22cee82036c0b5"
+}

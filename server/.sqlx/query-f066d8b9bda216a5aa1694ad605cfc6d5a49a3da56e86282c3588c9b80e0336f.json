@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO elo_game_loses (elo_id, game_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "f066d8b9bda216a5aa1694ad605cfc6d5a49a3da56e86282c3588c9b80e0336f"
+}

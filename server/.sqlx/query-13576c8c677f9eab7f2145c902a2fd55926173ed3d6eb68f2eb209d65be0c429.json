@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM event_in_game_members WHERE event_id = ? AND member_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "13576c8c677f9eab7f2145c902a2fd55926173ed3d6eb68f2eb209d65be0c429"
+}

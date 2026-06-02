@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO clubs (club_username, name, president_id, info, date_created, is_active, socials)\n           VALUES (?, ?, ?, ?, ?, 1, '[]') RETURNING id AS \"id!: i64\"",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "2d100fe65be7519c3b09261c6ce0f830c55ac6ac6de3e7e4be3b3d30ab4e124d"
+}

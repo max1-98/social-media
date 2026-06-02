@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT elo AS \"elo!: i64\" FROM elo WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "elo!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a6499332c1f84a769b4532e032457a825b2a4e67017043ea8ae58fd9e8c0666c"
+}

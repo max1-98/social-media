@@ -1,0 +1,86 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT c.id AS \"id!: i64\", c.club_username, c.name, c.info, c.logo,\n                  c.address, c.coordinates, c.date_created,\n                  c.is_active AS \"is_active!: i64\",\n                  c.president_id AS \"president_id!: i64\",\n                  s.name AS \"sport_name?: String\",\n                  u.username AS \"president_username!: String\"\n           FROM clubs c\n           LEFT JOIN sports s ON s.id = c.sport_type_id\n           JOIN users u ON u.id = c.president_id\n           WHERE c.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "club_username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "info",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "logo",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "address",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "coordinates",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "date_created",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_active!: i64",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "president_id!: i64",
+        "ordinal": 9,
+        "type_info": "Integer"
+      },
+      {
+        "name": "sport_name?: String",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "president_username!: String",
+        "ordinal": 11,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "486d296e3050da1c0a2acf196c7ab75b6ce8e3199e5965dda2bd80904cd146f7"
+}

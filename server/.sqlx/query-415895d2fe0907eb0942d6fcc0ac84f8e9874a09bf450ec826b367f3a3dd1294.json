@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT wins, player_match_counts, best_winstreak, initial_elo, final_elo\n         FROM events WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "wins",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "player_match_counts",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "best_winstreak",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "initial_elo",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "final_elo",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "415895d2fe0907eb0942d6fcc0ac84f8e9874a09bf450ec826b367f3a3dd1294"
+}

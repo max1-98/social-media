@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id AS \"id!: i64\", date, start_time,\n                  event_active AS \"event_active!: i64\",\n                  event_complete AS \"event_complete!: i64\"\n           FROM events WHERE club_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "start_time",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "event_active!: i64",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "event_complete!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6fdf4e8ee2608326345e26fe87d67135d12af8f6248f40619e9c72f249c1d221"
+}

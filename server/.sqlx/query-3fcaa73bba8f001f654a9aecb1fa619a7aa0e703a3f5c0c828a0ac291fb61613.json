@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT e.club_id AS \"club_id!: i64\", e.game_type_id AS \"game_type_id?: i64\",\n                  e.sbmm AS \"sbmm!: i64\", e.even_teams AS \"even_teams!: i64\",\n                  gt.name AS \"game_type_name?: String\"\n           FROM events e\n           LEFT JOIN game_types gt ON gt.id = e.game_type_id\n           WHERE e.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "game_type_id?: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "sbmm!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "even_teams!: i64",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "game_type_name?: String",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "3fcaa73bba8f001f654a9aecb1fa619a7aa0e703a3f5c0c828a0ac291fb61613"
+}

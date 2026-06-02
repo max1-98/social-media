@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT member_id AS \"member_id!: i64\" FROM game_team1 WHERE game_id = ? ORDER BY member_id",
+  "describe": {
+    "columns": [
+      {
+        "name": "member_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "409cef7e524ff6f0377b30949ef744ca665bae0f9913ba6358dcc91c07736245"
+}

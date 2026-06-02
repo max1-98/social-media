@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO events\n            (club_id, game_type_id, date, start_time, finish_time, number_of_courts,\n             sbmm, guests_allowed, over_18_under_18_mixed)\n           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS \"id!: i64\"",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "015a4784e65eb63b52a9dce983dfb17e1ddaede582f55bd6767401a5ddfe1e36"
+}

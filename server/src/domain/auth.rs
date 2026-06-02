@@ -9,7 +9,7 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use axum::extract::{FromRef, FromRequestParts, State};
+use axum::extract::{FromRef, FromRequestParts, Path, State};
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
 use axum::{Json, RequestPartsExt};
@@ -724,6 +724,64 @@ pub async fn me(
         biological_gender: row.biological_gender,
         email_verified: row.email_verified != 0,
         parental_consent_required: row.parental_consent_required != 0,
+    }))
+}
+
+/// Minimal public profile, shaped like Django `SimpleUserSerializer`.
+#[derive(Debug, Serialize)]
+pub struct SimpleUser {
+    pub id: i64,
+    pub username: String,
+}
+
+/// GET /api/auth/profile/:pk — any user's public profile (id + username).
+/// Mirrors `SimpleProfileView`.
+pub async fn simple_profile(
+    State(app): State<AppState>,
+    _user: AuthUser,
+    Path(pk): Path<i64>,
+) -> Result<Json<SimpleUser>, AppError> {
+    let row = sqlx::query!("SELECT id, username FROM users WHERE id = ?", pk)
+        .fetch_optional(&app.pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
+    Ok(Json(SimpleUser {
+        id: row.id,
+        username: row.username,
+    }))
+}
+
+/// Navbar user info, shaped like Django `NavbarUserInfoSerializer` (note the
+/// legacy JSON key `email_verify`, from the model field of the same name).
+#[derive(Debug, Serialize)]
+pub struct NavbarInfo {
+    pub username: String,
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub surname: Option<String>,
+    pub email_verify: bool,
+}
+
+/// GET /api/auth/navbar_info — the authenticated user's navbar info. Mirrors
+/// `NavbarUserInfoView`.
+pub async fn navbar_info(
+    State(app): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<NavbarInfo>, AppError> {
+    let row = sqlx::query!(
+        "SELECT username, email, first_name, surname, email_verified
+         FROM users WHERE id = ?",
+        user.id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
+    Ok(Json(NavbarInfo {
+        username: row.username,
+        email: row.email,
+        first_name: row.first_name,
+        surname: row.surname,
+        email_verify: row.email_verified != 0,
     }))
 }
 

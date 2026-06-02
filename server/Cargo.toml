@@ -7,7 +7,7 @@ license = "UNLICENSED"
 publish = false
 
 [dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["multipart"] }
 axum-extra = { version = "0.9", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["fs", "trace"] }
@@ -32,8 +32,11 @@ rand = "0.8"
 time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 
-# NOTE: media (R2/S3) and geocoding (Nominatim) dependencies are added in their
-# respective phases to keep the binary lean.
+# Phase 4 — media signed-URL HMAC. Tiny, no-default-feature crates used to sign
+# expiring media URLs for LocalDiskStorage (R2 SigV4 lands at deploy, Phase 7).
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

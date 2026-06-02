@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT m.id AS \"id!: i64\", m.club_id AS \"club_id!: i64\",\n                  m.user_id AS \"user_id!: i64\", m.is_admin AS \"is_admin!: i64\",\n                  c.president_id AS \"president_id!: i64\",\n                  u.is_active AS \"is_active!: i64\", u.username AS \"username!: String\"\n           FROM members m\n           JOIN clubs c ON c.id = m.club_id\n           JOIN users u ON u.id = m.user_id\n           WHERE m.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "club_id!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_id!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "is_admin!: i64",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "president_id!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "is_active!: i64",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "username!: String",
+        "ordinal": 6,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f898e58a23dd5907d959b37d241fdd3db2fddef0b006a45529df1db9d0277b03"
+}

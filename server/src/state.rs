@@ -3,17 +3,33 @@
 use sqlx::SqlitePool;
 
 use crate::config::Config;
+use crate::geocode::SharedGeocoder;
+use crate::media::SharedStorage;
 
-/// Handler-facing state: the DB pool and runtime config. Cheap to clone
-/// (`SqlitePool` is an `Arc` internally; `Config` is small).
+/// Handler-facing state: the DB pool, runtime config, and the pluggable media
+/// store + geocoder (behind traits so tests inject local/mock implementations).
+/// Cheap to clone (`SqlitePool` and the `Arc` trait objects are reference-counted;
+/// `Config` is small).
 #[derive(Clone)]
 pub struct AppState {
     pub pool: SqlitePool,
     pub config: Config,
+    pub storage: SharedStorage,
+    pub geocoder: SharedGeocoder,
 }
 
 impl AppState {
-    pub fn new(pool: SqlitePool, config: Config) -> Self {
-        Self { pool, config }
+    pub fn new(
+        pool: SqlitePool,
+        config: Config,
+        storage: SharedStorage,
+        geocoder: SharedGeocoder,
+    ) -> Self {
+        Self {
+            pool,
+            config,
+            storage,
+            geocoder,
+        }
     }
 }

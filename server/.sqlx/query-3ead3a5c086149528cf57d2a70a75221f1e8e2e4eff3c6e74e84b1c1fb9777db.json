@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT MAX(date) AS \"max?: String\" FROM events WHERE club_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "max?: String",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "3ead3a5c086149528cf57d2a70a75221f1e8e2e4eff3c6e74e84b1c1fb9777db"
+}

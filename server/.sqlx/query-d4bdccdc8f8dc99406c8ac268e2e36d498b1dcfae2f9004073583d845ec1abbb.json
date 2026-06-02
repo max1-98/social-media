@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM event_active_members WHERE event_id = ? AND member_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "d4bdccdc8f8dc99406c8ac268e2e36d498b1dcfae2f9004073583d845ec1abbb"
+}

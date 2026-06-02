@@ -18,9 +18,31 @@ Add an HTTP endpoint to `server/`. See `.claude/rules/rust.md` and
 4. Define request/response structs with `serde`; mirror the Django field names.
 5. Add a `cargo test`: assert status + JSON shape. For ported behaviour, add an
    oracle assertion against the Django output on identical fixtures.
-6. Verify: `cargo fmt --check && cargo clippy --all-targets -- -D warnings &&
+6. If you added/changed any `sqlx::query!`/`query_as!`/`query_scalar!` macro,
+   regenerate the offline cache (CI runs `SQLX_OFFLINE=true`):
+   `export DATABASE_URL="sqlite://$(pwd)/data/dev.db" && cargo sqlx prepare`,
+   then commit the new `server/.sqlx/*.json`.
+7. Verify: `cargo fmt --check && cargo clippy --all-targets -- -D warnings &&
    cargo test`.
-7. Update this skill if the pattern changed (`update-a-skill`).
+8. Update this skill if the pattern changed (`update-a-skill`).
+
+## Patterns
+
+- Side-effecting deps (media `Storage`, `Geocoder`) live on `AppState` behind a
+  trait. Inject `Arc<dyn Trait>`; tests pass `LocalDiskStorage` (tempdir) +
+  `MockGeocoder` — never the network. See `src/media.rs`, `src/geocode.rs`.
+- File uploads use Axum `Multipart` (the `multipart` feature). Validate
+  content-type + size (`media::validate_image`) before persisting.
+- Routes that have no Django app-prefix are `.merge`d into `/api` (not nested);
+  one path may serve two verbs via `get(..).delete(..)`. See the clubs block.
+  Static and param segments at the same position coexist (e.g. `/event/start`
+  beside `/event/:pk1`) — matchit prefers the static route.
+- Legacy JSONField maps (keyed by member id as string) live as JSON TEXT columns.
+  Pattern: parse to a `BTreeMap` (`parse_int_map`), transform with a **pure**
+  helper (so `domain::games` can reuse it), persist via a fixed-column enum, never
+  interpolated SQL. See `domain::events` stat helpers.
+- Deprecated legacy stubs that returned 501 map to `AppError::NotImplemented`
+  (the events `active/` route mirrors this).
 
 ## Done when
 

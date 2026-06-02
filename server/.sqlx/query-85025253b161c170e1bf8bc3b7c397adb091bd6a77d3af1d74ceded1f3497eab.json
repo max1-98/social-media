@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO user_elos (user_id, elo_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "85025253b161c170e1bf8bc3b7c397adb091bd6a77d3af1d74ceded1f3497eab"
+}

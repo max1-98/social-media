@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT is_admin AS \"is_admin!: i64\" FROM members WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "is_admin!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5f6e6d3e2310c87d583accefdcec373214b8118b2a668bba4b406a8dad40460e"
+}

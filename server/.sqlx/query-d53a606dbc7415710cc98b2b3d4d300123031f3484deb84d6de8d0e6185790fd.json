@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT is_member FROM members WHERE user_id = ? AND club_id = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "is_member",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d53a606dbc7415710cc98b2b3d4d300123031f3484deb84d6de8d0e6185790fd"
+}

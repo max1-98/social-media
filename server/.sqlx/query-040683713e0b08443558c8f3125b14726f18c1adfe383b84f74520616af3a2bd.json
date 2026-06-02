@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT c.id AS \"id!: i64\", c.name, c.logo, s.name AS \"sport_name?: String\"\n           FROM members m\n           JOIN clubs c ON c.id = m.club_id\n           LEFT JOIN sports s ON s.id = c.sport_type_id\n           WHERE m.user_id = ?\n           ORDER BY m.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "logo",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "sport_name?: String",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "040683713e0b08443558c8f3125b14726f18c1adfe383b84f74520616af3a2bd"
+}

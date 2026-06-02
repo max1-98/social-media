@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT club_id AS \"club_id!: i64\", user_id AS \"user_id!: i64\"\n           FROM member_requests WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_id!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "aaabe5655b86340615e5c90b5266223de0602e9397d4dc789dd838b39f3fb494"
+}

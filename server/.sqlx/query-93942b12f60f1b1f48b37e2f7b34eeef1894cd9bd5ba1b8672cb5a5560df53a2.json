@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE events SET even_teams = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "93942b12f60f1b1f48b37e2f7b34eeef1894cd9bd5ba1b8672cb5a5560df53a2"
+}

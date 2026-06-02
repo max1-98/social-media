@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO event_in_game_members (event_id, member_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "fa038ae6b7a4c073704bb8b6a9b2bc868a06830f5fd3d3b00099ba24c14e6a81"
+}

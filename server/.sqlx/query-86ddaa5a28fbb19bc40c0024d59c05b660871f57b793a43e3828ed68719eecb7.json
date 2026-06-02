@@ -1,0 +1,80 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT e.id AS \"id!: i64\", e.date, e.start_time, e.finish_time,\n                  e.number_of_courts AS \"number_of_courts!: i64\",\n                  e.sbmm AS \"sbmm!: i64\", e.guests_allowed AS \"guests_allowed!: i64\",\n                  e.over_18_under_18_mixed, e.event_active AS \"event_active!: i64\",\n                  e.event_complete AS \"event_complete!: i64\",\n                  gt.name AS \"game_type_name?: String\"\n           FROM events e\n           LEFT JOIN game_types gt ON gt.id = e.game_type_id\n           WHERE e.club_id = ? ORDER BY e.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "start_time",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "finish_time",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "number_of_courts!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "sbmm!: i64",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "guests_allowed!: i64",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "over_18_under_18_mixed",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "event_active!: i64",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "event_complete!: i64",
+        "ordinal": 9,
+        "type_info": "Integer"
+      },
+      {
+        "name": "game_type_name?: String",
+        "ordinal": 10,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "86ddaa5a28fbb19bc40c0024d59c05b660871f57b793a43e3828ed68719eecb7"
+}

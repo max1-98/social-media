@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT m.id AS \"id!: i64\", m.is_admin AS \"is_admin!: i64\",\n                  u.first_name, u.surname, u.username AS \"username!: String\"\n           FROM members m JOIN users u ON u.id = m.user_id\n           WHERE m.club_id = ? ORDER BY m.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "is_admin!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "first_name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "surname",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "username!: String",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3192b76cf21569636fb0e93f68d9e175e9f2fc6a2013bd2723b03e8388f0e246"
+}
