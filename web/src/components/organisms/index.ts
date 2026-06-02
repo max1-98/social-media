@@ -1,5 +1,7 @@
 // Barrel for the organisms layer. May re-export modules composed from atoms +
 // molecules. Cross-layer imports MUST come through this file.
+export { ConsentBanner } from "./ConsentBanner";
+export type { ConsentBannerProps } from "./ConsentBanner";
 export { ErrorBoundary } from "./ErrorBoundary";
 export type { ErrorBoundaryProps } from "./ErrorBoundary";
 export { MapView } from "./MapView";
