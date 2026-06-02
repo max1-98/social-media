@@ -13,11 +13,8 @@ web/dist
 # Local runtime data (SQLite db + uploaded media).
 server/data
 
-# Legacy stack — not part of the rebuild image.
-backend
-frontend
-compose
-venv
+# Host-only deploy config (not part of the runtime image).
+deploy
 
 # Misc.
 **/.DS_Store

@@ -1,0 +1,41 @@
+# systemd unit for the social-media Axum binary, supervised by Litestream.
+#
+# Litestream runs the server as a child process (`replicate -exec`) so the
+# SQLite db is continuously streamed to EU R2 and restored on boot if missing.
+# TLS is terminated by Caddy (see Caddyfile); this process stays HTTP on
+# localhost:8080. Install to /etc/systemd/system/social-media.service.
+
+[Unit]
+Description=social-media (Axum binary + Litestream replication)
+Documentation=https://github.com/max1-98/social-media
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Dedicated unprivileged service user; create with: useradd --system social
+User=social
+Group=social
+WorkingDirectory=/var/lib/social-media
+EnvironmentFile=/etc/social-media/social-media.env
+# Litestream supervises the binary: restore-on-boot + continuous replication.
+ExecStart=/usr/local/bin/litestream replicate -exec /usr/local/bin/server
+Restart=on-failure
+RestartSec=2
+
+# --- Hardening ------------------------------------------------------------
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Only the data dir is writable (SQLite db + media live here).
+ReadWritePaths=/var/lib/social-media
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target

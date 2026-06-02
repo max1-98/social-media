@@ -10,4 +10,5 @@ skill** (see `update-a-skill`). Each `SKILL.md` has `name` + `description`.
 - @.claude/skills/port-django-logic/SKILL.md — port pure logic with oracle tests.
 - @.claude/skills/run-standards/SKILL.md — run the full local standards bar.
 - @.claude/skills/run-with-docker/SKILL.md — build + run the rebuild locally with Docker.
+- @.claude/skills/deploy/SKILL.md — deploy to an EU VM (systemd, Litestream→R2, Caddy) + restore drill.
 - @.claude/skills/split-markdown/SKILL.md — split a >150-line doc into linked files.

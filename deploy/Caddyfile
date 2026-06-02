@@ -1,0 +1,28 @@
+# Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+#
+# Install to /etc/caddy/Caddyfile and run Caddy as its own systemd service
+# (`apt install caddy` ships caddy.service). Caddy terminates TLS and proxies
+# to the Axum binary on localhost:8080, so the binary stays lean (no rustls).
+# Replace example.com with your domain; certs auto-renew.
+
+example.com {
+	encode zstd gzip
+	reverse_proxy localhost:8080
+
+	# Security headers (HSTS, sniffing, framing, referrer).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Caddy sets Server by default; drop it.
+		-Server
+	}
+
+	# Contact for Let's Encrypt expiry notices.
+	tls admin@example.com
+
+	log {
+		output file /var/log/caddy/social-media.log
+	}
+}

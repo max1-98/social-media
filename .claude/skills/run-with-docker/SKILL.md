@@ -41,8 +41,8 @@ DB/media paths under `/app/data`, a dev `MEDIA_SECRET`. Add env vars (e.g.
 ## Gotchas
 
 - Don't ignore `server/.sqlx` in `.dockerignore` — the offline build needs it.
-- The legacy `docker-compose.yml` (Django stack) is separate and untouched; use
-  `compose.yaml` for the rebuild.
+- `compose.yaml` is for local dev; production deploy (EU VM, systemd,
+  Litestream→R2, Caddy) lives in `deploy/` — see the `deploy` skill.
 - After changing `Cargo.toml`/`package.json`, rebuild with `--build`.
 
 ## Done when

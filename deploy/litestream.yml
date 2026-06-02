@@ -1,0 +1,27 @@
+# Litestream replication config -> EU Cloudflare R2.
+#
+# Install to /etc/litestream.yml. The systemd unit runs:
+#   litestream replicate -exec /usr/local/bin/server
+# which reads this file, streams the SQLite db to R2, and (because the unit's
+# ExecStart wraps the binary) restores from R2 automatically on boot if the
+# local db file is missing.
+#
+# Credentials come from the environment (set in social-media.env):
+#   LITESTREAM_ACCESS_KEY_ID, LITESTREAM_SECRET_ACCESS_KEY
+# Use an R2 API token scoped to the single backup bucket.
+
+dbs:
+  - path: /var/lib/social-media/app.db
+    replicas:
+      - type: s3
+        bucket: social-media-backups
+        # R2 EU endpoint. Replace <accountid> with your Cloudflare account id.
+        endpoint: https://<accountid>.eu.r2.cloudflarestorage.com
+        region: auto
+        path: app.db
+        # Keep ~30 days of restore points; tune to retention policy.
+        retention: 720h
+        retention-check-interval: 12h
+        # Snapshot daily; WAL frames stream continuously between snapshots.
+        snapshot-interval: 24h
+        sync-interval: 1s

@@ -95,5 +95,10 @@ web/src/
 - EU VM + systemd unit for the binary; Litestream sidecar → EU R2 bucket; DNS/TLS
   (Caddy/rustls). Sign processor DPAs; add RoPA + sub-processor list + policies to
   `docs/`. README updated.
+- Host config lives in [`deploy/`](../../deploy/README.md); steps in the
+  [deployment runbook](05-deploy.md). Processor paperwork:
+  [RoPA](../legal/ropa.md), [sub-processors](../legal/sub-processors.md),
+  [DPA register](../legal/dpa-register.md). Legacy `backend/`, `frontend/`,
+  `compose/`, the old `docker-compose*.yml`, and the committed `venv/` are removed.
 - **DoD:** live on EU host; backup restore tested; no Redis/Celery/RabbitMQ
   anywhere; binary RSS < ~50 MB under load.

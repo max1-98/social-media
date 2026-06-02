@@ -7,10 +7,10 @@ stack. Full plan: `docs/REBUILD_PLAN.md`.
 
 - `server/` — Rust + Axum single binary (JSON API + static frontend + media proxy).
 - `web/` — React + Vite + TypeScript, organised by **Atomic Design**.
+- `deploy/` — production host config (systemd, Litestream→R2, Caddy); see the
+  `deploy` skill and `docs/rebuild/05-deploy.md`.
 - `scripts/lint/` — custom repo linter (md<150, index-sync, frontmatter, barrels).
 - `.claude/` — config, rules, agents, skills, hooks (each dir has an `INDEX.md`).
-- `backend/`, `frontend/` — **legacy reference only.** Never lint or modify them;
-  they are removed at cutover (Phase 7).
 
 ## Run the bar
 

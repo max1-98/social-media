@@ -5,12 +5,10 @@ on:
     branches: ["**"]
   pull_request:
 
-# CI for the lightweight rebuild. Gates the new `server/` (Rust) and `web/`
+# CI for the lightweight rebuild. Gates the `server/` (Rust) and `web/`
 # (React) trees plus a repo-wide `standards` job (Markdown line limit, .claude
-# index-sync, agent/skill frontmatter, atomic-design barrels). The legacy
-# `backend/` + `frontend/` reference code is intentionally not built or linted
-# here; it is removed at cutover (Phase 7). Branch protection should require the
-# `server`, `web`, and `standards` checks to pass.
+# index-sync, agent/skill frontmatter, atomic-design barrels). Branch protection
+# should require the `server`, `web`, and `standards` checks to pass.
 
 concurrency:
   group: ci-${{ github.ref }}
