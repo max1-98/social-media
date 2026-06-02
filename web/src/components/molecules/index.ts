@@ -4,3 +4,7 @@ export { AddressForm } from "./AddressForm";
 export type { AddressFormProps, AddressResult } from "./AddressForm";
 export { AdSlot } from "./AdSlot";
 export type { AdSlotProps } from "./AdSlot";
+export { GameCard } from "./GameCard";
+export type { GameCardProps } from "./GameCard";
+export { ScoreInput } from "./ScoreInput";
+export type { ScoreInputProps } from "./ScoreInput";
