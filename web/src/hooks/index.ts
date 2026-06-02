@@ -1,2 +1,2 @@
-// Barrel for shared hooks. Empty until the first hook lands (Phase 6).
-export {};
+// Barrel for shared hooks. Cross-layer imports come through here.
+export { useAuth } from "./useAuth";

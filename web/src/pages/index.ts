@@ -1,2 +1,3 @@
-// Barrel for route-level screens. Empty until the first page lands (Phase 6).
-export {};
+// Barrel for route-level screens. Cross-layer imports come through this file.
+export { HomePage } from "./HomePage";
+export { LoginPage } from "./LoginPage";

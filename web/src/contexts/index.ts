@@ -1,2 +1,3 @@
-// Barrel for React contexts. Empty until the first context lands (Phase 6).
-export {};
+// Barrel for React contexts. Cross-layer imports come through here.
+export { AuthContext, AuthProvider } from "./AuthContext";
+export type { AuthContextValue, AuthProviderProps } from "./AuthContext";
