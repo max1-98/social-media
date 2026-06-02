@@ -12,6 +12,7 @@ use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::extract::{FromRef, FromRequestParts, Path, State};
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
+use axum::response::IntoResponse;
 use axum::{Json, RequestPartsExt};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use rand::distributions::Alphanumeric;
@@ -189,6 +190,62 @@ pub struct ResetRequest {
 pub struct ConsentRequest {
     pub consent_type: String,
     pub choice: String,
+}
+
+/// The full account snapshot returned by `GET /account/export` (GDPR Art. 20
+/// portability). Scope: profile, consent log, club memberships, authored posts.
+#[derive(Serialize)]
+pub struct AccountExport {
+    pub user: ExportUser,
+    pub consents: Vec<ConsentEntry>,
+    pub memberships: Vec<MembershipEntry>,
+    pub posts: Vec<PostEntry>,
+}
+
+#[derive(Serialize)]
+pub struct ExportUser {
+    pub id: i64,
+    pub username: String,
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub surname: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub biological_gender: String,
+    pub email_verified: bool,
+    pub date_joined: String,
+    pub tier: String,
+}
+
+#[derive(Serialize)]
+pub struct ConsentEntry {
+    pub consent_type: String,
+    pub choice: String,
+    pub ip_address: Option<String>,
+    pub user_agent: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Serialize)]
+pub struct MembershipEntry {
+    pub club_id: i64,
+    pub club_name: String,
+    pub is_admin: bool,
+    pub is_member: bool,
+    pub date_joined: String,
+}
+
+#[derive(Serialize)]
+pub struct PostEntry {
+    pub id: i64,
+    pub content: String,
+    pub club_id: Option<i64>,
+    pub created_at: String,
+}
+
+/// `DELETE /account` body — re-confirms the caller's password before erasure.
+#[derive(Deserialize)]
+pub struct DeleteAccountRequest {
+    pub password: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -783,6 +840,165 @@ pub async fn navbar_info(
         surname: row.surname,
         email_verify: row.email_verified != 0,
     }))
+}
+
+// ---------------------------------------------------------------------------
+// GDPR data-subject rights: export (portability) + erasure (anonymization)
+// ---------------------------------------------------------------------------
+
+/// GET /account/export — the authenticated user's data as a JSON download
+/// (GDPR Art. 20). Scope: profile, consent log, club memberships, authored posts.
+pub async fn account_export(
+    State(app): State<AppState>,
+    user: AuthUser,
+) -> Result<impl IntoResponse, AppError> {
+    let u = sqlx::query!(
+        "SELECT id, username, email, first_name, surname, date_of_birth,
+                biological_gender, email_verified, date_joined, tier
+         FROM users WHERE id = ?",
+        user.id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
+
+    let consents = sqlx::query!(
+        "SELECT consent_type, choice, ip_address, user_agent, created_at
+         FROM consent_log WHERE user_id = ? ORDER BY id",
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| ConsentEntry {
+        consent_type: r.consent_type,
+        choice: r.choice,
+        ip_address: r.ip_address,
+        user_agent: r.user_agent,
+        created_at: r.created_at,
+    })
+    .collect();
+
+    let memberships = sqlx::query!(
+        "SELECT m.club_id AS club_id, c.name AS club_name, m.is_admin AS is_admin,
+                m.is_member AS is_member, m.date_joined AS date_joined
+         FROM members m JOIN clubs c ON c.id = m.club_id
+         WHERE m.user_id = ? ORDER BY m.id",
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| MembershipEntry {
+        club_id: r.club_id,
+        club_name: r.club_name,
+        is_admin: r.is_admin != 0,
+        is_member: r.is_member != 0,
+        date_joined: r.date_joined,
+    })
+    .collect();
+
+    let posts = sqlx::query!(
+        "SELECT id AS \"id!\", content, club_id, created_at FROM posts
+         WHERE author_id = ? ORDER BY id",
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| PostEntry {
+        id: r.id,
+        content: r.content,
+        club_id: r.club_id,
+        created_at: r.created_at,
+    })
+    .collect();
+
+    let export = AccountExport {
+        user: ExportUser {
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            first_name: u.first_name,
+            surname: u.surname,
+            date_of_birth: u.date_of_birth,
+            biological_gender: u.biological_gender,
+            email_verified: u.email_verified != 0,
+            date_joined: u.date_joined,
+            tier: u.tier,
+        },
+        consents,
+        memberships,
+        posts,
+    };
+
+    // Offer it as a file download; the client can still read the JSON inline.
+    let headers = [(
+        axum::http::header::CONTENT_DISPOSITION,
+        "attachment; filename=\"account-export.json\"",
+    )];
+    Ok((headers, Json(export)))
+}
+
+/// DELETE /account — erasure-by-anonymization (GDPR Art. 17). Requires the
+/// caller's password. PII is nulled and the username pseudonymized, but the row
+/// is *kept* (tombstoned) so shared games/ELO/event history survives for other
+/// members. Purely-personal rows are hard-deleted and the session is cleared.
+pub async fn account_delete(
+    State(app): State<AppState>,
+    user: AuthUser,
+    jar: CookieJar,
+    Json(req): Json<DeleteAccountRequest>,
+) -> Result<(CookieJar, Json<Value>), AppError> {
+    let row = sqlx::query!("SELECT password_hash FROM users WHERE id = ?", user.id)
+        .fetch_optional(&app.pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
+    if !verify_password(&row.password_hash, &req.password) {
+        return Err(AppError::Unauthorized("Password is incorrect.".into()));
+    }
+
+    let mut tx = app.pool.begin().await?;
+
+    // Anonymize the kept row: null PII, pseudonymize the username, tombstone, and
+    // set an unusable password hash so the account can never be logged into.
+    sqlx::query!(
+        "UPDATE users
+         SET email = NULL, first_name = NULL, surname = NULL, date_of_birth = NULL,
+             last_login = NULL, username = 'deleted_user_' || id, password_hash = '!',
+             is_active = 0, is_tombstoned = 1,
+             parental_consent_required = 0, parental_consent_granted = 0
+         WHERE id = ?",
+        user.id
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    // Hard-delete purely-personal rows. The user row is kept, so FK CASCADE never
+    // fires — these must be removed explicitly. Shared history (members, elo,
+    // games, events, clubs) is intentionally left intact.
+    sqlx::query!("DELETE FROM posts WHERE author_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM member_requests WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM email_verify WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM password_reset WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM tokens WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
+
+    let jar = jar
+        .add(clearing_cookie(ACCESS_COOKIE))
+        .add(clearing_cookie(REFRESH_COOKIE));
+    Ok((jar, Json(json!({ "detail": "Account deleted." }))))
 }
 
 #[cfg(test)]
