@@ -173,6 +173,25 @@ export interface CompleteGame {
   start_time: string;
 }
 
+/** One leaderboard entry in an event's stats (name + the relevant metric). */
+export interface StatPlayer {
+  name: string;
+  wins?: number;
+  best_winstreak?: number;
+  games_played?: number;
+  win_rate?: number;
+  elo_gain?: number;
+}
+
+/** GET /api/event/:pk/stats — the five per-event leaderboards. */
+export interface EventStatsResult {
+  best_winstreak_players: StatPlayer[];
+  highest_win_rate_players: StatPlayer[];
+  most_wins_players: StatPlayer[];
+  most_games_played_players: StatPlayer[];
+  highest_elo_gain_players: StatPlayer[];
+}
+
 export interface Elo {
   game_type: string;
   elo: number;

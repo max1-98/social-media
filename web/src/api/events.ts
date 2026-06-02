@@ -3,7 +3,7 @@
  * (list/detail, create, member activation, lifecycle, settings, stats).
  */
 
-import type { Event, EventDetail } from "../types";
+import type { Event, EventDetail, EventStatsResult } from "../types";
 
 import type { DetailResponse } from "./auth";
 import { getJson, patchJson, postJson } from "./http";
@@ -26,8 +26,12 @@ export interface EventSettingsPayload {
   over_18_under_18_mixed?: string;
 }
 
-/** Per-member attendance counts keyed by username, returned by `/stats`. */
-export type EventStats = Record<string, number>;
+/**
+ * The five leaderboards returned by `/stats` (best winstreak, highest win rate,
+ * most wins, most games played, highest ELO gain). Shape per the
+ * `EventStatsSerializer` parity test in `server/src/domain/events.rs`.
+ */
+export type EventStats = EventStatsResult;
 
 /** GET /api/events — the caller's events. */
 export async function myEvents(): Promise<Event[]> {
