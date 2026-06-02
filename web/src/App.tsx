@@ -6,7 +6,28 @@ import { Navbar } from "./components/organisms";
 import { PageLayout } from "./components/templates";
 import { AuthProvider, ConsentProvider } from "./contexts";
 import { useAuth } from "./hooks";
-import { ConsentBannerContainer, CookiePolicy, HomePage, LoginPage, PrivacyPolicy } from "./pages";
+import {
+  AllClubsPage,
+  ClubDetailPage,
+  ClubEventsPage,
+  ConsentBannerContainer,
+  CookiePolicy,
+  CreateClubPage,
+  CreateEventPage,
+  DiscoverClubsPage,
+  EditClubPage,
+  EventViewPage,
+  GameTypeElosPage,
+  LoginPage,
+  MyClubsPage,
+  MyEventsPage,
+  PastGamesPage,
+  PrivacyPolicy,
+  ProfilePage,
+  RegisterPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+} from "./pages";
 
 /**
  * Route guard: renders children only for an authenticated user; otherwise
@@ -49,6 +70,9 @@ function AuthedLayout(): ReactElement {
  * Application root: wires the consent + auth providers and client-side routing.
  * The consent banner renders globally (above every route) so the GDPR gate
  * applies before login too; ads never load until consent is accepted.
+ *
+ * Public routes (auth + policies) render bare; every other screen renders under
+ * `AuthedLayout` (guard + navbar shell).
  */
 export default function App(): ReactElement {
   return (
@@ -58,12 +82,34 @@ export default function App(): ReactElement {
           {/* Global, route-independent consent gate. */}
           <ConsentBannerContainer />
           <Routes>
+            {/* Public */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
+
+            {/* Authenticated (guard + navbar shell) */}
             <Route element={<AuthedLayout />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<AllClubsPage />} />
+              <Route path="/clubs" element={<DiscoverClubsPage />} />
+              <Route path="/my-clubs" element={<MyClubsPage />} />
+              <Route path="/createclub" element={<CreateClubPage />} />
+              <Route path="/club/edit/:clubId" element={<EditClubPage />} />
+              <Route path="/club/:clubId" element={<ClubDetailPage />} />
+              <Route path="/club/:clubId/events" element={<ClubEventsPage />} />
+              <Route path="/club/:clubId/event/create" element={<CreateEventPage />} />
+              <Route path="/club/:clubId/event/:eventId" element={<EventViewPage />} />
+              <Route path="/events" element={<MyEventsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/games" element={<PastGamesPage />} />
+              <Route path="/elos" element={<GameTypeElosPage />} />
+              <Route path="/elos/:username" element={<GameTypeElosPage />} />
             </Route>
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

@@ -50,12 +50,12 @@ export interface NavbarProps {
 /** Default sidebar destinations, mirroring the legacy navbar items. */
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { label: "All clubs", to: "/", icon: GroupsIcon },
-  { label: "My clubs", to: "/club/my-clubs", icon: GroupsIcon },
+  { label: "My clubs", to: "/my-clubs", icon: GroupsIcon },
   { label: "Discover clubs", to: "/clubs", icon: TravelExploreIcon },
   { label: "My events", to: "/events", icon: CasinoIcon },
-  { label: "Create club", to: "/club/create", icon: AddBoxIcon },
-  { label: "Past games", to: "/account/past-games", icon: CasinoIcon },
-  { label: "Profile", to: "/account/profile", icon: Person2Icon },
+  { label: "Create club", to: "/createclub", icon: AddBoxIcon },
+  { label: "Past games", to: "/games", icon: CasinoIcon },
+  { label: "Profile", to: "/profile", icon: Person2Icon },
 ];
 
 /**
