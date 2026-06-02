@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -5,7 +7,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { eventsApi, ApiRequestError } from "../api";
 import { Alert, Button, Spinner, Text } from "../components/atoms";
 import { EventList } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import type { Event } from "../types";
 
 /**
@@ -39,18 +40,18 @@ export function ClubEventsPage(): ReactElement {
   }, [clubId]);
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Club events
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Club events</Text>
       {clubId !== undefined ? (
-        <Button
-          onClick={() => {
-            void navigate(`/club/${clubId}/event/create`);
-          }}
-        >
-          Create event
-        </Button>
+        <Box>
+          <Button
+            onClick={() => {
+              void navigate(`/club/${clubId}/event/create`);
+            }}
+          >
+            Create event
+          </Button>
+        </Box>
       ) : null}
       {error !== null ? <Alert severity="error">{error}</Alert> : null}
       {events === null && error === null ? (
@@ -63,6 +64,6 @@ export function ClubEventsPage(): ReactElement {
           }}
         />
       ) : null}
-    </PageLayout>
+    </Stack>
   );
 }

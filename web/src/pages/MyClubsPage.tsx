@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiRequestError, clubsApi } from "../api";
 import { Alert, Avatar, Spinner, Text } from "../components/atoms";
-import { PageLayout } from "../components/templates";
 import type { MyClub } from "../types";
 
 /**
@@ -42,10 +41,8 @@ export function MyClubsPage(): ReactElement {
   }, []);
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        My clubs
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">My clubs</Text>
       {error !== null && <Alert severity="error">{error}</Alert>}
       {loading ? (
         <Spinner />
@@ -79,6 +76,6 @@ export function MyClubsPage(): ReactElement {
           ))}
         </Grid>
       )}
-    </PageLayout>
+    </Stack>
   );
 }

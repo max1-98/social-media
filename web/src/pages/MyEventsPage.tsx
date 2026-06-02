@@ -1,3 +1,4 @@
+import Stack from "@mui/material/Stack";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
@@ -5,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { eventsApi, ApiRequestError } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
 import { EventList } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import type { Event } from "../types";
 
 /**
@@ -37,10 +37,8 @@ export function MyEventsPage(): ReactElement {
   }, []);
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        My events
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">My events</Text>
       {error !== null ? <Alert severity="error">{error}</Alert> : null}
       {events === null && error === null ? (
         <Spinner />
@@ -52,6 +50,6 @@ export function MyEventsPage(): ReactElement {
           }}
         />
       ) : null}
-    </PageLayout>
+    </Stack>
   );
 }

@@ -8,7 +8,6 @@ import { useParams } from "react-router-dom";
 
 import { ApiRequestError, eloApi } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
-import { PageLayout } from "../components/templates";
 import { useAuth } from "../hooks";
 import type { Elo } from "../types";
 
@@ -54,10 +53,8 @@ export function GameTypeElosPage(): ReactElement {
   }, [username]);
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        ELO ratings
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">ELO ratings</Text>
       {loading ? (
         <Spinner />
       ) : error !== null ? (
@@ -94,6 +91,6 @@ export function GameTypeElosPage(): ReactElement {
           ))}
         </Grid>
       )}
-    </PageLayout>
+    </Stack>
   );
 }

@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiRequestError, clubsApi } from "../api";
 import { Alert, Button, Input, Select, Text } from "../components/atoms";
-import { PageLayout } from "../components/templates";
 import type { Sport } from "../types";
 
 /**
@@ -58,10 +57,8 @@ export function CreateClubPage(): ReactElement {
   }
 
   return (
-    <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Create a club
-      </Text>
+    <Stack spacing={3}>
+      <Text variant="h1">Create a club</Text>
       <form
         onSubmit={(event) => {
           void handleSubmit(event);
@@ -109,6 +106,6 @@ export function CreateClubPage(): ReactElement {
           </Button>
         </Stack>
       </form>
-    </PageLayout>
+    </Stack>
   );
 }

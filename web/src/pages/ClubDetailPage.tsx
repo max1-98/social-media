@@ -11,7 +11,6 @@ import { Alert, Avatar, Button, Spinner, Text } from "../components/atoms";
 import { AddressForm, SocialLink } from "../components/molecules";
 import type { AddressResult } from "../components/molecules";
 import { ClubRequests, MapView, MemberTable } from "../components/organisms";
-import { PageLayout } from "../components/templates";
 import { useAuth } from "../hooks";
 import type { Club, Member, MemberRequest, Social } from "../types";
 
@@ -178,23 +177,15 @@ export function ClubDetailPage(): ReactElement {
   );
 
   if (clubId === undefined) {
-    return (
-      <PageLayout>
-        <Alert severity="error">No club specified.</Alert>
-      </PageLayout>
-    );
+    return <Alert severity="error">No club specified.</Alert>;
   }
 
   if (club === null) {
-    return (
-      <PageLayout>
-        {error !== null ? <Alert severity="error">{error}</Alert> : <Spinner />}
-      </PageLayout>
-    );
+    return error !== null ? <Alert severity="error">{error}</Alert> : <Spinner />;
   }
 
   return (
-    <PageLayout>
+    <Stack spacing={3}>
       {error !== null && <Alert severity="error">{error}</Alert>}
       <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
         <Avatar
@@ -211,17 +202,17 @@ export function ClubDetailPage(): ReactElement {
           </Text>
         </div>
       </Stack>
-      <Text sx={{ mt: 2 }}>{club.info}</Text>
+      <Text>{club.info}</Text>
 
       {socials.length > 0 && (
-        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+        <Stack direction="row" spacing={2}>
           {socials.map((social) => (
             <SocialLink key={social.platform} social={social} />
           ))}
         </Stack>
       )}
 
-      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+      <Stack direction="row" spacing={1}>
         {user !== null && club.membership_status === MEMBERSHIP_NONE && (
           <Button onClick={handleJoin}>Request to join</Button>
         )}
@@ -243,7 +234,7 @@ export function ClubDetailPage(): ReactElement {
       </Stack>
 
       {club.coordinates !== null && (
-        <Box sx={{ height: 280, width: "100%", mt: 3 }}>
+        <Box sx={{ height: 280, width: "100%" }}>
           <MapView
             center={club.coordinates}
             zoom={14}
@@ -254,8 +245,8 @@ export function ClubDetailPage(): ReactElement {
       )}
 
       {club.is_club_admin && (
-        <>
-          <Divider sx={{ my: 3 }} />
+        <Box>
+          <Divider sx={{ mb: 3 }} />
           <Text variant="h2" gutterBottom>
             Members
           </Text>
@@ -288,8 +279,8 @@ export function ClubDetailPage(): ReactElement {
             Address
           </Text>
           <AddressForm onSubmit={handleAddress} />
-        </>
+        </Box>
       )}
-    </PageLayout>
+    </Stack>
   );
 }
