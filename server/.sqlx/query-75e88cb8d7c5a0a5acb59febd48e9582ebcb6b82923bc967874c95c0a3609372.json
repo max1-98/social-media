@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, username, email, first_name, surname, date_of_birth,\n                biological_gender, email_verified, parental_consent_required\n         FROM users WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "email",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "first_name",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "surname",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "date_of_birth",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "biological_gender",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "email_verified",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "parental_consent_required",
+        "ordinal": 8,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "75e88cb8d7c5a0a5acb59febd48e9582ebcb6b82923bc967874c95c0a3609372"
+}

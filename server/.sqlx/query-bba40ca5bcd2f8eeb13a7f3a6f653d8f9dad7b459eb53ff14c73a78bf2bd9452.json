@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE tokens SET access_token = ?, access_expires_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "bba40ca5bcd2f8eeb13a7f3a6f653d8f9dad7b459eb53ff14c73a78bf2bd9452"
+}

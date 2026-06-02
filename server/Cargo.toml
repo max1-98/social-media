@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 axum = "0.7"
+axum-extra = { version = "0.9", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["fs", "trace"] }
 serde = { version = "1", features = ["derive"] }
@@ -15,9 +16,24 @@ serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-# NOTE: persistence (sqlx + SQLite), auth (argon2 + jwt), media (R2/S3),
-# email (Resend), and geocoding (Nominatim) dependencies are added in their
-# respective phases (3+) to keep the Phase 1 scaffold build fast and green.
+# Phase 3 — persistence + identity layer. SQLite via sqlx (compile-time checked
+# queries; an `.sqlx` offline cache keeps CI buildable without a live DB), argon2
+# password hashing, and an in-house OAuth2-style DB-backed token model. Email goes
+# out over HTTPS to Resend via reqwest (rustls, no native TLS).
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "sqlite",
+    "macros",
+    "migrate",
+    "time",
+] }
+argon2 = "0.5"
+rand = "0.8"
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+# NOTE: media (R2/S3) and geocoding (Nominatim) dependencies are added in their
+# respective phases to keep the binary lean.
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

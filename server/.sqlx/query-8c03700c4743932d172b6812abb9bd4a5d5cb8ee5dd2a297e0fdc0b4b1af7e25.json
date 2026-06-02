@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO email_verify (user_id, token, creation_time) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "8c03700c4743932d172b6812abb9bd4a5d5cb8ee5dd2a297e0fdc0b4b1af7e25"
+}
