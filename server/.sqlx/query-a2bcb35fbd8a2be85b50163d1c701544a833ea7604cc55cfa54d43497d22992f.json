@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT (SELECT COUNT(*) FROM event_played_one_match p WHERE p.event_id = e.id)\n                   AS \"count!: i64\"\n        FROM events e\n        WHERE e.club_id = ? AND e.event_complete = 1 AND e.date >= ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "count!: i64",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a2bcb35fbd8a2be85b50163d1c701544a833ea7604cc55cfa54d43497d22992f"
+}

@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT c.id AS \"id!: i64\", c.club_username, c.name, c.info, c.logo,\n                      c.coordinates, c.is_active AS \"is_active!: i64\",\n                      s.name AS \"sport_name?: String\"\n               FROM clubs c LEFT JOIN sports s ON s.id = c.sport_type_id\n               ORDER BY c.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "club_username",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "info",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "logo",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "coordinates",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_active!: i64",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "sport_name?: String",
+        "ordinal": 7,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "eef5b7dc0d901f91d19d07573e17a6a5688c5c1f189e081ad78127fc8cd6a07e"
+}

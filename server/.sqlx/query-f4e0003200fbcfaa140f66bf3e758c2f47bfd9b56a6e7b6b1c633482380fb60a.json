@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE clubs SET coordinates = ?, address = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "f4e0003200fbcfaa140f66bf3e758c2f47bfd9b56a6e7b6b1c633482380fb60a"
+}

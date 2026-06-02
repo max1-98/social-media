@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT socials FROM clubs WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "socials",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b4ba3195e02d7a8ae66101f3eb5c72a0c1ae54ff1ce5a9b53778e2a4f1e8cf91"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO club_bots (club_id, user_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "cad8b14d3bcb74b22f67f7b4e0c8e2613579cc41ede4361c2e3d1531856620a3"
+}

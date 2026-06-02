@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT 1 AS \"x!: i64\" FROM users WHERE username = ?\n         UNION ALL SELECT 1 FROM clubs WHERE club_username = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "x!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "eef4050ce46f68b6c0cb0f8950313ceafa4ac13749f82bb39c7687d5f1c1dc31"
+}

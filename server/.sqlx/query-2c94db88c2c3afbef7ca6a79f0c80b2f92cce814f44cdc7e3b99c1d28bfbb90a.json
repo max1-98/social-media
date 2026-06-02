@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT club_username FROM clubs WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_username",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2c94db88c2c3afbef7ca6a79f0c80b2f92cce814f44cdc7e3b99c1d28bfbb90a"
+}

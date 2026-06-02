@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT m.id AS \"id!: i64\", u.first_name, u.surname,\n                  COUNT(*) AS \"attendance_count!: i64\"\n           FROM event_played_one_match p\n           JOIN events e ON e.id = p.event_id\n           JOIN members m ON m.id = p.member_id\n           JOIN users u ON u.id = m.user_id\n           WHERE e.club_id = ? AND e.date >= ? AND e.date <= ?\n           GROUP BY m.id\n           ORDER BY u.surname",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "first_name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "surname",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "attendance_count!: i64",
+        "ordinal": 3,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "dfb597203f56afa0b24cf8189b45d75ca4ac9cd6ee159bf1924af6b6c051d30f"
+}

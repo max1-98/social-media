@@ -27,10 +27,13 @@ mod media;
 mod rating;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use crate::config::Config;
+use crate::geocode::NominatimGeocoder;
+use crate::media::LocalDiskStorage;
 use crate::state::AppState;
 
 #[tokio::main]
@@ -44,7 +47,17 @@ async fn main() {
     let pool = db::init_pool(&config.database_url)
         .await
         .expect("failed to initialise database");
-    let app = routes::router(AppState::new(pool, config));
+
+    // Pluggable media store + geocoder, constructed from config. Both sit behind
+    // traits so deploy can swap in R2 and tests a mock/local impl.
+    let storage = Arc::new(LocalDiskStorage::new(
+        config.media_dir.clone(),
+        config.media_base_url.clone(),
+        config.media_secret.clone().into_bytes(),
+    ));
+    let geocoder = Arc::new(NominatimGeocoder::new(config.geocoder_user_agent.clone()));
+
+    let app = routes::router(AppState::new(pool, config, storage, geocoder));
 
     let port: u16 = std::env::var("PORT")
         .ok()

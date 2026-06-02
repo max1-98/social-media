@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT mr.id AS \"id!: i64\", mr.club_id AS \"club!: i64\",\n                  mr.user_id AS \"user!: i64\", mr.date_requested,\n                  u.username AS \"username!: String\"\n           FROM member_requests mr JOIN users u ON u.id = mr.user_id\n           WHERE mr.club_id = ? ORDER BY mr.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "club!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date_requested",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "username!: String",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4475de544a64fe2f235d378f7e706149628c889e8371fb9893fa0feebbd69e8d"
+}

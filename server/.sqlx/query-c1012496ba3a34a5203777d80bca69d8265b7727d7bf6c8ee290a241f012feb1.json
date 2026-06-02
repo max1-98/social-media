@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT president_id FROM clubs WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "president_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c1012496ba3a34a5203777d80bca69d8265b7727d7bf6c8ee290a241f012feb1"
+}
