@@ -1,0 +1,36 @@
+# Local one-command run of the rebuild stack. The single Axum binary serves the
+# API and the built SPA on http://localhost:8080.
+#
+#   docker compose up --build
+#
+# (The legacy Django stack still lives in ./docker-compose.yml and is untouched.)
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Local HTTP dev: relax the prod-safe defaults from server/src/config.rs.
+      COOKIE_SECURE: "false"
+      FRONTEND_BASE_URL: "http://localhost:8080"
+      # Persisted under the named volume below.
+      DATABASE_URL: "sqlite:///app/data/app.db"
+      MEDIA_DIR: "/app/data/media"
+      # Dev-only signing secret; override for anything reachable beyond localhost.
+      MEDIA_SECRET: "dev-insecure-media-secret"
+      PORT: "8080"
+    volumes:
+      # Persist the SQLite db + uploaded media across container restarts.
+      - appdata:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  appdata:

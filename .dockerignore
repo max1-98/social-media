@@ -1,0 +1,24 @@
+# Keep the build context small and free of host build artifacts. Note: the Rust
+# .sqlx offline cache (server/.sqlx) is deliberately NOT ignored — it is needed
+# for the SQLX_OFFLINE=true build.
+
+.git
+.github
+
+# Rust / Node build outputs (rebuilt inside the image).
+server/target
+web/node_modules
+web/dist
+
+# Local runtime data (SQLite db + uploaded media).
+server/data
+
+# Legacy stack — not part of the rebuild image.
+backend
+frontend
+compose
+venv
+
+# Misc.
+**/.DS_Store
+**/*.log

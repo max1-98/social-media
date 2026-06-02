@@ -84,6 +84,21 @@ Components follow **Atomic Design** under `src/components/`
 `contexts/`, `hooks/`, and `types/`. Import direction (atoms can't import
 molecules, etc.) is enforced by ESLint in Phase 2.
 
+### Run the whole app with Docker
+
+One image builds the SPA and the Axum binary; the binary serves both the API and
+the static frontend on a single port. No database container is needed (embedded
+SQLite, migrations + seed run on first start).
+
+```bash
+docker compose up --build      # app at http://localhost:8080
+#   GET /api/health -> {"status":"ok"}
+```
+
+The SQLite db and uploaded media persist in the `appdata` volume across restarts.
+This uses `compose.yaml` (the rebuild); the legacy `docker-compose.yml` (old
+Django stack) is left untouched until cutover. See the `run-with-docker` skill.
+
 ## Rebuild status
 
 Phase 1 (**scaffold**) is done: `server/` and `web/` build, test, and run; CI
