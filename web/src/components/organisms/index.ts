@@ -1,3 +1,4 @@
 // Barrel for the organisms layer. May re-export modules composed from atoms +
-// molecules. Empty until the first organism lands (Phase 6).
-export {};
+// molecules.
+export { MapView } from "./MapView";
+export type { MapBounds, MapClubMarker, MapViewProps } from "./MapView";
