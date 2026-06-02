@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT m.club_id AS club_id, c.name AS club_name, m.is_admin AS is_admin,\n                m.is_member AS is_member, m.date_joined AS date_joined\n         FROM members m JOIN clubs c ON c.id = m.club_id\n         WHERE m.user_id = ? ORDER BY m.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "club_name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_admin",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "is_member",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date_joined",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d20dd6057b6bb9bbe322ff8e6316d240faa06f6572d3e8c5aeed0f592493a533"
+}

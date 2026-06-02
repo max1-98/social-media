@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT consent_type, choice, ip_address, user_agent, created_at\n         FROM consent_log WHERE user_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "consent_type",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "choice",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "ip_address",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "user_agent",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ae4ec845b70578f24ba590d583938a0da2e5e14dd079fc5dec041f581baab9a1"
+}

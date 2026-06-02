@@ -41,6 +41,12 @@ pub fn router(state: AppState) -> Router {
         .route("/profile/:pk", get(auth::simple_profile))
         .route("/navbar_info", get(auth::navbar_info));
 
+    // GDPR data-subject rights. Bare `/account*` paths (not under `/auth`) per the
+    // rebuild spec, so merged flat into /api like the clubs routes.
+    let account = Router::new()
+        .route("/account/export", get(auth::account_export))
+        .route("/account", delete(auth::account_delete));
+
     // ELO: a user's rating rows. Mirrors backend/elo (EloListView).
     let elo = Router::new().route("/elos/:username", get(elo::list_for_user));
 
@@ -123,6 +129,7 @@ pub fn router(state: AppState) -> Router {
         .route("/hello", get(hello))
         .nest("/auth", auth)
         .nest("/elo", elo)
+        .merge(account)
         .merge(clubs)
         .merge(events)
         .merge(games);
@@ -1888,5 +1895,171 @@ mod tests {
         let body = body_json(res).await;
         assert_eq!(body.as_array().unwrap().len(), 1);
         assert_eq!(body[0]["score"], "21,15");
+    }
+
+    // -----------------------------------------------------------------------
+    // GDPR data-subject rights: export + erasure-by-anonymization
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn account_export_requires_auth() {
+        let (app, _pool) = test_app().await;
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/account/export")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn account_export_returns_user_data() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "exporter").await;
+
+        // A consent choice and a club membership should appear in the export.
+        app.clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/auth/consent",
+                &cookies,
+                json!({ "consent_type": "ads", "choice": "accept" }),
+            ))
+            .await
+            .unwrap();
+        create_test_club(&app, &cookies, "expclub", "Export Club").await;
+
+        let res = app
+            .oneshot(get_with("/api/account/export", &cookies))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(
+            res.headers()
+                .get(header::CONTENT_DISPOSITION)
+                .and_then(|v| v.to_str().ok()),
+            Some("attachment; filename=\"account-export.json\"")
+        );
+        let body = body_json(res).await;
+        assert_eq!(body["user"]["username"], "exporter");
+        assert_eq!(body["user"]["email"], "exporter@example.com");
+        assert!(body["user"].get("password_hash").is_none());
+        assert_eq!(body["consents"].as_array().unwrap().len(), 1);
+        assert_eq!(body["consents"][0]["choice"], "accept");
+        assert_eq!(body["memberships"].as_array().unwrap().len(), 1);
+        assert_eq!(body["memberships"][0]["club_name"], "Export Club");
+        assert_eq!(body["memberships"][0]["is_admin"], true);
+        assert!(body["posts"].is_array());
+    }
+
+    #[tokio::test]
+    async fn account_delete_requires_auth() {
+        let (app, _pool) = test_app().await;
+        let res = app
+            .oneshot(json_with(
+                "DELETE",
+                "/api/account",
+                "",
+                json!({ "password": "123ThisPasswordRocks!" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn account_delete_rejects_wrong_password() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "wrongpw").await;
+        let res = app
+            .oneshot(json_with(
+                "DELETE",
+                "/api/account",
+                &cookies,
+                json!({ "password": "not-my-password" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn account_delete_anonymizes_and_preserves_shared_history() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "leaver").await;
+        // Membership (shared history) + a post (purely personal).
+        create_test_club(&app, &cookies, "leaveclub", "Leave Club").await;
+        let user_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'leaver'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO posts (content, created_at, author_id) VALUES ('bye', '2026-01-01T00:00:00Z', ?)")
+            .bind(user_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "DELETE",
+                "/api/account",
+                &cookies,
+                json!({ "password": "123ThisPasswordRocks!" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(body_json(res).await["detail"], "Account deleted.");
+
+        // Row kept but anonymized + tombstoned.
+        let row = sqlx::query!(
+            "SELECT username, email, first_name, date_of_birth, is_tombstoned, is_active
+             FROM users WHERE id = ?",
+            user_id
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(row.username, format!("deleted_user_{user_id}"));
+        assert!(row.email.is_none());
+        assert!(row.first_name.is_none());
+        assert!(row.date_of_birth.is_none());
+        assert_eq!(row.is_tombstoned, 1);
+        assert_eq!(row.is_active, 0);
+
+        // Shared history (membership) survives; personal post + tokens are gone.
+        let members: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM members WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(members, 1);
+        let posts: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM posts WHERE author_id = ?")
+            .bind(user_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(posts, 0);
+        let tokens: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM tokens WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(tokens, 0);
+
+        // The old credentials can no longer authenticate.
+        let login = app
+            .oneshot(post(
+                "/api/auth/login",
+                json!({ "username": "leaver", "password": "123ThisPasswordRocks!" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(login.status(), StatusCode::UNAUTHORIZED);
     }
 }

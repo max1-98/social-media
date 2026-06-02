@@ -23,8 +23,8 @@ static pages + free tooling.
    volume; signed expiring media URLs; 72-hour breach runbook.
 5. **Processors/residency/paperwork (free but required):** EU primary data; sign
    **DPAs + SCCs** (Resend, Google, Cloudflare, host); maintain **RoPA** +
-   sub-processor list + **Privacy/Cookie Policy** static pages in `docs/`; define
-   retention windows.
+   sub-processor list + **Privacy/Cookie Policy** static pages in `docs/`
+   ([legal/](../legal/README.md) scaffolds); define retention windows.
 
 > Caveat: privacy-policy wording, chosen age threshold, and DPA signatures need
 > human/legal sign-off — the build scaffolds for them, it is not legal advice.

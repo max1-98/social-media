@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id AS \"id!\", content, club_id, created_at FROM posts\n         WHERE author_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "content",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "club_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a29daa7c19769f4f313a0ff503e7d14a95d371736e5d5efa127ea389b2c484cc"
+}
