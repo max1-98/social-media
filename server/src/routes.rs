@@ -37,7 +37,9 @@ pub fn router(state: AppState) -> Router {
         .route("/request-reset", post(auth::request_reset))
         .route("/reset-password", post(auth::reset_password))
         .route("/consent", post(auth::consent))
-        .route("/me", get(auth::me));
+        .route("/me", get(auth::me))
+        .route("/profile/:pk", get(auth::simple_profile))
+        .route("/navbar_info", get(auth::navbar_info));
 
     // ELO: a user's rating rows. Mirrors backend/elo (EloListView).
     let elo = Router::new().route("/elos/:username", get(elo::list_for_user));
@@ -614,6 +616,46 @@ mod tests {
         assert_eq!(row["wins"], 0);
         assert_eq!(row["total_games"], 0);
         assert_eq!(row["winrate"], 1);
+    }
+
+    #[tokio::test]
+    async fn navbar_info_and_simple_profile_parity() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "navuser").await;
+
+        // navbar_info: authenticated user's info, with the legacy `email_verify` key.
+        let navbar = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/auth/navbar_info")
+                    .header(header::COOKIE, &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(navbar.status(), StatusCode::OK);
+        let body = body_json(navbar).await;
+        assert_eq!(body["username"], "navuser");
+        assert_eq!(body["email_verify"], false);
+        assert!(body.get("email").is_some());
+
+        // simple_profile: any user's public id + username (user 1).
+        let profile = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/auth/profile/1")
+                    .header(header::COOKIE, &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(profile.status(), StatusCode::OK);
+        let body = body_json(profile).await;
+        assert_eq!(body["id"], 1);
+        assert_eq!(body["username"], "navuser");
     }
 
     // -----------------------------------------------------------------------
