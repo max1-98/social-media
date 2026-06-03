@@ -104,6 +104,8 @@ pub fn router(state: AppState) -> Router {
         .route("/events/:pk", get(events::club_events))
         .route("/event/:pk1", get(events::event_detail))
         .route("/event/create/:pk", post(events::create_event))
+        .route("/event/series/create/:pk", post(events::create_series))
+        .route("/event/series/:series_id", delete(events::cancel_series))
         .route("/event/activate-member", post(events::activate_member))
         .route("/event/deactivate-member", post(events::deactivate_member))
         .route("/event/start", post(events::start_event))
@@ -180,6 +182,7 @@ mod tests {
     use axum::http::{header, Request};
     use sqlx::SqlitePool;
     use std::sync::Arc;
+    use time::{Duration, OffsetDateTime};
     use tower::ServiceExt; // for `oneshot`
 
     /// Build an app backed by a fresh in-memory DB with cookies non-`Secure` so
@@ -1234,6 +1237,169 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn create_series_materializes_weekly_instances() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "seriesprez").await;
+        let club_id = create_test_club(&app, &cookies, "seriesc", "Series Club").await;
+
+        // Weekly series across a ~3 week window starting in the future but within
+        // the materialization horizon (~8 weeks): expect 3 instances generated.
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/event/series/create/{club_id}"),
+                &cookies,
+                json!({
+                    "game_type": "badminton singles",
+                    "start_time": "18:00",
+                    "finish_time": "20:00",
+                    "number_of_courts": 2,
+                    "frequency": "weekly",
+                    "interval": 1,
+                    "start_date": "2099-01-01",
+                    "end_date": "2099-01-15"
+                }),
+            ))
+            .await
+            .unwrap();
+        // Far-future start sits beyond the horizon, so no instances yet but the
+        // series is created successfully.
+        assert_eq!(res.status(), StatusCode::CREATED);
+        let body = body_json(res).await;
+        assert!(body["series_id"].as_i64().unwrap() > 0);
+        assert_eq!(body["events"].as_array().unwrap().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn create_series_generates_and_is_idempotent() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "idemprez").await;
+        let club_id = create_test_club(&app, &cookies, "idemc", "Idem Club").await;
+
+        // Daily series within the next few days, fully inside the horizon.
+        let today = OffsetDateTime::now_utc().date();
+        let start = today.to_string();
+        let end = (today + Duration::days(3)).to_string();
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/event/series/create/{club_id}"),
+                &cookies,
+                json!({
+                    "game_type": "badminton singles",
+                    "start_time": "18:00",
+                    "finish_time": "20:00",
+                    "number_of_courts": 1,
+                    "frequency": "daily",
+                    "interval": 1,
+                    "start_date": start,
+                    "end_date": end
+                }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::CREATED);
+        let body = body_json(res).await;
+        // start..=start+3 inclusive = 4 instances.
+        assert_eq!(body["events"].as_array().unwrap().len(), 4);
+
+        // Listing the club's events runs materialize again; count must not grow.
+        let res = app
+            .oneshot(get_with(&format!("/api/events/{club_id}"), &cookies))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE club_id = ?")
+            .bind(club_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 4);
+    }
+
+    #[tokio::test]
+    async fn create_series_requires_admin() {
+        let (app, _pool) = test_app().await;
+        let prez = register_and_login(&app, "seradmin").await;
+        let club_id = create_test_club(&app, &prez, "seradminc", "Ser Admin").await;
+        let outsider = register_and_login(&app, "seroutsider").await;
+
+        let res = app
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/event/series/create/{club_id}"),
+                &outsider,
+                json!({
+                    "start_time": "18:00",
+                    "finish_time": "20:00",
+                    "number_of_courts": 1,
+                    "frequency": "weekly",
+                    "start_date": "2099-01-01",
+                    "end_date": "2099-02-01"
+                }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn cancel_series_deactivates_and_drops_future() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "cancelprez").await;
+        let club_id = create_test_club(&app, &cookies, "cancelc", "Cancel Club").await;
+
+        let today = OffsetDateTime::now_utc().date();
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/event/series/create/{club_id}"),
+                &cookies,
+                json!({
+                    "start_time": "18:00",
+                    "finish_time": "20:00",
+                    "number_of_courts": 1,
+                    "frequency": "daily",
+                    "start_date": today.to_string(),
+                    "end_date": (today + Duration::days(3)).to_string()
+                }),
+            ))
+            .await
+            .unwrap();
+        let series_id = body_json(res).await["series_id"].as_i64().unwrap();
+
+        let res = app
+            .clone()
+            .oneshot(delete_with(
+                &format!("/api/event/series/{series_id}"),
+                &cookies,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+
+        // Future instances (date > today) are dropped; the series is inactive so
+        // a re-list does not regenerate them.
+        let active: i64 = sqlx::query_scalar("SELECT is_active FROM event_series WHERE id = ?")
+            .bind(series_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(active, 0);
+        let future: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE series_id = ? AND date > ?")
+                .bind(series_id)
+                .bind(today.to_string())
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(future, 0);
     }
 
     #[tokio::test]

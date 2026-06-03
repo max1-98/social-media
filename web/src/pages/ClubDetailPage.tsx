@@ -222,6 +222,15 @@ export function ClubDetailPage(): ReactElement {
         {club.membership_status === MEMBERSHIP_MEMBER && !club.is_club_president && (
           <Button onClick={handleLeave}>Leave club</Button>
         )}
+        {club.membership_status === MEMBERSHIP_MEMBER && (
+          <Button
+            onClick={() => {
+              void navigate(`/club/${String(club.id)}/events`);
+            }}
+          >
+            View events
+          </Button>
+        )}
         {club.is_club_admin && (
           <Button
             onClick={() => {

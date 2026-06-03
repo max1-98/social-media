@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM events\n           WHERE series_id = ? AND date > ?\n             AND id NOT IN (SELECT event_id FROM event_games)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "72724d5b5a1679fc1b578dcf8016b1df328861a10fff40c180d0f31dad31d2cc"
+}

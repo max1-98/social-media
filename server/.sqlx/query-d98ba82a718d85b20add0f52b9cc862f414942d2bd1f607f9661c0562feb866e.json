@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE event_series SET generated_through = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "d98ba82a718d85b20add0f52b9cc862f414942d2bd1f607f9661c0562feb866e"
+}

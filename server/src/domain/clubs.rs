@@ -324,6 +324,7 @@ pub struct MyClub {
     name: String,
     logo: Option<String>,
     sport_type: Option<SportField>,
+    is_club_admin: bool,
 }
 
 /// `MemberRequestDetailSerializer`.
@@ -697,7 +698,8 @@ pub async fn my_clubs(
     user: AuthUser,
 ) -> Result<Json<Vec<MyClub>>, AppError> {
     let rows = sqlx::query!(
-        r#"SELECT c.id AS "id!: i64", c.name, c.logo, s.name AS "sport_name?: String"
+        r#"SELECT c.id AS "id!: i64", c.name, c.logo, s.name AS "sport_name?: String",
+                  m.is_admin AS "is_admin!: i64"
            FROM members m
            JOIN clubs c ON c.id = m.club_id
            LEFT JOIN sports s ON s.id = c.sport_type_id
@@ -714,6 +716,7 @@ pub async fn my_clubs(
             name: r.name,
             logo: logo_url(&app, r.logo),
             sport_type: r.sport_name.map(|name| SportField { name }),
+            is_club_admin: r.is_admin != 0,
         })
         .collect();
     Ok(Json(out))

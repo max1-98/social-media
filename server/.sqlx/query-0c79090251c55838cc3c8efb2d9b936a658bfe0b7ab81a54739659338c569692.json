@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT c.id AS \"id!: i64\", c.name, c.logo, s.name AS \"sport_name?: String\"\n           FROM members m\n           JOIN clubs c ON c.id = m.club_id\n           LEFT JOIN sports s ON s.id = c.sport_type_id\n           WHERE m.user_id = ?\n           ORDER BY m.id",
+  "query": "SELECT c.id AS \"id!: i64\", c.name, c.logo, s.name AS \"sport_name?: String\",\n                  m.is_admin AS \"is_admin!: i64\"\n           FROM members m\n           JOIN clubs c ON c.id = m.club_id\n           LEFT JOIN sports s ON s.id = c.sport_type_id\n           WHERE m.user_id = ?\n           ORDER BY m.id",
   "describe": {
     "columns": [
       {
@@ -22,6 +22,11 @@
         "name": "sport_name?: String",
         "ordinal": 3,
         "type_info": "Text"
+      },
+      {
+        "name": "is_admin!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       true,
       false,
       true,
+      false,
       false
     ]
   },
-  "hash": "040683713e0b08443558c8f3125b14726f18c1adfe383b84f74520616af3a2bd"
+  "hash": "0c79090251c55838cc3c8efb2d9b936a658bfe0b7ab81a54739659338c569692"
 }
