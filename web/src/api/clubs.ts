@@ -221,6 +221,14 @@ export async function uploadLogo(pk: number | string, file: File): Promise<Messa
 }
 
 /**
+ * DELETE /api/club/:pk/logo — remove a club logo (admin only), clearing the
+ * stored file and the column, matching the Rust `remove_logo` handler.
+ */
+export async function removeLogo(pk: number | string): Promise<MessageResponse> {
+  return del<MessageResponse>(`/club/${String(pk)}/logo`);
+}
+
+/**
  * POST /api/club/edit/socials/:pk — set/clear a club's social links. The Rust
  * `update_socials` handler reads flat per-platform fields (`facebook`,
  * `instagram`, `whatsapp`, `website`); an empty string clears that platform.
