@@ -1424,6 +1424,27 @@ pub async fn upload_logo(
     Ok(Json(json!({ "message": "Club logo updated successfully" })))
 }
 
+/// DELETE /api/club/:pk/logo — remove a club logo (admin only).
+pub async fn remove_logo(
+    State(app): State<AppState>,
+    user: AuthUser,
+    Path(pk): Path<i64>,
+) -> Result<Json<Value>, AppError> {
+    require_admin(&app, user.id, pk).await?;
+
+    let row = sqlx::query!("SELECT logo FROM clubs WHERE id = ?", pk)
+        .fetch_optional(&app.pool)
+        .await?;
+    if let Some(key) = row.and_then(|r| r.logo) {
+        app.storage.delete(&key).await?;
+    }
+    sqlx::query!("UPDATE clubs SET logo = NULL WHERE id = ?", pk)
+        .execute(&app.pool)
+        .await?;
+
+    Ok(Json(json!({ "message": "Club logo removed successfully" })))
+}
+
 #[derive(Deserialize)]
 pub struct AddressRequest {
     address: Option<String>,

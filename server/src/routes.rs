@@ -92,7 +92,10 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/clubs/:pk/socials", get(clubs::club_socials))
         .route("/club/edit/socials/:pk", post(clubs::update_socials))
-        .route("/club/:pk/logo", patch(clubs::upload_logo))
+        .route(
+            "/club/:pk/logo",
+            patch(clubs::upload_logo).delete(clubs::remove_logo),
+        )
         .route("/club/add-address", post(clubs::add_address));
 
     // Events: mirrors backend/events/urls.py. Paths sit directly under /api like
@@ -1101,6 +1104,55 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(logo, format!("club_logos/{club_id}.png"));
+    }
+
+    #[tokio::test]
+    async fn remove_logo_clears_column() {
+        let (app, pool) = test_app().await;
+        let cookies = register_and_login(&app, "remover").await;
+        let club_id = create_test_club(&app, &cookies, "logod", "Logo Del Club").await;
+
+        // Upload a logo so there is something to remove.
+        let boundary = "X-BOUNDARY";
+        let body = format!(
+            "--{b}\r\nContent-Disposition: form-data; name=\"logo\"; filename=\"l.png\"\r\n\
+             Content-Type: image/png\r\n\r\nFAKEPNGDATA\r\n--{b}--\r\n",
+            b = boundary
+        );
+        let upload = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/club/{club_id}/logo"))
+            .header(header::COOKIE, &cookies)
+            .header(
+                header::CONTENT_TYPE,
+                format!("multipart/form-data; boundary={boundary}"),
+            )
+            .body(Body::from(body))
+            .unwrap();
+        assert_eq!(
+            app.clone().oneshot(upload).await.unwrap().status(),
+            StatusCode::OK
+        );
+
+        // Now remove it.
+        let req = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/club/{club_id}/logo"))
+            .header(header::COOKIE, &cookies)
+            .body(Body::empty())
+            .unwrap();
+        let res = app.oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(
+            body_json(res).await["message"],
+            "Club logo removed successfully"
+        );
+        let logo: Option<String> = sqlx::query_scalar("SELECT logo FROM clubs WHERE id = ?")
+            .bind(club_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(logo, None);
     }
 
     #[tokio::test]
