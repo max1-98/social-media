@@ -8,7 +8,7 @@ import type { Coordinates } from "../../types";
 
 /** A club rendered as a pin on the map. */
 export interface MapClubMarker {
-  id: number;
+  id: string;
   name: string;
   coordinates: Coordinates;
   /** Optional secondary line, e.g. the sport or info blurb. */
@@ -33,7 +33,7 @@ export interface MapViewProps {
   /** Called whenever the user pans/zooms, with the new visible bounds. */
   onBoundsChange?: (bounds: MapBounds) => void;
   /** Called when a club pin's popup content is clicked. */
-  onClubSelect?: (id: number) => void;
+  onClubSelect?: (id: string) => void;
   /** Accessible label for the map region. */
   ariaLabel?: string;
   /** Extra class names for sizing the map container. */

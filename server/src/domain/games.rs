@@ -13,7 +13,7 @@
 
 use std::collections::BTreeMap;
 
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use rand::seq::SliceRandom;
@@ -28,6 +28,7 @@ use crate::domain::events::{
     update_player_match_counts, update_player_social_counts, update_player_win_counts, GameResult,
 };
 use crate::error::AppError;
+use crate::id::{ApiPath, EventId, GameId, MemberId};
 use crate::matchmaking::{self, Gender, Player};
 use crate::rating;
 use crate::skill::{self, RatingModel, SkillState, TeamSkills};
@@ -40,7 +41,7 @@ use crate::state::AppState;
 /// `MemberSerializer`: a member with their ELO for the game's game type.
 #[derive(Debug, Serialize)]
 pub struct MemberOut {
-    id: i64,
+    id: MemberId,
     username: String,
     first_name: Option<String>,
     surname: Option<String>,
@@ -51,7 +52,7 @@ pub struct MemberOut {
 /// `SimpleMemberSerializer`: a member with no ELO field.
 #[derive(Debug, Serialize)]
 pub struct SimpleMemberOut {
-    id: i64,
+    id: MemberId,
     username: String,
     first_name: Option<String>,
     surname: Option<String>,
@@ -60,7 +61,7 @@ pub struct SimpleMemberOut {
 /// `GameSerializer`: `{ id, team1[], team2[] }`.
 #[derive(Debug, Serialize)]
 pub struct GameOut {
-    id: i64,
+    id: GameId,
     team1: Vec<MemberOut>,
     team2: Vec<MemberOut>,
 }
@@ -68,7 +69,7 @@ pub struct GameOut {
 /// `CompleteGameSerializer`: GameSerializer + game_type id, score, start_time.
 #[derive(Debug, Serialize)]
 pub struct CompleteGameOut {
-    id: i64,
+    id: GameId,
     team1: Vec<MemberOut>,
     team2: Vec<MemberOut>,
     game_type: Option<i64>,
@@ -417,7 +418,7 @@ fn to_player(m: &ActiveMember) -> Player {
 
 #[derive(Deserialize)]
 pub struct CreateGameRequest {
-    event_id: Option<i64>,
+    event_id: Option<EventId>,
 }
 
 /// POST /api/game/create-sbmm — SBMM (or mixed SBMM, by chance + feasibility).
@@ -429,7 +430,8 @@ pub async fn create_sbmm(
 ) -> Result<(StatusCode, Json<GameOut>), AppError> {
     let event_id = req
         .event_id
-        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?;
+        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?
+        .inner();
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
 
@@ -479,7 +481,8 @@ pub async fn create_social(
 ) -> Result<(StatusCode, Json<GameOut>), AppError> {
     let event_id = req
         .event_id
-        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?;
+        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?
+        .inner();
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
 
@@ -533,7 +536,8 @@ pub async fn get_player_1(
 ) -> Result<Json<SimpleMemberOut>, AppError> {
     let event_id = req
         .event_id
-        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?;
+        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?
+        .inner();
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
 
@@ -558,7 +562,7 @@ pub async fn get_player_1(
     .fetch_one(&app.pool)
     .await?;
     Ok(Json(SimpleMemberOut {
-        id: r.id,
+        id: r.id.into(),
         username: r.username,
         first_name: r.first_name,
         surname: r.surname,
@@ -567,9 +571,9 @@ pub async fn get_player_1(
 
 #[derive(Deserialize)]
 pub struct PegCreateRequest {
-    event_id: Option<i64>,
+    event_id: Option<EventId>,
     #[serde(default)]
-    member_ids: Vec<i64>,
+    member_ids: Vec<MemberId>,
 }
 
 /// POST /api/game/create-peg — manually pegged teams. Mirrors `PegCreateGameView`:
@@ -581,15 +585,17 @@ pub async fn create_peg(
 ) -> Result<(StatusCode, Json<GameOut>), AppError> {
     let event_id = req
         .event_id
-        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?;
+        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?
+        .inner();
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
 
+    let member_ids: Vec<i64> = req.member_ids.iter().map(|m| m.inner()).collect();
     let team_size = number_in_team(event.game_type_name.as_deref()).unwrap_or(0) as usize;
-    let (team1, team2): (&[i64], &[i64]) = if team_size <= req.member_ids.len() {
-        req.member_ids.split_at(team_size)
+    let (team1, team2): (&[i64], &[i64]) = if team_size <= member_ids.len() {
+        member_ids.split_at(team_size)
     } else {
-        (req.member_ids.as_slice(), &[])
+        (member_ids.as_slice(), &[])
     };
 
     let game_id = create_game_for_event(&app, event_id, event.game_type_id, team1, team2).await?;
@@ -603,8 +609,8 @@ pub async fn create_peg(
 
 #[derive(Deserialize)]
 pub struct DeleteGameRequest {
-    game_id: Option<i64>,
-    event_id: Option<i64>,
+    game_id: Option<GameId>,
+    event_id: Option<EventId>,
 }
 
 /// POST /api/game/delete — delete a game, moving its members back to active.
@@ -618,6 +624,7 @@ pub async fn delete_game(
             "Game ID and Event ID are required".into(),
         ));
     };
+    let (game_id, event_id) = (game_id.inner(), event_id.inner());
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
     game_exists(&app, game_id).await?;
@@ -673,8 +680,8 @@ pub async fn delete_game(
 
 #[derive(Deserialize)]
 pub struct CompleteGameRequest {
-    game_id: Option<i64>,
-    event_id: Option<i64>,
+    game_id: Option<GameId>,
+    event_id: Option<EventId>,
     score: Option<String>,
 }
 
@@ -690,9 +697,11 @@ pub async fn complete_game(
             "Game ID and score are required".into(),
         ));
     };
+    let game_id = game_id.inner();
     let event_id = req
         .event_id
-        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?;
+        .ok_or_else(|| AppError::NotFound("No Event matches the given query.".into()))?
+        .inner();
     let event = event_core(&app, event_id).await?;
     require_admin(&app, user.id, event.club_id).await?;
     game_exists(&app, game_id).await?;
@@ -1118,8 +1127,9 @@ async fn update_event_stats(
 pub async fn event_incomplete_games(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
 ) -> Result<Json<Vec<GameOut>>, AppError> {
+    let pk1 = pk1.inner();
     let event = event_core(&app, pk1).await?;
     require_member(&app, user.id, event.club_id).await?;
 
@@ -1144,8 +1154,9 @@ pub async fn event_incomplete_games(
 pub async fn event_complete_games(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
 ) -> Result<Json<Vec<CompleteGameOut>>, AppError> {
+    let pk1 = pk1.inner();
     let event = event_core(&app, pk1).await?;
     require_member(&app, user.id, event.club_id).await?;
 
@@ -1296,7 +1307,7 @@ async fn team_members_out(
             None => None,
         };
         out.push(MemberOut {
-            id: r.id,
+            id: r.id.into(),
             username: r.username,
             first_name: r.first_name,
             surname: r.surname,
@@ -1312,7 +1323,7 @@ async fn game_out(
     game_type_name: Option<&str>,
 ) -> Result<GameOut, AppError> {
     Ok(GameOut {
-        id: game_id,
+        id: game_id.into(),
         team1: team_members_out(app, game_id, 1, game_type_name).await?,
         team2: team_members_out(app, game_id, 2, game_type_name).await?,
     })
@@ -1331,7 +1342,7 @@ async fn complete_game_out(
     .fetch_one(&app.pool)
     .await?;
     Ok(CompleteGameOut {
-        id: game_id,
+        id: game_id.into(),
         team1: team_members_out(app, game_id, 1, game_type_name).await?,
         team2: team_members_out(app, game_id, 2, game_type_name).await?,
         game_type: g.game_type_id,

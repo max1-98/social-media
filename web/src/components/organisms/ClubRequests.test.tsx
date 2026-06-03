@@ -6,7 +6,7 @@ import type { MemberRequest } from "../../types";
 import { ClubRequests } from "./ClubRequests.tsx";
 
 const requests: MemberRequest[] = [
-  { id: 11, club: 1, user: 5, username: "newbie", date_requested: "2026-01-15T10:00:00Z" },
+  { id: "11", club: "1", user: "5", username: "newbie", date_requested: "2026-01-15T10:00:00Z" },
 ];
 
 describe("ClubRequests organism", () => {

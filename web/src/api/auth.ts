@@ -65,8 +65,8 @@ export async function me(): Promise<User> {
 }
 
 /** GET /api/auth/profile/:pk — a minimal public profile. */
-export async function profile(pk: number | string): Promise<SimpleUser> {
-  return getJson<SimpleUser>(`/auth/profile/${String(pk)}`);
+export async function profile(pk: string): Promise<SimpleUser> {
+  return getJson<SimpleUser>(`/auth/profile/${pk}`);
 }
 
 /** GET /api/auth/navbar_info — navbar identity + verification flag. */

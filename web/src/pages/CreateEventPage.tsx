@@ -63,7 +63,7 @@ export function CreateEventPage(): ReactElement {
     };
     try {
       const created = await eventsApi.createEvent(clubId, payload);
-      void navigate(`/club/${clubId}/event/${String(created.id)}`);
+      void navigate(`/club/${clubId}/event/${created.id}`);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not create the event.");
       setSubmitting(false);

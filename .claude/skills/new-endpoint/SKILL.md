@@ -16,6 +16,12 @@ Add an HTTP endpoint to `server/`. See `.claude/rules/rust.md` and
 3. Register the route in `src/routes.rs` with method + path matching the legacy
    `urls.py` path and the same JSON shape.
 4. Define request/response structs with `serde`; mirror the Django field names.
+   **Never expose a raw integer PK on the wire** — type every id/FK field that
+   crosses the API with its `crate::id` newtype (`ClubId`, `UserId`, …) so it
+   (de)serialises as an opaque string; wrap rows with `.into()`, unwrap with
+   `.inner()` for queries. Extract id path params with `id::ApiPath<…>`
+   (rejects bad/cross-entity ids → 404). Reference data (game_type, sport) stays
+   numeric. See `src/id.rs`.
 5. Add a `cargo test`: assert status + JSON shape. For ported behaviour, add an
    oracle assertion against the Django output on identical fixtures.
 6. If you added/changed any `sqlx::query!`/`query_as!`/`query_scalar!` macro,

@@ -50,8 +50,8 @@ describe("MapView organism", () => {
         center={center}
         zoom={6}
         clubs={[
-          { id: 1, name: "Alpha Club", coordinates: { lat: 54, lng: -2 }, description: "Tennis" },
-          { id: 2, name: "Beta Club", coordinates: { lat: 53, lng: -1 } },
+          { id: "1", name: "Alpha Club", coordinates: { lat: 54, lng: -2 }, description: "Tennis" },
+          { id: "2", name: "Beta Club", coordinates: { lat: 53, lng: -1 } },
         ]}
         userLocation={{ lat: 54.5, lng: -2.5 }}
       />,
@@ -68,11 +68,11 @@ describe("MapView organism", () => {
       <MapView
         center={center}
         zoom={6}
-        clubs={[{ id: 42, name: "Gamma Club", coordinates: { lat: 54, lng: -2 } }]}
+        clubs={[{ id: "42", name: "Gamma Club", coordinates: { lat: 54, lng: -2 } }]}
         onClubSelect={onClubSelect}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /Gamma Club/ }));
-    expect(onClubSelect).toHaveBeenCalledWith(42);
+    expect(onClubSelect).toHaveBeenCalledWith("42");
   });
 });

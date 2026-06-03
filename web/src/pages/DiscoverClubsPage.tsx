@@ -82,8 +82,8 @@ export function DiscoverClubsPage(): ReactElement {
   );
 
   const handleSelect = useCallback(
-    (id: number): void => {
-      void navigate(`/club/${String(id)}`);
+    (id: string): void => {
+      void navigate(`/club/${id}`);
     },
     [navigate],
   );

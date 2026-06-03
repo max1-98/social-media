@@ -6,8 +6,8 @@ import type { Member } from "../../types";
 import { MemberTable } from "./MemberTable.tsx";
 
 const members: Member[] = [
-  { id: 1, first_name: "Ada", surname: "Lovelace", username: "ada", is_club_admin: true },
-  { id: 2, first_name: "Alan", surname: "Turing", username: "alan", is_club_admin: false },
+  { id: "1", first_name: "Ada", surname: "Lovelace", username: "ada", is_club_admin: true },
+  { id: "2", first_name: "Alan", surname: "Turing", username: "alan", is_club_admin: false },
 ];
 
 describe("MemberTable organism", () => {

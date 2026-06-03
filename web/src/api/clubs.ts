@@ -37,7 +37,7 @@ export interface AddressResponse {
 }
 
 export interface AddressPayload {
-  club_id: number;
+  club_id: string;
   address: string;
 }
 
@@ -79,13 +79,13 @@ export async function myClubs(): Promise<MyClub[]> {
 }
 
 /** GET /api/club/:pk — a single club's detail. */
-export async function clubDetail(pk: number | string): Promise<Club> {
-  return getJson<Club>(`/club/${String(pk)}`);
+export async function clubDetail(pk: string): Promise<Club> {
+  return getJson<Club>(`/club/${pk}`);
 }
 
 /** DELETE /api/club/:pk — delete a club (president only). */
-export async function deleteClub(pk: number | string): Promise<DetailResponse> {
-  return del<DetailResponse>(`/club/${String(pk)}`);
+export async function deleteClub(pk: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/club/${pk}`);
 }
 
 /** POST /api/createclub — create a club. */
@@ -94,78 +94,63 @@ export async function createClub(payload: CreateClubPayload): Promise<Club> {
 }
 
 /** PATCH /api/club/edit/:pk — edit a club's profile. */
-export async function editClub(pk: number | string, payload: EditClubPayload): Promise<Club> {
-  return patchJson<Club>(`/club/edit/${String(pk)}`, payload);
+export async function editClub(pk: string, payload: EditClubPayload): Promise<Club> {
+  return patchJson<Club>(`/club/edit/${pk}`, payload);
 }
 
 /** POST /api/club/request/create — request to join a club. */
-export async function createRequest(clubId: number): Promise<DetailResponse> {
+export async function createRequest(clubId: string): Promise<DetailResponse> {
   return postJson<DetailResponse>("/club/request/create", { club_id: clubId });
 }
 
 /** POST /api/club/request/cancel — cancel a pending join request. */
-export async function cancelRequest(clubId: number): Promise<DetailResponse> {
+export async function cancelRequest(clubId: string): Promise<DetailResponse> {
   return postJson<DetailResponse>("/club/request/cancel", { club_id: clubId });
 }
 
 /** GET /api/club/requests/:pk — pending join requests for a club. */
-export async function clubRequests(pk: number | string): Promise<MemberRequest[]> {
-  return getJson<MemberRequest[]>(`/club/requests/${String(pk)}`);
+export async function clubRequests(pk: string): Promise<MemberRequest[]> {
+  return getJson<MemberRequest[]>(`/club/requests/${pk}`);
 }
 
 /** GET /api/club/members/:pk — a club's members. */
-export async function clubMembers(pk: number | string): Promise<Member[]> {
-  return getJson<Member[]>(`/club/members/${String(pk)}`);
+export async function clubMembers(pk: string): Promise<Member[]> {
+  return getJson<Member[]>(`/club/members/${pk}`);
 }
 
 /** GET /api/club/members/event/:pk1 — members with their event ELO. */
-export async function clubMembersForEvent(pk1: number | string): Promise<MemberEvent[]> {
-  return getJson<MemberEvent[]>(`/club/members/event/${String(pk1)}`);
+export async function clubMembersForEvent(pk1: string): Promise<MemberEvent[]> {
+  return getJson<MemberEvent[]>(`/club/members/event/${pk1}`);
 }
 
 /** GET /api/club/request-accept/:clubPk/:requestPk — accept a join request. */
-export async function acceptRequest(
-  clubPk: number | string,
-  requestPk: number | string,
-): Promise<DetailResponse> {
-  return getJson<DetailResponse>(`/club/request-accept/${String(clubPk)}/${String(requestPk)}`);
+export async function acceptRequest(clubPk: string, requestPk: string): Promise<DetailResponse> {
+  return getJson<DetailResponse>(`/club/request-accept/${clubPk}/${requestPk}`);
 }
 
 /** DELETE /api/club/request-accept/:clubPk/:requestPk — reject a join request. */
-export async function rejectRequest(
-  clubPk: number | string,
-  requestPk: number | string,
-): Promise<DetailResponse> {
-  return del<DetailResponse>(`/club/request-accept/${String(clubPk)}/${String(requestPk)}`);
+export async function rejectRequest(clubPk: string, requestPk: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/club/request-accept/${clubPk}/${requestPk}`);
 }
 
 /** DELETE /api/club/member/:clubPk/:memberPk — remove a member (admin). */
-export async function removeMember(
-  clubPk: number | string,
-  memberPk: number | string,
-): Promise<DetailResponse> {
-  return del<DetailResponse>(`/club/member/${String(clubPk)}/${String(memberPk)}`);
+export async function removeMember(clubPk: string, memberPk: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/club/member/${clubPk}/${memberPk}`);
 }
 
 /** DELETE /api/club/member/:pk — leave a club. */
-export async function leaveClub(pk: number | string): Promise<DetailResponse> {
-  return del<DetailResponse>(`/club/member/${String(pk)}`);
+export async function leaveClub(pk: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/club/member/${pk}`);
 }
 
 /** GET /api/club/make-admin/:clubPk/:memberPk — promote a member to admin. */
-export async function promoteMember(
-  clubPk: number | string,
-  memberPk: number | string,
-): Promise<DetailResponse> {
-  return getJson<DetailResponse>(`/club/make-admin/${String(clubPk)}/${String(memberPk)}`);
+export async function promoteMember(clubPk: string, memberPk: string): Promise<DetailResponse> {
+  return getJson<DetailResponse>(`/club/make-admin/${clubPk}/${memberPk}`);
 }
 
 /** DELETE /api/club/make-admin/:clubPk/:memberPk — demote an admin. */
-export async function demoteMember(
-  clubPk: number | string,
-  memberPk: number | string,
-): Promise<DetailResponse> {
-  return del<DetailResponse>(`/club/make-admin/${String(clubPk)}/${String(memberPk)}`);
+export async function demoteMember(clubPk: string, memberPk: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/club/make-admin/${clubPk}/${memberPk}`);
 }
 
 /** GET /api/club/add-sport — the list of selectable sports. */
@@ -180,7 +165,7 @@ export interface MessageResponse {
 
 /** Payload for `POST /api/club/add-sport`. */
 export interface AddSportPayload {
-  club_id: number;
+  club_id: string;
   sport_name: string;
 }
 
@@ -201,18 +186,18 @@ export async function addSport(payload: AddSportPayload): Promise<MessageRespons
 }
 
 /** GET /api/clubs/:pk/socials — a club's social links. */
-export async function clubSocials(pk: number | string): Promise<Social[]> {
-  return getJson<Social[]>(`/clubs/${String(pk)}/socials`);
+export async function clubSocials(pk: string): Promise<Social[]> {
+  return getJson<Social[]>(`/clubs/${pk}/socials`);
 }
 
 /**
  * PATCH /api/club/:pk/logo — upload a club logo (admin only). Sends the file as
  * multipart under the `logo` field, matching the Rust `upload_logo` handler.
  */
-export async function uploadLogo(pk: number | string, file: File): Promise<MessageResponse> {
+export async function uploadLogo(pk: string, file: File): Promise<MessageResponse> {
   const form = new FormData();
   form.append("logo", file);
-  return patchForm<MessageResponse>(`/club/${String(pk)}/logo`, form);
+  return patchForm<MessageResponse>(`/club/${pk}/logo`, form);
 }
 
 /**
@@ -221,10 +206,10 @@ export async function uploadLogo(pk: number | string, file: File): Promise<Messa
  * `instagram`, `whatsapp`, `website`); an empty string clears that platform.
  */
 export async function updateSocials(
-  pk: number | string,
+  pk: string,
   links: SocialLinksPayload,
 ): Promise<DetailResponse> {
-  return postJson<DetailResponse>(`/club/edit/socials/${String(pk)}`, links);
+  return postJson<DetailResponse>(`/club/edit/socials/${pk}`, links);
 }
 
 /** POST /api/club/add-address — geocode + store a club's address. */

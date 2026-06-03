@@ -74,7 +74,7 @@ export function ClubDetailPage(): ReactElement {
     async (address: string): Promise<AddressResult> => {
       if (clubId === undefined) throw new Error("No club");
       const result: AddressResponse = await clubsApi.addAddress({
-        club_id: Number(clubId),
+        club_id: clubId,
         address,
       });
       loadClub();
@@ -225,7 +225,7 @@ export function ClubDetailPage(): ReactElement {
         {club.is_club_admin && (
           <Button
             onClick={() => {
-              void navigate(`/club/edit/${String(club.id)}`);
+              void navigate(`/club/edit/${club.id}`);
             }}
           >
             Edit club

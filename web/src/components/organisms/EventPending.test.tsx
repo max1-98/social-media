@@ -6,7 +6,7 @@ import type { EventDetail } from "../../types";
 import { EventPending } from "./EventPending.tsx";
 
 const event: EventDetail = {
-  id: 1,
+  id: "1",
   game_type: { name: "tennis singles" },
   date: "2026-07-01",
   start_time: "18:00",

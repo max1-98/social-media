@@ -13,7 +13,7 @@ const logout = vi.fn<() => Promise<void>>();
 const navigate = vi.fn();
 
 const user: User = {
-  id: 1,
+  id: "1",
   username: "alice",
   email: "alice@example.com",
   first_name: "Alice",

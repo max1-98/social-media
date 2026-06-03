@@ -15,6 +15,7 @@ mod routes;
 mod config;
 mod db;
 mod error;
+mod id;
 mod state;
 
 // Domain modules — placeholders that map 1:1 onto the existing Django apps so
@@ -45,6 +46,11 @@ async fn main() {
         .init();
 
     let config = Config::from_env();
+    // Configure the public-id encoder before any request can serialise an id.
+    id::init(
+        config.public_id_alphabet.as_deref(),
+        config.public_id_min_length,
+    );
     let pool = db::init_pool(&config.database_url)
         .await
         .expect("failed to initialise database");

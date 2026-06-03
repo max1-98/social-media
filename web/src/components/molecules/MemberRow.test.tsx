@@ -6,7 +6,7 @@ import type { Member } from "../../types";
 import { MemberRow } from "./MemberRow.tsx";
 
 const baseMember: Member = {
-  id: 7,
+  id: "7",
   first_name: "Ada",
   surname: "Lovelace",
   username: "ada",

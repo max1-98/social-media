@@ -18,11 +18,11 @@ export interface GameCardProps {
    */
   isAdmin?: boolean;
   /** Submit the game's final score (`"t1,t2"`). Required when `isAdmin`. */
-  onSubmitScore?: (gameId: number, score: string) => void;
+  onSubmitScore?: (gameId: string, score: string) => void;
   /** Delete (discard) the in-progress game. */
-  onDelete?: (gameId: number) => void;
+  onDelete?: (gameId: string) => void;
   /** Pause a player: removes the game and deactivates that member. */
-  onPausePlayer?: (gameId: number, memberId: number) => void;
+  onPausePlayer?: (gameId: string, memberId: string) => void;
 }
 
 function playerLabel(player: MemberEvent): string {
@@ -39,7 +39,7 @@ function TeamList({
   team: MemberEvent[];
   label: string;
   isAdmin: boolean;
-  onPause: ((memberId: number) => void) | undefined;
+  onPause: ((memberId: string) => void) | undefined;
 }): ReactElement {
   return (
     <Stack spacing={0.5} aria-label={label}>
@@ -76,7 +76,7 @@ export function GameCard({
   onPausePlayer,
 }: GameCardProps): ReactElement {
   return (
-    <Card variant="outlined" aria-label={`Game ${String(game.id)}`}>
+    <Card variant="outlined" aria-label={`Game ${game.id}`}>
       <CardContent>
         <TeamList
           team={game.team1}
@@ -116,7 +116,7 @@ export function GameCard({
             ) : null}
             {onDelete ? (
               <Button
-                aria-label={`Delete game ${String(game.id)}`}
+                aria-label={`Delete game ${game.id}`}
                 onClick={() => {
                   onDelete(game.id);
                 }}

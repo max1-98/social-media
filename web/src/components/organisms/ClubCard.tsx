@@ -35,7 +35,7 @@ export interface ClubCardProps {
   /** The club to summarise. */
   club: ManyClub;
   /** Called when the card is activated (navigate to the club's detail page). */
-  onSelect?: (id: number) => void;
+  onSelect?: (id: string) => void;
 }
 
 /**
