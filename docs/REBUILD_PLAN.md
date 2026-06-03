@@ -34,3 +34,6 @@ This plan is split so each file stays scannable (and under the 150-line rule):
   cross-phase verification, decisions to confirm, and post-parity roadmap.
 - **[Deployment & Operations Runbook](rebuild/05-deploy.md)** — Phase 7: EU VM,
   systemd, Litestream→R2 backup/restore, Caddy TLS, footprint check.
+- **[Skill Model (Rating + Allocation)](rebuild/06-skill-model.md)** —
+  post-parity design for a flexible, no-lock-in skill engine powering
+  matchmaking and rankings (model comparison + pluggable architecture).
