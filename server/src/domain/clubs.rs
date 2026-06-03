@@ -74,11 +74,6 @@ fn validate_create_club(club_username: &str, name: &str, info: &str) -> Result<(
             "Club name must be less than 50 characters.".into(),
         ));
     }
-    if info.is_empty() {
-        return Err(AppError::Validation(
-            "Please provide a club description.".into(),
-        ));
-    }
     if info.chars().count() > 160 {
         return Err(AppError::Validation(
             "Club description must be less than 160 characters.".into(),
@@ -1506,7 +1501,8 @@ mod tests {
         assert!(validate_create_club(&"a".repeat(13), "n", "i").is_err());
         assert!(validate_create_club("club", "", "i").is_err());
         assert!(validate_create_club("club", &"n".repeat(51), "i").is_err());
-        assert!(validate_create_club("club", "n", "").is_err());
+        // An empty description is allowed; it is an optional field.
+        assert!(validate_create_club("club", "n", "").is_ok());
         assert!(validate_create_club("club", "n", &"i".repeat(161)).is_err());
         assert!(validate_create_club("club", "Name", "Info").is_ok());
     }
