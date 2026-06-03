@@ -1625,6 +1625,20 @@ mod tests {
         assert_eq!(elo1, 1012);
         assert_eq!(elo2, 988);
 
+        // The skill-model columns are persisted alongside the legacy `elo`:
+        // for the Elo model the display value equals `mu`, and `games_played`
+        // increments for both players.
+        let (mu1, gp1): (f64, i64) = sqlx::query_as(
+            "SELECT e.mu, e.games_played FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
+             JOIN members m ON m.user_id = ue.user_id WHERE m.id = ? AND e.game_type_id = 1",
+        )
+        .bind(m1)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(mu1, 1012.0);
+        assert_eq!(gp1, 1);
+
         // Players reactivated; win/match stat maps updated.
         let active_now: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")

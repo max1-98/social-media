@@ -29,7 +29,8 @@ use crate::domain::events::{
 };
 use crate::error::AppError;
 use crate::matchmaking::{self, Gender, Player};
-use crate::rating::{self, PlayerElo};
+use crate::rating;
+use crate::skill::{self, RatingModel, SkillState, TeamSkills};
 use crate::state::AppState;
 
 // ===========================================================================
@@ -775,10 +776,15 @@ fn parse_score(score: &str) -> Result<(i64, i64), AppError> {
     Ok((a, b))
 }
 
-/// Port of `elo.services.update_elo`: load each player's rating row for the game
-/// type (creating one at the default if absent), recompute via the pure
-/// `apply_elo_update`, persist the new elo/winstreak/best_winstreak + last_game,
-/// and record the game in the win/lose join tables.
+/// Post-game rating update. Loads each player's per-`(user, game_type)` skill
+/// state (creating one at the model default if absent), runs the game type's
+/// pluggable [`skill::RatingModel`], and persists the new state plus the legacy
+/// `elo` display column, winstreaks, and the win/lose join rows.
+///
+/// `sbmm` gates the *rating* update (parity: non-SBMM games freeze ratings and
+/// only move winstreaks). The model is selected per game type via
+/// `game_types.model_version`, so old game types keep the Elo math and new ones
+/// can adopt Weng-Lin/Glicko-2 without disturbing existing ratings.
 #[allow(clippy::too_many_arguments)]
 async fn update_elo(
     app: &AppState,
@@ -796,48 +802,88 @@ async fn update_elo(
         (team2, team1)
     };
 
-    // elo row id per member (in order) for each side.
+    let version = model_version_for(app, game_type_id).await?;
+    let model = skill::model_for(&version);
+
+    // Skill rows per member (in order) for each side.
     let mut win_rows = Vec::new();
     for &member_id in winners {
-        win_rows.push(elo_row_for_member(app, member_id, game_type_id).await?);
+        win_rows.push(elo_row_for_member(app, member_id, game_type_id, model.as_ref()).await?);
     }
     let mut lose_rows = Vec::new();
     for &member_id in losers {
-        lose_rows.push(elo_row_for_member(app, member_id, game_type_id).await?);
+        lose_rows.push(elo_row_for_member(app, member_id, game_type_id, model.as_ref()).await?);
     }
 
-    let win_in: Vec<PlayerElo> = win_rows
-        .iter()
-        .map(|r| PlayerElo {
-            elo: r.elo,
-            winstreak: r.winstreak,
-            best_winstreak: r.best_winstreak,
-        })
-        .collect();
-    let lose_in: Vec<PlayerElo> = lose_rows
-        .iter()
-        .map(|r| PlayerElo {
-            elo: r.elo,
-            winstreak: r.winstreak,
-            best_winstreak: r.best_winstreak,
-        })
-        .collect();
+    // Lazy decay: inflate uncertainty for players who have been inactive, based
+    // on time since their last game (no scheduler — applied here at read time).
+    let now_ts = now();
+    let decayed = |r: &EloRow| -> SkillState {
+        let mut s = row_to_state(r);
+        model.decay(&mut s, days_inactive(&r.last_game, now_ts));
+        s
+    };
+    let win_team = TeamSkills(win_rows.iter().map(&decayed).collect());
+    let lose_team = TeamSkills(lose_rows.iter().map(&decayed).collect());
 
-    let update = rating::apply_elo_update(&win_in, &lose_in, diff, sbmm);
+    // Rating update only runs for SBMM games with both teams present.
+    let updated = if sbmm && !win_rows.is_empty() && !lose_rows.is_empty() {
+        // Calibration telemetry: log predicted win prob vs the actual outcome so
+        // models can be compared on Brier score / reliability.
+        let predicted = model.expected_score(&win_team, &lose_team);
+        tracing::info!(
+            model = %version,
+            predicted,
+            actual = 1.0_f64,
+            margin = diff,
+            "rating_calibration"
+        );
+        let [w, l] = model.update(&win_team, &lose_team, diff as f64);
+        Some((w, l))
+    } else {
+        None
+    };
+
     let last_game = fmt_ts(now())?;
 
-    for (row, out) in win_rows.iter().zip(update.winners.iter()) {
-        sqlx::query!(
-            "UPDATE elo SET elo = ?, winstreak = ?, best_winstreak = ?, last_game = ?
-             WHERE id = ?",
-            out.elo,
-            out.winstreak,
-            out.best_winstreak,
-            last_game,
-            row.elo_id
-        )
-        .execute(&app.pool)
-        .await?;
+    for (i, row) in win_rows.iter().enumerate() {
+        let winstreak = row.winstreak + 1;
+        let best = winstreak.max(row.best_winstreak);
+        match updated.as_ref().map(|(w, _)| &w[i]) {
+            Some(s) => {
+                let elo_disp = model.conservative_rating(s).round() as i64;
+                let extra = s.extra.to_string();
+                let gp = s.games_played as i64;
+                sqlx::query!(
+                    "UPDATE elo SET elo = ?, mu = ?, sigma = ?, games_played = ?,
+                                    model_version = ?, extra = ?, winstreak = ?,
+                                    best_winstreak = ?, last_game = ? WHERE id = ?",
+                    elo_disp,
+                    s.mu,
+                    s.sigma,
+                    gp,
+                    version,
+                    extra,
+                    winstreak,
+                    best,
+                    last_game,
+                    row.elo_id
+                )
+                .execute(&app.pool)
+                .await?;
+            }
+            None => {
+                sqlx::query!(
+                    "UPDATE elo SET winstreak = ?, best_winstreak = ?, last_game = ? WHERE id = ?",
+                    winstreak,
+                    best,
+                    last_game,
+                    row.elo_id
+                )
+                .execute(&app.pool)
+                .await?;
+            }
+        }
         sqlx::query!(
             "INSERT OR IGNORE INTO elo_game_wins (elo_id, game_id) VALUES (?, ?)",
             row.elo_id,
@@ -846,18 +892,39 @@ async fn update_elo(
         .execute(&app.pool)
         .await?;
     }
-    for (row, out) in lose_rows.iter().zip(update.losers.iter()) {
-        sqlx::query!(
-            "UPDATE elo SET elo = ?, winstreak = ?, best_winstreak = ?, last_game = ?
-             WHERE id = ?",
-            out.elo,
-            out.winstreak,
-            out.best_winstreak,
-            last_game,
-            row.elo_id
-        )
-        .execute(&app.pool)
-        .await?;
+
+    for (i, row) in lose_rows.iter().enumerate() {
+        match updated.as_ref().map(|(_, l)| &l[i]) {
+            Some(s) => {
+                let elo_disp = model.conservative_rating(s).round() as i64;
+                let extra = s.extra.to_string();
+                let gp = s.games_played as i64;
+                sqlx::query!(
+                    "UPDATE elo SET elo = ?, mu = ?, sigma = ?, games_played = ?,
+                                    model_version = ?, extra = ?, winstreak = 0,
+                                    last_game = ? WHERE id = ?",
+                    elo_disp,
+                    s.mu,
+                    s.sigma,
+                    gp,
+                    version,
+                    extra,
+                    last_game,
+                    row.elo_id
+                )
+                .execute(&app.pool)
+                .await?;
+            }
+            None => {
+                sqlx::query!(
+                    "UPDATE elo SET winstreak = 0, last_game = ? WHERE id = ?",
+                    last_game,
+                    row.elo_id
+                )
+                .execute(&app.pool)
+                .await?;
+            }
+        }
         sqlx::query!(
             "INSERT OR IGNORE INTO elo_game_loses (elo_id, game_id) VALUES (?, ?)",
             row.elo_id,
@@ -869,18 +936,56 @@ async fn update_elo(
     Ok(())
 }
 
-struct EloRow {
-    elo_id: i64,
-    elo: i64,
-    winstreak: i64,
-    best_winstreak: i64,
+/// The rating model selected for a game type (`game_types.model_version`),
+/// defaulting to the legacy Elo model when there is no game type.
+async fn model_version_for(app: &AppState, game_type_id: Option<i64>) -> Result<String, AppError> {
+    let Some(id) = game_type_id else {
+        return Ok(skill::elo::VERSION.to_string());
+    };
+    Ok(sqlx::query_scalar!(
+        r#"SELECT model_version AS "v!: String" FROM game_types WHERE id = ?"#,
+        id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    .unwrap_or_else(|| skill::elo::VERSION.to_string()))
 }
 
-/// Fetch (or create at the default) a member's rating row for the game type.
+struct EloRow {
+    elo_id: i64,
+    winstreak: i64,
+    best_winstreak: i64,
+    mu: f64,
+    sigma: f64,
+    games_played: i64,
+    extra: String,
+    last_game: String,
+}
+
+/// Build a model-agnostic [`SkillState`] from a persisted row.
+fn row_to_state(r: &EloRow) -> SkillState {
+    SkillState {
+        mu: r.mu,
+        sigma: r.sigma,
+        games_played: r.games_played.max(0) as u32,
+        extra: serde_json::from_str(&r.extra).unwrap_or(Value::Null),
+    }
+}
+
+/// Whole-day count since an RFC3339 `last_game` (0 if absent/unparseable), used
+/// to drive each model's lazy uncertainty decay.
+fn days_inactive(last_game: &str, now: OffsetDateTime) -> f64 {
+    OffsetDateTime::parse(last_game, &Rfc3339)
+        .map(|t| ((now - t).whole_seconds().max(0) as f64) / 86_400.0)
+        .unwrap_or(0.0)
+}
+
+/// Fetch (or create at the model default) a member's skill row for the game type.
 async fn elo_row_for_member(
     app: &AppState,
     member_id: i64,
     game_type_id: Option<i64>,
+    model: &dyn RatingModel,
 ) -> Result<EloRow, AppError> {
     let member = sqlx::query!(
         r#"SELECT user_id AS "user_id!: i64" FROM members WHERE id = ?"#,
@@ -890,9 +995,16 @@ async fn elo_row_for_member(
     .await?
     .ok_or_else(|| AppError::NotFound("No Member matches the given query.".into()))?;
 
+    // COALESCE keeps the read robust for rows created before the skill-model
+    // migration (or by the bare `INSERT INTO elo` paths): a NULL `mu` falls back
+    // to the legacy `elo`, and a NULL `sigma` to the high-uncertainty default.
     if let Some(existing) = sqlx::query!(
-        r#"SELECT e.id AS "id!: i64", e.elo AS "elo!: i64",
-                  e.winstreak AS "winstreak!: i64", e.best_winstreak AS "best_winstreak!: i64"
+        r#"SELECT e.id AS "id!: i64",
+                  e.winstreak AS "winstreak!: i64", e.best_winstreak AS "best_winstreak!: i64",
+                  COALESCE(e.mu, CAST(e.elo AS REAL)) AS "mu!: f64",
+                  COALESCE(e.sigma, 350.0 / 3.0) AS "sigma!: f64",
+                  e.games_played AS "games_played!: i64", e.extra AS "extra!: String",
+                  e.last_game AS "last_game!: String"
            FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
            WHERE ue.user_id = ? AND e.game_type_id IS ? LIMIT 1"#,
         member.user_id,
@@ -903,18 +1015,34 @@ async fn elo_row_for_member(
     {
         return Ok(EloRow {
             elo_id: existing.id,
-            elo: existing.elo,
             winstreak: existing.winstreak,
             best_winstreak: existing.best_winstreak,
+            mu: existing.mu,
+            sigma: existing.sigma,
+            games_played: existing.games_played,
+            extra: existing.extra,
+            last_game: existing.last_game,
         });
     }
 
+    let default = model.default_state();
+    let elo_disp = model.conservative_rating(&default).round() as i64;
+    let extra = default.extra.to_string();
+    let version = model.version();
+    let games_played = default.games_played as i64;
     let last_game = fmt_ts(now())?;
     let new_id = sqlx::query_scalar!(
-        r#"INSERT INTO elo (game_type_id, last_game) VALUES (?, ?)
+        r#"INSERT INTO elo (game_type_id, last_game, elo, mu, sigma, games_played, model_version, extra)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
            RETURNING id AS "id!: i64""#,
         game_type_id,
-        last_game
+        last_game,
+        elo_disp,
+        default.mu,
+        default.sigma,
+        games_played,
+        version,
+        extra
     )
     .fetch_one(&app.pool)
     .await?;
@@ -925,18 +1053,15 @@ async fn elo_row_for_member(
     )
     .execute(&app.pool)
     .await?;
-    let row = sqlx::query!(
-        r#"SELECT elo AS "elo!: i64", winstreak AS "winstreak!: i64",
-                  best_winstreak AS "best_winstreak!: i64" FROM elo WHERE id = ?"#,
-        new_id
-    )
-    .fetch_one(&app.pool)
-    .await?;
     Ok(EloRow {
         elo_id: new_id,
-        elo: row.elo,
-        winstreak: row.winstreak,
-        best_winstreak: row.best_winstreak,
+        winstreak: 0,
+        best_winstreak: 0,
+        mu: default.mu,
+        sigma: default.sigma,
+        games_played,
+        extra,
+        last_game,
     })
 }
 

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT model_version AS \"v!: String\" FROM game_types WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "v!: String",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1268b3946984a025f94bb69790389fca4212c85beda75b7dbb87ed74b0857d17"
+}
