@@ -200,9 +200,14 @@ export async function addSport(payload: AddSportPayload): Promise<MessageRespons
   return postJson<MessageResponse>("/club/add-sport", payload);
 }
 
-/** GET /api/clubs/:pk/socials — a club's social links. */
+/**
+ * GET /api/clubs/:pk/socials — a club's social links. The backend wraps the list
+ * in `{ socials: [...] }` (`ClubSocialSerializer`); unwrap to the bare array so
+ * callers get the declared `Social[]`.
+ */
 export async function clubSocials(pk: number | string): Promise<Social[]> {
-  return getJson<Social[]>(`/clubs/${String(pk)}/socials`);
+  const body = await getJson<{ socials: Social[] }>(`/clubs/${String(pk)}/socials`);
+  return body.socials;
 }
 
 /**
