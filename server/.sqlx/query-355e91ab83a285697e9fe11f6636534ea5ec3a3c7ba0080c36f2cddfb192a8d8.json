@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE users SET biological_gender = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "355e91ab83a285697e9fe11f6636534ea5ec3a3c7ba0080c36f2cddfb192a8d8"
+}

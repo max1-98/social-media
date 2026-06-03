@@ -14,7 +14,13 @@ export * as eloApi from "./elo";
 export * as eventsApi from "./events";
 export * as gamesApi from "./games";
 
-export type { AuthUserResponse, DetailResponse, RegisterPayload, LoginPayload } from "./auth";
+export type {
+  AuthUserResponse,
+  DetailResponse,
+  RegisterPayload,
+  LoginPayload,
+  UpdateProfilePayload,
+} from "./auth";
 export type {
   AccountExport,
   ExportUser,
