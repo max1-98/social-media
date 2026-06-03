@@ -39,6 +39,7 @@ vi.mock("../components/organisms", () => ({
 
 vi.mock("../components/molecules", () => ({
   AddressForm: () => <div data-testid="address-form" />,
+  LogoUploader: () => <div data-testid="logo-uploader" />,
   SocialLink: ({ social }: { social: Social }) => <span>{social.platform}</span>,
 }));
 

@@ -79,6 +79,7 @@ export interface MyClub {
   name: string;
   logo: string;
   sport_type: Sport | null;
+  is_club_admin: boolean;
 }
 
 export interface ManyClub {
@@ -156,6 +157,15 @@ export interface EventDetail {
   mode: string;
   even_teams: boolean;
   team_size: number;
+}
+
+/** Recurrence cadence for an event series. */
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly";
+
+/** POST /api/event/series/create/:pk — the created series + first instances. */
+export interface SeriesCreated {
+  series_id: string;
+  events: Event[];
 }
 
 export interface Game {

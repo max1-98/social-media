@@ -20,7 +20,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::auth::AuthUser;
 use crate::error::AppError;
-use crate::id::{ApiPath, ClubId, EventId, MemberId};
+use crate::id::{ApiPath, ClubId, EventId, MemberId, SeriesId};
 use crate::state::AppState;
 
 // ===========================================================================
@@ -179,6 +179,37 @@ fn should_activate(event_active: bool, date: Date, today: Date, start_time_passe
 /// Should a not-yet-complete event auto-complete? (2+ days past its date)
 fn should_complete(event_complete: bool, date: Date, today: Date) -> bool {
     !event_complete && date + Duration::days(2) < today
+}
+
+// ===========================================================================
+// Recurrence (event series). Pure date math, unit-tested below; the IO that
+// materializes concrete events lives in `materialize_series`.
+// ===========================================================================
+
+/// How far ahead `materialize_series` generates instances (~8 weeks). Keeping a
+/// rolling horizon (rather than the full series at once) bounds the row count
+/// and lets lazy generation top up as listings happen.
+const MATERIALIZE_HORIZON_DAYS: i64 = 56;
+
+/// Add `months` calendar months to `date`, clamping the day to the target
+/// month's length (e.g. Jan 31 + 1 month -> Feb 28/29). Pure.
+fn add_months(date: Date, months: i64) -> Option<Date> {
+    let total = i64::from(date.year()) * 12 + (i64::from(u8::from(date.month())) - 1) + months;
+    let year = i32::try_from(total.div_euclid(12)).ok()?;
+    let month = time::Month::try_from(u8::try_from(total.rem_euclid(12)).ok()? + 1).ok()?;
+    let day = date.day().min(month.length(year));
+    Date::from_calendar_date(year, month, day).ok()
+}
+
+/// The next occurrence after `date` for a `frequency`/`interval` rule. Pure.
+fn next_occurrence(date: Date, frequency: &str, interval: i64) -> Option<Date> {
+    let n = interval.max(1);
+    match frequency {
+        "daily" => date.checked_add(Duration::days(n)),
+        "weekly" => date.checked_add(Duration::days(7 * n)),
+        "monthly" => add_months(date, n),
+        _ => None,
+    }
 }
 
 // ===========================================================================
@@ -524,10 +555,97 @@ fn start_time_before_now(start_time: &str) -> bool {
     }
 }
 
+/// Lazily generate concrete `events` rows for a club's active series, up to a
+/// rolling horizon. Idempotent: `generated_through` watermarks the furthest date
+/// processed, so repeated listings never duplicate instances, and instances that
+/// `auto_manage_events` later auto-deletes (empty + completed) are not recreated.
+/// Occurrences strictly in the past are skipped (no backlog) but still advance
+/// the watermark to keep the cadence aligned to `start_date`.
+async fn materialize_series(app: &AppState, club_id: i64) -> Result<(), AppError> {
+    let today = now().date();
+    let horizon = today + Duration::days(MATERIALIZE_HORIZON_DAYS);
+
+    let series = sqlx::query!(
+        r#"SELECT id AS "id!: i64", game_type_id AS "game_type_id?: i64",
+                  start_time, finish_time,
+                  number_of_courts AS "number_of_courts!: i64",
+                  sbmm AS "sbmm!: i64", guests_allowed AS "guests_allowed!: i64",
+                  over_18_under_18_mixed, frequency,
+                  interval AS "interval!: i64", start_date, end_date,
+                  generated_through
+           FROM event_series WHERE club_id = ? AND is_active = 1"#,
+        club_id
+    )
+    .fetch_all(&app.pool)
+    .await?;
+
+    for s in series {
+        let (Some(start), Some(end)) = (parse_date(&s.start_date), parse_date(&s.end_date)) else {
+            continue;
+        };
+        let limit = end.min(horizon);
+        // Resume after the watermark; otherwise begin at the series start.
+        let mut date = match s.generated_through.as_deref().and_then(parse_date) {
+            Some(g) => match next_occurrence(g, &s.frequency, s.interval) {
+                Some(d) => d,
+                None => continue,
+            },
+            None => start,
+        };
+
+        let mut watermark: Option<Date> = None;
+        while date <= limit {
+            let date_str = date.to_string();
+            if date >= today {
+                sqlx::query!(
+                    r#"INSERT INTO events
+                        (club_id, game_type_id, date, start_time, finish_time,
+                         number_of_courts, sbmm, guests_allowed,
+                         over_18_under_18_mixed, series_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                    club_id,
+                    s.game_type_id,
+                    date_str,
+                    s.start_time,
+                    s.finish_time,
+                    s.number_of_courts,
+                    s.sbmm,
+                    s.guests_allowed,
+                    s.over_18_under_18_mixed,
+                    s.id,
+                )
+                .execute(&app.pool)
+                .await?;
+            }
+            watermark = Some(date);
+            date = match next_occurrence(date, &s.frequency, s.interval) {
+                Some(d) => d,
+                None => break,
+            };
+        }
+
+        if let Some(w) = watermark {
+            let w_str = w.to_string();
+            sqlx::query!(
+                "UPDATE event_series SET generated_through = ? WHERE id = ?",
+                w_str,
+                s.id
+            )
+            .execute(&app.pool)
+            .await?;
+        }
+    }
+    Ok(())
+}
+
 /// Lazily auto-manage a club's events (port of `auto_manage_events`): activate
 /// past events whose start has passed, complete events 2+ days old, and delete
 /// completed empty events. Runs before listing, matching the legacy view.
 async fn auto_manage_events(app: &AppState, club_id: i64) -> Result<(), AppError> {
+    // Top up recurring series before auto-managing, so freshly generated
+    // instances are activated/completed in the same pass.
+    materialize_series(app, club_id).await?;
+
     let today = now().date();
     let rows = sqlx::query!(
         r#"SELECT id AS "id!: i64", date, start_time,
@@ -853,6 +971,214 @@ pub async fn create_event(
         },
     );
     Ok((StatusCode::CREATED, Json(item)))
+}
+
+#[derive(Deserialize)]
+pub struct CreateSeriesRequest {
+    game_type: Option<String>,
+    start_time: Option<String>,
+    finish_time: Option<String>,
+    number_of_courts: Option<i64>,
+    #[serde(default)]
+    sbmm: Option<bool>,
+    #[serde(default)]
+    guests_allowed: Option<bool>,
+    over_18_under_18_mixed: Option<String>,
+    frequency: Option<String>,
+    #[serde(default)]
+    interval: Option<i64>,
+    start_date: Option<String>,
+    end_date: Option<String>,
+}
+
+/// Response for series creation: the new series id plus the instances generated
+/// within the materialization horizon.
+#[derive(Debug, Serialize)]
+pub struct SeriesCreated {
+    series_id: SeriesId,
+    events: Vec<EventListItem>,
+}
+
+/// POST /api/event/series/create/:pk — create a recurring event series for club
+/// `pk` (admin only). Inserts the series template + rule, materializes the first
+/// instances, and returns the series id with those instances.
+pub async fn create_series(
+    State(app): State<AppState>,
+    user: AuthUser,
+    ApiPath(pk): ApiPath<ClubId>,
+    Json(req): Json<CreateSeriesRequest>,
+) -> Result<(StatusCode, Json<SeriesCreated>), AppError> {
+    let pk = pk.inner();
+    require_admin(&app, user.id, pk).await?;
+
+    let (
+        Some(start_time),
+        Some(finish_time),
+        Some(number_of_courts),
+        Some(frequency),
+        Some(start_date),
+        Some(end_date),
+    ) = (
+        req.start_time,
+        req.finish_time,
+        req.number_of_courts,
+        req.frequency,
+        req.start_date,
+        req.end_date,
+    )
+    else {
+        return Err(AppError::Validation("This field is required.".into()));
+    };
+
+    if !matches!(frequency.as_str(), "daily" | "weekly" | "monthly") {
+        return Err(AppError::Validation(
+            "frequency must be daily, weekly or monthly.".into(),
+        ));
+    }
+    let interval = req.interval.unwrap_or(1).max(1);
+    let (Some(start), Some(end)) = (parse_date(&start_date), parse_date(&end_date)) else {
+        return Err(AppError::Validation("Invalid date.".into()));
+    };
+    if end < start {
+        return Err(AppError::Validation(
+            "end_date must not be before start_date.".into(),
+        ));
+    }
+
+    let game_type_id = match req.game_type.as_deref() {
+        Some(name) => Some(
+            sqlx::query_scalar!("SELECT id FROM game_types WHERE name = ?", name)
+                .fetch_optional(&app.pool)
+                .await?
+                .ok_or_else(|| AppError::NotFound("No GameType matches the given query.".into()))?,
+        ),
+        None => None,
+    };
+
+    let sbmm = i64::from(req.sbmm.unwrap_or(true));
+    let guests = i64::from(req.guests_allowed.unwrap_or(false));
+    let mixed = req.over_18_under_18_mixed.unwrap_or_default();
+
+    let series_id = sqlx::query_scalar!(
+        r#"INSERT INTO event_series
+            (club_id, game_type_id, start_time, finish_time, number_of_courts,
+             sbmm, guests_allowed, over_18_under_18_mixed, frequency, interval,
+             start_date, end_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS "id!: i64""#,
+        pk,
+        game_type_id,
+        start_time,
+        finish_time,
+        number_of_courts,
+        sbmm,
+        guests,
+        mixed,
+        frequency,
+        interval,
+        start_date,
+        end_date,
+    )
+    .fetch_one(&app.pool)
+    .await?;
+
+    // Generate the first instances now so the caller can show them immediately.
+    materialize_series(&app, pk).await?;
+
+    let club = sqlx::query!(
+        r#"SELECT id AS "id!: i64", name, logo FROM clubs WHERE id = ?"#,
+        pk
+    )
+    .fetch_one(&app.pool)
+    .await?;
+    let logo = logo_url(&app, club.logo);
+
+    let rows = sqlx::query!(
+        r#"SELECT e.id AS "id!: i64", e.date, e.start_time, e.finish_time,
+                  e.number_of_courts AS "number_of_courts!: i64",
+                  e.sbmm AS "sbmm!: i64", e.guests_allowed AS "guests_allowed!: i64",
+                  e.over_18_under_18_mixed, e.event_active AS "event_active!: i64",
+                  e.event_complete AS "event_complete!: i64",
+                  gt.name AS "game_type_name?: String"
+           FROM events e
+           LEFT JOIN game_types gt ON gt.id = e.game_type_id
+           WHERE e.series_id = ? ORDER BY e.date"#,
+        series_id
+    )
+    .fetch_all(&app.pool)
+    .await?;
+
+    let events = rows
+        .into_iter()
+        .map(|r| {
+            let row = EventRow {
+                id: r.id,
+                date: r.date,
+                start_time: r.start_time,
+                finish_time: r.finish_time,
+                number_of_courts: r.number_of_courts,
+                sbmm: r.sbmm,
+                guests_allowed: r.guests_allowed,
+                over_18_under_18_mixed: r.over_18_under_18_mixed,
+                event_active: r.event_active,
+                event_complete: r.event_complete,
+                game_type_name: r.game_type_name,
+            };
+            event_list_item(
+                row,
+                EventClub {
+                    id: club.id.into(),
+                    name: club.name.clone(),
+                    logo: logo.clone(),
+                },
+            )
+        })
+        .collect();
+
+    Ok((
+        StatusCode::CREATED,
+        Json(SeriesCreated {
+            series_id: series_id.into(),
+            events,
+        }),
+    ))
+}
+
+/// DELETE /api/event/series/:series_id — cancel a series (admin only):
+/// deactivate it and drop future instances that have no recorded games.
+pub async fn cancel_series(
+    State(app): State<AppState>,
+    user: AuthUser,
+    ApiPath(series_id): ApiPath<SeriesId>,
+) -> Result<Json<Value>, AppError> {
+    let series_id = series_id.inner();
+    let club_id = sqlx::query_scalar!(
+        r#"SELECT club_id AS "club_id!: i64" FROM event_series WHERE id = ?"#,
+        series_id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    .ok_or_else(|| AppError::NotFound("No EventSeries matches the given query.".into()))?;
+    require_admin(&app, user.id, club_id).await?;
+
+    sqlx::query!(
+        "UPDATE event_series SET is_active = 0 WHERE id = ?",
+        series_id
+    )
+    .execute(&app.pool)
+    .await?;
+
+    let today = now().date().to_string();
+    sqlx::query!(
+        r#"DELETE FROM events
+           WHERE series_id = ? AND date > ?
+             AND id NOT IN (SELECT event_id FROM event_games)"#,
+        series_id,
+        today
+    )
+    .execute(&app.pool)
+    .await?;
+
+    Ok(Json(json!({ "detail": "Series cancelled." })))
 }
 
 #[derive(Deserialize)]
@@ -1496,5 +1822,48 @@ mod tests {
         assert!(should_complete(false, date!(2026 - 05 - 30), today));
         assert!(!should_complete(false, date!(2026 - 06 - 01), today));
         assert!(!should_complete(true, date!(2026 - 05 - 01), today));
+    }
+
+    #[test]
+    fn next_occurrence_daily_and_weekly() {
+        let d = date!(2026 - 06 - 02);
+        assert_eq!(next_occurrence(d, "daily", 1), Some(date!(2026 - 06 - 03)));
+        assert_eq!(next_occurrence(d, "daily", 3), Some(date!(2026 - 06 - 05)));
+        assert_eq!(next_occurrence(d, "weekly", 1), Some(date!(2026 - 06 - 09)));
+        assert_eq!(next_occurrence(d, "weekly", 2), Some(date!(2026 - 06 - 16)));
+        // interval < 1 is treated as 1; unknown frequency yields None.
+        assert_eq!(next_occurrence(d, "daily", 0), Some(date!(2026 - 06 - 03)));
+        assert_eq!(next_occurrence(d, "yearly", 1), None);
+    }
+
+    #[test]
+    fn next_occurrence_monthly_clamps_day() {
+        // Jan 31 + 1 month -> Feb 28 (2026 is not a leap year).
+        assert_eq!(
+            next_occurrence(date!(2026 - 01 - 31), "monthly", 1),
+            Some(date!(2026 - 02 - 28))
+        );
+        // Crossing a year boundary.
+        assert_eq!(
+            next_occurrence(date!(2026 - 12 - 15), "monthly", 1),
+            Some(date!(2027 - 01 - 15))
+        );
+        // Leap-year February keeps the 29th.
+        assert_eq!(
+            next_occurrence(date!(2024 - 01 - 29), "monthly", 1),
+            Some(date!(2024 - 02 - 29))
+        );
+    }
+
+    #[test]
+    fn add_months_multi_step() {
+        assert_eq!(
+            add_months(date!(2026 - 06 - 02), 3),
+            Some(date!(2026 - 09 - 02))
+        );
+        assert_eq!(
+            add_months(date!(2026 - 11 - 30), 3),
+            Some(date!(2027 - 02 - 28))
+        );
     }
 }

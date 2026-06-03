@@ -2,13 +2,13 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import { useCallback, useEffect, useState } from "react";
-import type { ChangeEvent, ReactElement } from "react";
+import type { ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { ApiRequestError, clubsApi } from "../api";
 import type { AddressResponse } from "../api";
 import { Alert, Avatar, Button, Spinner, Text } from "../components/atoms";
-import { AddressForm, SocialLink } from "../components/molecules";
+import { AddressForm, LogoUploader, SocialLink } from "../components/molecules";
 import type { AddressResult } from "../components/molecules";
 import { ClubRequests, MapView, MemberTable } from "../components/organisms";
 import { useAuth } from "../hooks";
@@ -83,19 +83,20 @@ export function ClubDetailPage(): ReactElement {
     [clubId, loadClub],
   );
 
-  const handleLogo = useCallback(
-    (event: ChangeEvent<HTMLInputElement>): void => {
-      const file = event.target.files?.[0];
-      if (file === undefined || clubId === undefined) return;
-      void clubsApi
-        .uploadLogo(clubId, file)
-        .then(loadClub)
-        .catch(() => {
-          setError("Could not upload the logo.");
-        });
+  const handleUploadLogo = useCallback(
+    async (file: File): Promise<void> => {
+      if (clubId === undefined) throw new Error("No club");
+      await clubsApi.uploadLogo(clubId, file);
+      loadClub();
     },
     [clubId, loadClub],
   );
+
+  const handleRemoveLogo = useCallback(async (): Promise<void> => {
+    if (clubId === undefined) throw new Error("No club");
+    await clubsApi.removeLogo(clubId);
+    loadClub();
+  }, [clubId, loadClub]);
 
   const handleJoin = useCallback((): void => {
     if (club === null) return;
@@ -222,6 +223,15 @@ export function ClubDetailPage(): ReactElement {
         {club.membership_status === MEMBERSHIP_MEMBER && !club.is_club_president && (
           <Button onClick={handleLeave}>Leave club</Button>
         )}
+        {club.membership_status === MEMBERSHIP_MEMBER && (
+          <Button
+            onClick={() => {
+              void navigate(`/club/${club.id}/events`);
+            }}
+          >
+            View events
+          </Button>
+        )}
         {club.is_club_admin && (
           <Button
             onClick={() => {
@@ -269,10 +279,12 @@ export function ClubDetailPage(): ReactElement {
           <Text variant="h2" gutterBottom>
             Club logo
           </Text>
-          <label>
-            Upload logo
-            <input type="file" accept="image/*" onChange={handleLogo} />
-          </label>
+          <LogoUploader
+            currentLogo={club.logo}
+            clubName={club.name}
+            onUpload={handleUploadLogo}
+            onRemove={handleRemoveLogo}
+          />
 
           <Divider sx={{ my: 3 }} />
           <Text variant="h2" gutterBottom>

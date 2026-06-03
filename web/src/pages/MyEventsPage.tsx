@@ -1,10 +1,11 @@
+import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { eventsApi, ApiRequestError } from "../api";
-import { Alert, Spinner, Text } from "../components/atoms";
+import { Alert, Button, Spinner, Text } from "../components/atoms";
 import { EventList } from "../components/organisms";
 import type { Event } from "../types";
 
@@ -39,6 +40,15 @@ export function MyEventsPage(): ReactElement {
   return (
     <Stack spacing={3}>
       <Text variant="h1">My events</Text>
+      <Box>
+        <Button
+          onClick={() => {
+            void navigate("/event/create");
+          }}
+        >
+          Create event
+        </Button>
+      </Box>
       {error !== null ? <Alert severity="error">{error}</Alert> : null}
       {events === null && error === null ? (
         <Spinner />

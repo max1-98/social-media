@@ -20,7 +20,13 @@ vi.mock("../api", () => ({
 describe("MyClubsPage", () => {
   it("lists the user's clubs", async () => {
     myClubs.mockResolvedValue([
-      { id: "2", name: "Padel Pals", logo: "", sport_type: { name: "padel" } },
+      {
+        id: "2",
+        name: "Padel Pals",
+        logo: "",
+        sport_type: { name: "padel" },
+        is_club_admin: false,
+      },
     ]);
     render(
       <MemoryRouter>

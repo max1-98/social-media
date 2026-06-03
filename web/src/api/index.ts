@@ -33,5 +33,10 @@ export type {
   MessageResponse,
   SocialLinksPayload,
 } from "./clubs";
-export type { CreateEventPayload, EventSettingsPayload, EventStats } from "./events";
+export type {
+  CreateEventPayload,
+  CreateSeriesPayload,
+  EventSettingsPayload,
+  EventStats,
+} from "./events";
 export type { CompleteGamePayload } from "./games";

@@ -159,6 +159,10 @@ public_id!(
     /// Public id for a post (`posts.id`).
     PostId = 7
 );
+public_id!(
+    /// Public id for a recurring event series (`event_series.id`).
+    SeriesId = 8
+);
 
 /// Path extractor that decodes tagged public ids and maps **any** failure
 /// (malformed string, wrong entity tag, missing segment) to a uniform `404`, so

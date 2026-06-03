@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT logo FROM clubs WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "logo",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "afabff241bdf148842e365b0525b5d36f8e757c5fb82ee4f110266dc35b21c00"
+}

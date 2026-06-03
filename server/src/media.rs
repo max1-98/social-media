@@ -40,6 +40,10 @@ pub trait Storage: Send + Sync {
         content_type: &str,
     ) -> Result<StoredObject, AppError>;
 
+    /// Delete the object at `key`. Missing objects are treated as success
+    /// (idempotent), so removing an already-gone logo is not an error.
+    async fn delete(&self, key: &str) -> Result<(), AppError>;
+
     /// Build a signed URL for `key`, valid for `ttl_secs` seconds.
     fn signed_url(&self, key: &str, ttl_secs: u64) -> String;
 }
@@ -107,6 +111,14 @@ impl Storage for LocalDiskStorage {
         })
     }
 
+    async fn delete(&self, key: &str) -> Result<(), AppError> {
+        match tokio::fs::remove_file(self.root.join(key)).await {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(AppError::Internal(format!("media delete: {e}"))),
+        }
+    }
+
     fn signed_url(&self, key: &str, ttl_secs: u64) -> String {
         let expires = now_unix() + ttl_secs;
         // Signing can only fail on an empty key; fall back to an unsigned URL.
@@ -141,6 +153,11 @@ impl Storage for R2Storage {
     ) -> Result<StoredObject, AppError> {
         // TODO Phase 7 deploy: PUT to R2 via SigV4.
         Err(AppError::Internal("R2 storage not configured.".into()))
+    }
+
+    async fn delete(&self, _key: &str) -> Result<(), AppError> {
+        // TODO Phase 7 deploy: DELETE object via SigV4.
+        Ok(())
     }
 
     fn signed_url(&self, _key: &str, _ttl_secs: u64) -> String {
@@ -214,6 +231,21 @@ mod tests {
         assert!(obj.url.contains("&sig="));
         let written = tokio::fs::read(dir.join("club_logos/1.png")).await.unwrap();
         assert_eq!(written, b"hello");
+        let _ = tokio::fs::remove_dir_all(&dir).await;
+    }
+
+    #[tokio::test]
+    async fn local_disk_delete_is_idempotent() {
+        let dir = std::env::temp_dir().join(format!("media-del-{}", now_unix()));
+        let store = LocalDiskStorage::new(&dir, "/media", b"secret".to_vec());
+        store
+            .put("club_logos/1.png", b"hello", "image/png")
+            .await
+            .unwrap();
+        store.delete("club_logos/1.png").await.unwrap();
+        assert!(!dir.join("club_logos/1.png").exists());
+        // Deleting an already-gone object still succeeds.
+        store.delete("club_logos/1.png").await.unwrap();
         let _ = tokio::fs::remove_dir_all(&dir).await;
     }
 

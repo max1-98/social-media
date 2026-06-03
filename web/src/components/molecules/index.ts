@@ -8,6 +8,8 @@ export { FormField } from "./FormField";
 export type { FormFieldProps } from "./FormField";
 export { GameCard } from "./GameCard";
 export type { GameCardProps } from "./GameCard";
+export { LogoUploader } from "./LogoUploader";
+export type { LogoUploaderProps } from "./LogoUploader";
 export { MemberRow } from "./MemberRow";
 export type { MemberRowProps } from "./MemberRow";
 export { PasswordField } from "./PasswordField";

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { eventsApi, ApiRequestError } from "../api";
+import { clubsApi, eventsApi, ApiRequestError } from "../api";
 import { Alert, Button, Spinner, Text } from "../components/atoms";
 import { EventList } from "../components/organisms";
 import type { Event } from "../types";
@@ -19,6 +19,7 @@ export function ClubEventsPage(): ReactElement {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[] | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,6 +35,12 @@ export function ClubEventsPage(): ReactElement {
           setError(err instanceof ApiRequestError ? err.message : "Could not load club events.");
         }
       });
+    void clubsApi
+      .clubDetail(clubId)
+      .then((club) => {
+        if (active) setIsAdmin(club.is_club_admin);
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
@@ -42,7 +49,7 @@ export function ClubEventsPage(): ReactElement {
   return (
     <Stack spacing={3}>
       <Text variant="h1">Club events</Text>
-      {clubId !== undefined ? (
+      {clubId !== undefined && isAdmin ? (
         <Box>
           <Button
             onClick={() => {

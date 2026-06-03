@@ -185,9 +185,14 @@ export async function addSport(payload: AddSportPayload): Promise<MessageRespons
   return postJson<MessageResponse>("/club/add-sport", payload);
 }
 
-/** GET /api/clubs/:pk/socials — a club's social links. */
+/**
+ * GET /api/clubs/:pk/socials — a club's social links. The backend wraps the list
+ * in `{ socials: [...] }` (`ClubSocialSerializer`); unwrap to the bare array so
+ * callers get the declared `Social[]`.
+ */
 export async function clubSocials(pk: string): Promise<Social[]> {
-  return getJson<Social[]>(`/clubs/${pk}/socials`);
+  const body = await getJson<{ socials: Social[] }>(`/clubs/${pk}/socials`);
+  return body.socials;
 }
 
 /**
@@ -198,6 +203,14 @@ export async function uploadLogo(pk: string, file: File): Promise<MessageRespons
   const form = new FormData();
   form.append("logo", file);
   return patchForm<MessageResponse>(`/club/${pk}/logo`, form);
+}
+
+/**
+ * DELETE /api/club/:pk/logo — remove a club logo (admin only), clearing the
+ * stored file and the column, matching the Rust `remove_logo` handler.
+ */
+export async function removeLogo(pk: string): Promise<MessageResponse> {
+  return del<MessageResponse>(`/club/${pk}/logo`);
 }
 
 /**

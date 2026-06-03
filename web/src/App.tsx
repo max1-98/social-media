@@ -103,6 +103,7 @@ export default function App(): ReactElement {
               <Route path="/club/:clubId/events" element={<ClubEventsPage />} />
               <Route path="/club/:clubId/event/create" element={<CreateEventPage />} />
               <Route path="/club/:clubId/event/:eventId" element={<EventViewPage />} />
+              <Route path="/event/create" element={<CreateEventPage />} />
               <Route path="/events" element={<MyEventsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/games" element={<PastGamesPage />} />

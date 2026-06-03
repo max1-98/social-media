@@ -3,10 +3,16 @@
  * (list/detail, create, member activation, lifecycle, settings, stats).
  */
 
-import type { Event, EventDetail, EventStatsResult } from "../types";
+import type {
+  Event,
+  EventDetail,
+  EventStatsResult,
+  RecurrenceFrequency,
+  SeriesCreated,
+} from "../types";
 
 import type { DetailResponse } from "./auth";
-import { getJson, patchJson, postJson } from "./http";
+import { del, getJson, patchJson, postJson } from "./http";
 
 export interface CreateEventPayload {
   date: string;
@@ -17,6 +23,20 @@ export interface CreateEventPayload {
   guests_allowed: boolean;
   over_18_under_18_mixed: string;
   game_type: string;
+}
+
+export interface CreateSeriesPayload {
+  start_time: string;
+  finish_time: string;
+  number_of_courts: number;
+  sbmm: boolean;
+  guests_allowed: boolean;
+  over_18_under_18_mixed: string;
+  game_type: string;
+  frequency: RecurrenceFrequency;
+  interval: number;
+  start_date: string;
+  end_date: string;
 }
 
 export interface EventSettingsPayload {
@@ -54,6 +74,19 @@ export async function createEvent(
   payload: CreateEventPayload,
 ): Promise<EventDetail> {
   return postJson<EventDetail>(`/event/create/${clubPk}`, payload);
+}
+
+/** POST /api/event/series/create/:pk — create a recurring event series. */
+export async function createSeries(
+  clubPk: string,
+  payload: CreateSeriesPayload,
+): Promise<SeriesCreated> {
+  return postJson<SeriesCreated>(`/event/series/create/${clubPk}`, payload);
+}
+
+/** DELETE /api/event/series/:seriesId — cancel a series and drop future instances. */
+export async function cancelSeries(seriesId: string): Promise<DetailResponse> {
+  return del<DetailResponse>(`/event/series/${seriesId}`);
 }
 
 /** POST /api/event/activate-member — mark a member active for an event. */
