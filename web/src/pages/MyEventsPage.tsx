@@ -56,7 +56,7 @@ export function MyEventsPage(): ReactElement {
         <EventList
           events={events}
           onSelectEvent={(event) => {
-            void navigate(`/club/${String(event.club.id)}/event/${String(event.id)}`);
+            void navigate(`/club/${event.club.id}/event/${event.id}`);
           }}
         />
       ) : null}

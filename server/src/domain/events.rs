@@ -9,7 +9,7 @@
 
 use std::collections::BTreeMap;
 
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::auth::AuthUser;
 use crate::error::AppError;
+use crate::id::{ApiPath, ClubId, EventId, MemberId, SeriesId};
 use crate::state::AppState;
 
 // ===========================================================================
@@ -338,7 +339,7 @@ pub struct GameTypeField {
 /// `EventClubSerializer`.
 #[derive(Debug, Serialize)]
 pub struct EventClub {
-    id: i64,
+    id: ClubId,
     name: String,
     logo: Option<String>,
 }
@@ -346,7 +347,7 @@ pub struct EventClub {
 /// `EventSerializer`.
 #[derive(Debug, Serialize)]
 pub struct EventListItem {
-    id: i64,
+    id: EventId,
     date: String,
     start_time: String,
     finish_time: String,
@@ -363,7 +364,7 @@ pub struct EventListItem {
 /// `MemberBasicSerializer` (subset used by the event detail).
 #[derive(Debug, Serialize)]
 pub struct MemberBasic {
-    id: i64,
+    id: MemberId,
     first_name: Option<String>,
     surname: Option<String>,
     username: String,
@@ -373,7 +374,7 @@ pub struct MemberBasic {
 /// `EventDetailSerializer`.
 #[derive(Debug, Serialize)]
 pub struct EventDetail {
-    id: i64,
+    id: EventId,
     game_type: Option<GameTypeField>,
     date: String,
     start_time: String,
@@ -470,7 +471,7 @@ async fn load_event_members(
         .await?
         .into_iter()
         .map(|r| MemberBasic {
-            id: r.id,
+            id: r.id.into(),
             first_name: r.first_name,
             surname: r.surname,
             username: r.username,
@@ -490,7 +491,7 @@ async fn load_event_members(
         .await?
         .into_iter()
         .map(|r| MemberBasic {
-            id: r.id,
+            id: r.id.into(),
             first_name: r.first_name,
             surname: r.surname,
             username: r.username,
@@ -523,7 +524,7 @@ struct EventRow {
 /// Build an `EventListItem` (`EventSerializer`) from a row + its club.
 fn event_list_item(r: EventRow, club: EventClub) -> EventListItem {
     EventListItem {
-        id: r.id,
+        id: r.id.into(),
         date: r.date,
         start_time: r.start_time,
         finish_time: r.finish_time,
@@ -702,8 +703,9 @@ async fn auto_manage_events(app: &AppState, club_id: i64) -> Result<(), AppError
 pub async fn club_events(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<Vec<EventListItem>>, AppError> {
+    let pk = pk.inner();
     require_member(&app, user.id, pk).await?;
     auto_manage_events(&app, pk).await?;
 
@@ -749,7 +751,7 @@ pub async fn club_events(
             event_list_item(
                 row,
                 EventClub {
-                    id: club.id,
+                    id: club.id.into(),
                     name: club.name.clone(),
                     logo: logo.clone(),
                 },
@@ -805,7 +807,7 @@ pub async fn my_events(
             event_list_item(
                 row,
                 EventClub {
-                    id: r.club_id,
+                    id: r.club_id.into(),
                     name: r.club_name,
                     logo,
                 },
@@ -819,8 +821,9 @@ pub async fn my_events(
 pub async fn event_detail(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
 ) -> Result<Json<EventDetail>, AppError> {
+    let pk1 = pk1.inner();
     let club_id = event_club_id(&app, pk1).await?;
     require_member(&app, user.id, club_id).await?;
 
@@ -845,7 +848,7 @@ pub async fn event_detail(
     let team_size = number_in_team(r.game_type_name.as_deref());
 
     Ok(Json(EventDetail {
-        id: r.id,
+        id: r.id.into(),
         game_type: r.game_type_name.map(|name| GameTypeField { name }),
         date: r.date,
         start_time: r.start_time,
@@ -883,9 +886,10 @@ pub struct CreateEventRequest {
 pub async fn create_event(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     Json(req): Json<CreateEventRequest>,
 ) -> Result<(StatusCode, Json<EventListItem>), AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
 
     let (Some(date), Some(start_time), Some(finish_time), Some(number_of_courts)) = (
@@ -961,7 +965,7 @@ pub async fn create_event(
     let item = event_list_item(
         row,
         EventClub {
-            id: club.id,
+            id: club.id.into(),
             name: club.name,
             logo: logo_url(&app, club.logo),
         },
@@ -991,7 +995,7 @@ pub struct CreateSeriesRequest {
 /// within the materialization horizon.
 #[derive(Debug, Serialize)]
 pub struct SeriesCreated {
-    series_id: i64,
+    series_id: SeriesId,
     events: Vec<EventListItem>,
 }
 
@@ -1001,9 +1005,10 @@ pub struct SeriesCreated {
 pub async fn create_series(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     Json(req): Json<CreateSeriesRequest>,
 ) -> Result<(StatusCode, Json<SeriesCreated>), AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
 
     let (
@@ -1121,7 +1126,7 @@ pub async fn create_series(
             event_list_item(
                 row,
                 EventClub {
-                    id: club.id,
+                    id: club.id.into(),
                     name: club.name.clone(),
                     logo: logo.clone(),
                 },
@@ -1131,7 +1136,10 @@ pub async fn create_series(
 
     Ok((
         StatusCode::CREATED,
-        Json(SeriesCreated { series_id, events }),
+        Json(SeriesCreated {
+            series_id: series_id.into(),
+            events,
+        }),
     ))
 }
 
@@ -1140,8 +1148,9 @@ pub async fn create_series(
 pub async fn cancel_series(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(series_id): Path<i64>,
+    ApiPath(series_id): ApiPath<SeriesId>,
 ) -> Result<Json<Value>, AppError> {
+    let series_id = series_id.inner();
     let club_id = sqlx::query_scalar!(
         r#"SELECT club_id AS "club_id!: i64" FROM event_series WHERE id = ?"#,
         series_id
@@ -1174,8 +1183,8 @@ pub async fn cancel_series(
 
 #[derive(Deserialize)]
 pub struct MemberActionRequest {
-    event_id: Option<i64>,
-    member_id: Option<i64>,
+    event_id: Option<EventId>,
+    member_id: Option<MemberId>,
 }
 
 /// POST /api/event/activate-member — add a member to the active set (admin).
@@ -1190,6 +1199,8 @@ pub async fn activate_member(
     let (Some(event_id), Some(member_id)) = (req.event_id, req.member_id) else {
         return Err(AppError::Validation("This field is required.".into()));
     };
+    let event_id = event_id.inner();
+    let member_id = member_id.inner();
     let club_id = event_club_id(&app, event_id).await?;
     require_admin(&app, user.id, club_id).await?;
 
@@ -1300,6 +1311,8 @@ pub async fn deactivate_member(
     let (Some(event_id), Some(member_id)) = (req.event_id, req.member_id) else {
         return Err(AppError::Validation("This field is required.".into()));
     };
+    let event_id = event_id.inner();
+    let member_id = member_id.inner();
     let club_id = event_club_id(&app, event_id).await?;
     require_admin(&app, user.id, club_id).await?;
 
@@ -1317,7 +1330,7 @@ pub async fn deactivate_member(
 
 #[derive(Deserialize)]
 pub struct EventActionRequest {
-    event_id: Option<i64>,
+    event_id: Option<EventId>,
 }
 
 /// POST /api/event/start — mark an event active (admin). Errors if already active
@@ -1330,6 +1343,7 @@ pub async fn start_event(
     let Some(event_id) = req.event_id else {
         return Err(AppError::Validation("This field is required.".into()));
     };
+    let event_id = event_id.inner();
     let club_id = event_club_id(&app, event_id).await?;
     require_admin(&app, user.id, club_id).await?;
 
@@ -1359,6 +1373,7 @@ pub async fn complete_event(
     let Some(event_id) = req.event_id else {
         return Err(AppError::Validation("This field is required.".into()));
     };
+    let event_id = event_id.inner();
     let club_id = event_club_id(&app, event_id).await?;
     require_admin(&app, user.id, club_id).await?;
 
@@ -1433,9 +1448,10 @@ pub struct EventSettingsUpdate {
 pub async fn update_settings(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
     Json(req): Json<EventSettingsUpdate>,
 ) -> Result<Json<EventSettings>, AppError> {
+    let pk1 = pk1.inner();
     let club_id = event_club_id(&app, pk1).await?;
     require_admin(&app, user.id, club_id).await?;
 
@@ -1480,8 +1496,9 @@ pub async fn update_settings(
 pub async fn event_stats(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
 ) -> Result<Json<EventStats>, AppError> {
+    let pk1 = pk1.inner();
     let club_id = event_club_id(&app, pk1).await?;
     require_member(&app, user.id, club_id).await?;
 

@@ -27,7 +27,7 @@ vi.mock("../components/organisms", () => ({
 
 function clubWithAdmin(isAdmin: boolean): Club {
   return {
-    id: 7,
+    id: "7",
     club_username: "c",
     name: "Club",
     sport_type: null,

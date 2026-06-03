@@ -22,15 +22,15 @@ export interface MatchmakingPanelProps {
   /** Complete (finish) the event. */
   onCompleteEvent: () => void;
   /** Submit a game's score (`"t1,t2"`). */
-  onSubmitScore: (gameId: number, score: string) => void;
+  onSubmitScore: (gameId: string, score: string) => void;
   /** Delete an in-progress game. */
-  onDeleteGame: (gameId: number) => void;
+  onDeleteGame: (gameId: string) => void;
   /** Pause a player: discards the game and deactivates the member. */
-  onPausePlayer: (gameId: number, memberId: number) => void;
+  onPausePlayer: (gameId: string, memberId: string) => void;
   /** Activate a member (move from inactive to active). */
-  onActivateMember: (memberId: number) => void;
+  onActivateMember: (memberId: string) => void;
   /** Deactivate a member (move from active to inactive). */
-  onDeactivateMember: (memberId: number) => void;
+  onDeactivateMember: (memberId: string) => void;
   /** All club members eligible for the event (active + inactive). */
   members: Member[];
   /** A recoverable error to surface (e.g. "not enough players"). */
@@ -50,7 +50,7 @@ function MemberColumn({
   title: string;
   members: Member[];
   actionLabel: string;
-  onAction: (memberId: number) => void;
+  onAction: (memberId: string) => void;
 }): ReactElement {
   return (
     <Grid size={{ xs: 12, lg: 6 }}>

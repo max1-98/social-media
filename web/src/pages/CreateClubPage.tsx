@@ -50,7 +50,7 @@ export function CreateClubPage(): ReactElement {
       if (sportType) {
         await clubsApi.addSport({ club_id: club.id, sport_name: sportType });
       }
-      void navigate(`/club/${String(club.id)}`);
+      void navigate(`/club/${club.id}`);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not create the club.");
     } finally {

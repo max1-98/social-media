@@ -180,6 +180,7 @@ mod tests {
     use crate::db::test_support::test_pool;
     use crate::geocode::test_support::MockGeocoder;
     use crate::geocode::GeoLocation;
+    use crate::id::{ClubId, EventId, GameId, MemberId, SeriesId, UserId};
     use crate::media::LocalDiskStorage;
     use axum::body::{to_bytes, Body};
     use axum::http::{header, Request};
@@ -229,6 +230,28 @@ mod tests {
     async fn body_json(res: Response) -> Value {
         let bytes = to_bytes(res.into_body(), usize::MAX).await.unwrap();
         serde_json::from_slice(&bytes).unwrap()
+    }
+
+    // Ids cross the API boundary as opaque Sqids strings, but tests still need the
+    // raw `i64` PK for direct SQL binds and for paths the server builds from the
+    // PK (e.g. `club_logos/<pk>.png`). These helpers round-trip an opaque string
+    // back through the typed newtype's `Deserialize` impl to recover the PK —
+    // using only the public id API, never hand-decoding.
+    fn raw_club(id: &str) -> i64 {
+        serde_json::from_value::<ClubId>(json!(id)).unwrap().inner()
+    }
+    fn raw_event(id: &str) -> i64 {
+        serde_json::from_value::<EventId>(json!(id))
+            .unwrap()
+            .inner()
+    }
+    fn raw_game(id: &str) -> i64 {
+        serde_json::from_value::<GameId>(json!(id)).unwrap().inner()
+    }
+    fn raw_series(id: &str) -> i64 {
+        serde_json::from_value::<SeriesId>(json!(id))
+            .unwrap()
+            .inner()
     }
 
     fn post(uri: &str, json: Value) -> Request<Body> {
@@ -654,8 +677,28 @@ mod tests {
         assert_eq!(body["email_verify"], false);
         assert!(body.get("email").is_some());
 
-        // simple_profile: any user's public id + username (user 1).
+        // simple_profile: any user's public id + username. The first registered
+        // user is raw PK 1; address it by its opaque id, never the integer.
+        let user_id = UserId::from_raw(1).to_string();
+        assert_ne!(user_id, "1", "ids are opaque, not raw integers");
         let profile = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/auth/profile/{user_id}"))
+                    .header(header::COOKIE, &cookies)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(profile.status(), StatusCode::OK);
+        let body = body_json(profile).await;
+        assert_eq!(body["id"].as_str().unwrap(), user_id);
+        assert_eq!(body["username"], "navuser");
+
+        // A raw integer id is not enumerable: the extractor 404s it.
+        let raw = app
             .oneshot(
                 Request::builder()
                     .uri("/api/auth/profile/1")
@@ -665,10 +708,7 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(profile.status(), StatusCode::OK);
-        let body = body_json(profile).await;
-        assert_eq!(body["id"], 1);
-        assert_eq!(body["username"], "navuser");
+        assert_eq!(raw.status(), StatusCode::NOT_FOUND);
     }
 
     // -----------------------------------------------------------------------
@@ -723,7 +763,7 @@ mod tests {
     }
 
     /// Create a club via the API and return its id.
-    async fn create_test_club(app: &Router, cookies: &str, username: &str, name: &str) -> i64 {
+    async fn create_test_club(app: &Router, cookies: &str, username: &str, name: &str) -> String {
         let res = app
             .clone()
             .oneshot(json_with(
@@ -735,7 +775,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::CREATED);
-        body_json(res).await["id"].as_i64().unwrap()
+        body_json(res).await["id"].as_str().unwrap().to_string()
     }
 
     #[tokio::test]
@@ -791,7 +831,7 @@ mod tests {
         let club_id = create_test_club(&app, &cookies, "tennaces", "Tennis Aces").await;
         // Attach the badminton sport (id 1) directly.
         sqlx::query("UPDATE clubs SET sport_type_id = 1 WHERE id = ?")
-            .bind(club_id)
+            .bind(raw_club(&club_id))
             .execute(&pool)
             .await
             .unwrap();
@@ -872,7 +912,7 @@ mod tests {
             .unwrap();
         assert_eq!(reqs.status(), StatusCode::OK);
         let body = body_json(reqs).await;
-        let request_id = body[0]["id"].as_i64().unwrap();
+        let request_id = body[0]["id"].as_str().unwrap().to_string();
         assert_eq!(body[0]["username"], "newbie");
 
         let accept = app
@@ -931,17 +971,18 @@ mod tests {
             "INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
              SELECT ?, id, 1, 0, '2026-01-01T00:00:00Z' FROM users WHERE username = 'regular'",
         )
-        .bind(club_id)
+        .bind(raw_club(&club_id))
         .execute(&pool)
         .await
         .unwrap();
-        let member_id: i64 = sqlx::query_scalar(
+        let member_raw: i64 = sqlx::query_scalar(
             "SELECT m.id FROM members m JOIN users u ON u.id = m.user_id
              WHERE u.username = 'regular'",
         )
         .fetch_one(&pool)
         .await
         .unwrap();
+        let member_id = MemberId::from_raw(member_raw).to_string();
 
         // A non-president cannot promote.
         let denied = app
@@ -975,13 +1016,14 @@ mod tests {
         assert_eq!(demote.status(), StatusCode::NO_CONTENT);
 
         // The president's own membership cannot be removed.
-        let prez_member_id: i64 = sqlx::query_scalar(
+        let prez_member_raw: i64 = sqlx::query_scalar(
             "SELECT m.id FROM members m JOIN users u ON u.id = m.user_id
              WHERE u.username = 'headhoncho'",
         )
         .fetch_one(&pool)
         .await
         .unwrap();
+        let prez_member_id = MemberId::from_raw(prez_member_raw).to_string();
         let protect = app
             .oneshot(delete_with(
                 &format!("/api/club/member/{prez_member_id}/{club_id}"),
@@ -1101,12 +1143,13 @@ mod tests {
             body_json(res).await["message"],
             "Club logo updated successfully"
         );
+        let club_pk = raw_club(&club_id);
         let logo: String = sqlx::query_scalar("SELECT logo FROM clubs WHERE id = ?")
-            .bind(club_id)
+            .bind(club_pk)
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(logo, format!("club_logos/{club_id}.png"));
+        assert_eq!(logo, format!("club_logos/{club_pk}.png"));
     }
 
     #[tokio::test]
@@ -1151,7 +1194,7 @@ mod tests {
             "Club logo removed successfully"
         );
         let logo: Option<String> = sqlx::query_scalar("SELECT logo FROM clubs WHERE id = ?")
-            .bind(club_id)
+            .bind(raw_club(&club_id))
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -1186,7 +1229,7 @@ mod tests {
 
         let (addr, coords): (String, String) =
             sqlx::query_as("SELECT address, coordinates FROM clubs WHERE id = ?")
-                .bind(club_id)
+                .bind(raw_club(&club_id))
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -1210,7 +1253,7 @@ mod tests {
     // -----------------------------------------------------------------------
 
     /// Create an event for a club via the API and return its id.
-    async fn create_test_event(app: &Router, cookies: &str, club_id: i64) -> i64 {
+    async fn create_test_event(app: &Router, cookies: &str, club_id: &str) -> String {
         let res = app
             .clone()
             .oneshot(json_with(
@@ -1229,7 +1272,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::CREATED);
-        body_json(res).await["id"].as_i64().unwrap()
+        body_json(res).await["id"].as_str().unwrap().to_string()
     }
 
     #[tokio::test]
@@ -1322,7 +1365,7 @@ mod tests {
         // series is created successfully.
         assert_eq!(res.status(), StatusCode::CREATED);
         let body = body_json(res).await;
-        assert!(body["series_id"].as_i64().unwrap() > 0);
+        assert!(!body["series_id"].as_str().unwrap().is_empty());
         assert_eq!(body["events"].as_array().unwrap().len(), 0);
     }
 
@@ -1367,7 +1410,7 @@ mod tests {
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE club_id = ?")
-            .bind(club_id)
+            .bind(raw_club(&club_id))
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -1424,7 +1467,10 @@ mod tests {
             ))
             .await
             .unwrap();
-        let series_id = body_json(res).await["series_id"].as_i64().unwrap();
+        let series_id = body_json(res).await["series_id"]
+            .as_str()
+            .unwrap()
+            .to_string();
 
         let res = app
             .clone()
@@ -1439,14 +1485,14 @@ mod tests {
         // Future instances (date > today) are dropped; the series is inactive so
         // a re-list does not regenerate them.
         let active: i64 = sqlx::query_scalar("SELECT is_active FROM event_series WHERE id = ?")
-            .bind(series_id)
+            .bind(raw_series(&series_id))
             .fetch_one(&pool)
             .await
             .unwrap();
         assert_eq!(active, 0);
         let future: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE series_id = ? AND date > ?")
-                .bind(series_id)
+                .bind(raw_series(&series_id))
                 .bind(today.to_string())
                 .fetch_one(&pool)
                 .await
@@ -1459,7 +1505,7 @@ mod tests {
         let (app, _pool) = test_app().await;
         let cookies = register_and_login(&app, "detailprez").await;
         let club_id = create_test_club(&app, &cookies, "detailc", "Detail Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
 
         let res = app
             .oneshot(get_with(&format!("/api/event/{event_id}"), &cookies))
@@ -1480,7 +1526,7 @@ mod tests {
         let (app, _pool) = test_app().await;
         let prez = register_and_login(&app, "listprez").await;
         let club_id = create_test_club(&app, &prez, "evlistc", "Ev List").await;
-        create_test_event(&app, &prez, club_id).await;
+        create_test_event(&app, &prez, &club_id).await;
         let outsider = register_and_login(&app, "evstranger").await;
 
         let forbidden = app
@@ -1503,7 +1549,7 @@ mod tests {
         let (app, _pool) = test_app().await;
         let cookies = register_and_login(&app, "myev").await;
         let club_id = create_test_club(&app, &cookies, "myevc", "My Ev Club").await;
-        create_test_event(&app, &cookies, club_id).await;
+        create_test_event(&app, &cookies, &club_id).await;
 
         let res = app
             .oneshot(get_with("/api/events", &cookies))
@@ -1520,7 +1566,7 @@ mod tests {
         let (app, _pool) = test_app().await;
         let cookies = register_and_login(&app, "lifecycle").await;
         let club_id = create_test_club(&app, &cookies, "lifec", "Lifecycle Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
 
         let start = app
             .clone()
@@ -1572,7 +1618,7 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "statprez").await;
         let club_id = create_test_club(&app, &cookies, "statc", "Stat Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
 
         // The president's own member id.
         let member_id: i64 = sqlx::query_scalar(
@@ -1589,7 +1635,10 @@ mod tests {
                 "POST",
                 "/api/event/activate-member",
                 &cookies,
-                json!({ "event_id": event_id, "member_id": member_id }),
+                json!({
+                    "event_id": event_id,
+                    "member_id": MemberId::from_raw(member_id).to_string(),
+                }),
             ))
             .await
             .unwrap();
@@ -1633,7 +1682,7 @@ mod tests {
         .bind(format!("{{\"{member_id}\": 3}}"))
         .bind(format!("{{\"{member_id}\": 4}}"))
         .bind(format!("{{\"{member_id}\": 3}}"))
-        .bind(event_id)
+        .bind(raw_event(&event_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -1695,17 +1744,20 @@ mod tests {
     // -----------------------------------------------------------------------
 
     /// Register a user, add them as an active member of `event_id` in `club_id`
-    /// with a seeded badminton-singles (game_type 1) rating row at `elo`/`streak`,
-    /// and return the new member id.
+    /// (both opaque api ids), seed a badminton-singles (game_type 1) rating row at
+    /// `elo`/`streak`, and return the new raw member PK (for SQL + opaque encoding
+    /// at call sites).
     async fn seed_active_member(
         pool: &SqlitePool,
-        club_id: i64,
-        event_id: i64,
+        club_id: &str,
+        event_id: &str,
         username: &str,
         gender: &str,
         elo: i64,
         streak: i64,
     ) -> i64 {
+        let club_id = raw_club(club_id);
+        let event_id = raw_event(event_id);
         sqlx::query(
             "INSERT INTO users (username, email, password_hash, first_name, surname,
                                 date_of_birth, biological_gender, is_active, date_joined)
@@ -1771,11 +1823,14 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "gameadmin").await;
         let club_id = create_test_club(&app, &cookies, "gamec", "Game Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
 
         // Two equal-rated singles players, both active.
-        let m1 = seed_active_member(&pool, club_id, event_id, "p_one", "male", 1000, 0).await;
-        let m2 = seed_active_member(&pool, club_id, event_id, "p_two", "male", 1000, 0).await;
+        let m1 = seed_active_member(&pool, &club_id, &event_id, "p_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, &club_id, &event_id, "p_two", "male", 1000, 0).await;
+
+        let m1_id = MemberId::from_raw(m1).to_string();
+        let m2_id = MemberId::from_raw(m2).to_string();
 
         // Peg the teams: m1 vs m2 (singles -> team_size 1).
         let create = app
@@ -1784,22 +1839,22 @@ mod tests {
                 "POST",
                 "/api/game/create-peg",
                 &cookies,
-                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+                json!({ "event_id": event_id, "member_ids": [m1_id, m2_id] }),
             ))
             .await
             .unwrap();
         assert_eq!(create.status(), StatusCode::CREATED);
         let game = body_json(create).await;
-        let game_id = game["id"].as_i64().unwrap();
+        let game_id = game["id"].as_str().unwrap().to_string();
         assert_eq!(game["team1"].as_array().unwrap().len(), 1);
         assert_eq!(game["team2"].as_array().unwrap().len(), 1);
-        assert_eq!(game["team1"][0]["id"], m1);
+        assert_eq!(game["team1"][0]["id"], m1_id);
         assert_eq!(game["team1"][0]["elo"], 1000);
 
         // Members moved active -> in_game.
         let active_after: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
-                .bind(event_id)
+                .bind(raw_event(&event_id))
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -1860,13 +1915,13 @@ mod tests {
         // Players reactivated; win/match stat maps updated.
         let active_now: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
-                .bind(event_id)
+                .bind(raw_event(&event_id))
                 .fetch_one(&pool)
                 .await
                 .unwrap();
         assert_eq!(active_now, 2);
         let wins: String = sqlx::query_scalar("SELECT wins FROM events WHERE id = ?")
-            .bind(event_id)
+            .bind(raw_event(&event_id))
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -1892,9 +1947,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "scoreadmin").await;
         let club_id = create_test_club(&app, &cookies, "scorec", "Score Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
-        let m1 = seed_active_member(&pool, club_id, event_id, "s_one", "male", 1000, 0).await;
-        let m2 = seed_active_member(&pool, club_id, event_id, "s_two", "male", 1000, 0).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
+        let m1 = seed_active_member(&pool, &club_id, &event_id, "s_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, &club_id, &event_id, "s_two", "male", 1000, 0).await;
 
         let create = app
             .clone()
@@ -1902,11 +1957,17 @@ mod tests {
                 "POST",
                 "/api/game/create-peg",
                 &cookies,
-                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+                json!({
+                    "event_id": event_id,
+                    "member_ids": [
+                        MemberId::from_raw(m1).to_string(),
+                        MemberId::from_raw(m2).to_string(),
+                    ],
+                }),
             ))
             .await
             .unwrap();
-        let game_id = body_json(create).await["id"].as_i64().unwrap();
+        let game_id = body_json(create).await["id"].as_str().unwrap().to_string();
 
         // No team reached 21 -> validation error.
         let res = app
@@ -1939,9 +2000,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "deladmin").await;
         let club_id = create_test_club(&app, &cookies, "delc", "Del Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
-        let m1 = seed_active_member(&pool, club_id, event_id, "d_one", "male", 1000, 0).await;
-        let m2 = seed_active_member(&pool, club_id, event_id, "d_two", "male", 1000, 0).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
+        let m1 = seed_active_member(&pool, &club_id, &event_id, "d_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, &club_id, &event_id, "d_two", "male", 1000, 0).await;
 
         let create = app
             .clone()
@@ -1949,11 +2010,17 @@ mod tests {
                 "POST",
                 "/api/game/create-peg",
                 &cookies,
-                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+                json!({
+                    "event_id": event_id,
+                    "member_ids": [
+                        MemberId::from_raw(m1).to_string(),
+                        MemberId::from_raw(m2).to_string(),
+                    ],
+                }),
             ))
             .await
             .unwrap();
-        let game_id = body_json(create).await["id"].as_i64().unwrap();
+        let game_id = body_json(create).await["id"].as_str().unwrap().to_string();
 
         let del = app
             .clone()
@@ -1969,14 +2036,14 @@ mod tests {
 
         // Game gone, players back to active.
         let games: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM games WHERE id = ?")
-            .bind(game_id)
+            .bind(raw_game(&game_id))
             .fetch_one(&pool)
             .await
             .unwrap();
         assert_eq!(games, 0);
         let active: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
-                .bind(event_id)
+                .bind(raw_event(&event_id))
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -1988,9 +2055,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "sbmmadmin").await;
         let club_id = create_test_club(&app, &cookies, "sbmmc", "SBMM Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
-        seed_active_member(&pool, club_id, event_id, "sb_one", "male", 1000, 0).await;
-        seed_active_member(&pool, club_id, event_id, "sb_two", "male", 1010, 0).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
+        seed_active_member(&pool, &club_id, &event_id, "sb_one", "male", 1000, 0).await;
+        seed_active_member(&pool, &club_id, &event_id, "sb_two", "male", 1010, 0).await;
 
         let create = app
             .clone()
@@ -2010,7 +2077,7 @@ mod tests {
         assert_ne!(game["team1"][0]["id"], game["team2"][0]["id"]);
         let active: i64 =
             sqlx::query_scalar("SELECT COUNT(*) FROM event_active_members WHERE event_id = ?")
-                .bind(event_id)
+                .bind(raw_event(&event_id))
                 .fetch_one(&pool)
                 .await
                 .unwrap();
@@ -2022,9 +2089,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "fewadmin").await;
         let club_id = create_test_club(&app, &cookies, "fewc", "Few Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
         // Only one active member: not enough for singles (needs 2).
-        seed_active_member(&pool, club_id, event_id, "f_one", "male", 1000, 0).await;
+        seed_active_member(&pool, &club_id, &event_id, "f_one", "male", 1000, 0).await;
 
         let res = app
             .oneshot(json_with(
@@ -2043,9 +2110,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "pegadmin").await;
         let club_id = create_test_club(&app, &cookies, "pegc", "Peg Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
-        let m1 = seed_active_member(&pool, club_id, event_id, "pg_one", "male", 1000, 0).await;
-        seed_active_member(&pool, club_id, event_id, "pg_two", "male", 1000, 0).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
+        let m1 = seed_active_member(&pool, &club_id, &event_id, "pg_one", "male", 1000, 0).await;
+        seed_active_member(&pool, &club_id, &event_id, "pg_two", "male", 1000, 0).await;
 
         let res = app
             .oneshot(json_with(
@@ -2060,8 +2127,10 @@ mod tests {
         let body = body_json(res).await;
         // SimpleMemberSerializer has no elo field; id is one of the active members.
         assert!(body.get("elo").is_none());
-        let id = body["id"].as_i64().unwrap();
-        assert!(id == m1 || id == m1 + 1);
+        let id = body["id"].as_str().unwrap();
+        let m1_id = MemberId::from_raw(m1).to_string();
+        let m2_id = MemberId::from_raw(m1 + 1).to_string();
+        assert!(id == m1_id || id == m2_id);
     }
 
     #[tokio::test]
@@ -2069,9 +2138,9 @@ mod tests {
         let (app, pool) = test_app().await;
         let cookies = register_and_login(&app, "ugadmin").await;
         let club_id = create_test_club(&app, &cookies, "ugc", "UG Club").await;
-        let event_id = create_test_event(&app, &cookies, club_id).await;
-        let m1 = seed_active_member(&pool, club_id, event_id, "ug_one", "male", 1000, 0).await;
-        let m2 = seed_active_member(&pool, club_id, event_id, "ug_two", "male", 1000, 0).await;
+        let event_id = create_test_event(&app, &cookies, &club_id).await;
+        let m1 = seed_active_member(&pool, &club_id, &event_id, "ug_one", "male", 1000, 0).await;
+        let m2 = seed_active_member(&pool, &club_id, &event_id, "ug_two", "male", 1000, 0).await;
 
         let create = app
             .clone()
@@ -2079,11 +2148,17 @@ mod tests {
                 "POST",
                 "/api/game/create-peg",
                 &cookies,
-                json!({ "event_id": event_id, "member_ids": [m1, m2] }),
+                json!({
+                    "event_id": event_id,
+                    "member_ids": [
+                        MemberId::from_raw(m1).to_string(),
+                        MemberId::from_raw(m2).to_string(),
+                    ],
+                }),
             ))
             .await
             .unwrap();
-        let game_id = body_json(create).await["id"].as_i64().unwrap();
+        let game_id = body_json(create).await["id"].as_str().unwrap().to_string();
         app.clone()
             .oneshot(json_with(
                 "POST",

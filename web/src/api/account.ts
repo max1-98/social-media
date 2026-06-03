@@ -17,7 +17,7 @@ export interface ExportConsent {
 
 /** A club membership snapshot (`MembershipEntry`). */
 export interface ExportMembership {
-  club_id: number;
+  club_id: string;
   club_name: string;
   is_admin: boolean;
   is_member: boolean;
@@ -26,15 +26,15 @@ export interface ExportMembership {
 
 /** An authored post (`PostEntry`). */
 export interface ExportPost {
-  id: number;
+  id: string;
   content: string;
-  club_id: number | null;
+  club_id: string | null;
   created_at: string;
 }
 
 /** Profile portion of the export (`ExportUser`). */
 export interface ExportUser {
-  id: number;
+  id: string;
   username: string;
   email: string | null;
   first_name: string | null;

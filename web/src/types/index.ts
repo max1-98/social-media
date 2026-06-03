@@ -4,7 +4,7 @@
 
 /** Authenticated profile returned by `GET /api/auth/me` (Rust `UserProfile`). */
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string | null;
   first_name: string | null;
@@ -17,13 +17,13 @@ export interface User {
 
 /** Minimal identity returned by login/refresh (`{ user: { id, username } }`). */
 export interface AuthUser {
-  id: number;
+  id: string;
   username: string;
 }
 
 /** Public profile from `GET /api/auth/profile/:pk` (Rust `SimpleUser`). */
 export interface SimpleUser {
-  id: number;
+  id: string;
   username: string;
 }
 
@@ -55,7 +55,7 @@ export interface Social {
 }
 
 export interface Club {
-  id: number;
+  id: string;
   club_username: string;
   name: string;
   sport_type: Sport | null;
@@ -75,7 +75,7 @@ export interface Club {
 }
 
 export interface MyClub {
-  id: number;
+  id: string;
   name: string;
   logo: string;
   sport_type: Sport | null;
@@ -83,7 +83,7 @@ export interface MyClub {
 }
 
 export interface ManyClub {
-  id: number;
+  id: string;
   club_username: string;
   name: string;
   sport_type: Sport | null;
@@ -96,7 +96,7 @@ export interface ManyClub {
 }
 
 export interface Member {
-  id: number;
+  id: string;
   first_name: string;
   surname: string;
   username: string;
@@ -104,7 +104,7 @@ export interface Member {
 }
 
 export interface MemberEvent {
-  id: number;
+  id: string;
   first_name: string;
   surname: string;
   username: string;
@@ -112,21 +112,21 @@ export interface MemberEvent {
 }
 
 export interface MemberRequest {
-  id: number;
-  club: number;
-  user: number;
+  id: string;
+  club: string;
+  user: string;
   username: string;
   date_requested: string;
 }
 
 export interface EventClub {
-  id: number;
+  id: string;
   name: string;
   logo: string;
 }
 
 export interface Event {
-  id: number;
+  id: string;
   date: string;
   start_time: string;
   finish_time: string;
@@ -141,7 +141,7 @@ export interface Event {
 }
 
 export interface EventDetail {
-  id: number;
+  id: string;
   game_type: GameType;
   date: string;
   start_time: string;
@@ -164,18 +164,18 @@ export type RecurrenceFrequency = "daily" | "weekly" | "monthly";
 
 /** POST /api/event/series/create/:pk — the created series + first instances. */
 export interface SeriesCreated {
-  series_id: number;
+  series_id: string;
   events: Event[];
 }
 
 export interface Game {
-  id: number;
+  id: string;
   team1: MemberEvent[];
   team2: MemberEvent[];
 }
 
 export interface CompleteGame {
-  id: number;
+  id: string;
   team1: MemberEvent[];
   team2: MemberEvent[];
   game_type: number;

@@ -6,7 +6,7 @@ import type { ManyClub } from "../../types";
 import { ClubCard } from "./ClubCard.tsx";
 
 const club: ManyClub = {
-  id: 3,
+  id: "3",
   club_username: "smashers",
   name: "Smashers Tennis",
   sport_type: { name: "tennis" },
@@ -38,6 +38,6 @@ describe("ClubCard organism", () => {
     const onSelect = vi.fn();
     render(<ClubCard club={club} onSelect={onSelect} />);
     fireEvent.click(screen.getByRole("button", { name: /view smashers tennis/i }));
-    expect(onSelect).toHaveBeenCalledWith(3);
+    expect(onSelect).toHaveBeenCalledWith("3");
   });
 });

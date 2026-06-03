@@ -27,7 +27,7 @@ vi.mock("../api", () => ({
 describe("CreateClubPage", () => {
   it("creates the club, sets the chosen sport, then navigates", async () => {
     listSports.mockResolvedValue([{ name: "tennis" }]);
-    createClub.mockResolvedValue({ id: 9 } as Club);
+    createClub.mockResolvedValue({ id: "9" } as Club);
     addSport.mockResolvedValue({ message: "ok" });
     render(
       <MemoryRouter>
@@ -47,7 +47,7 @@ describe("CreateClubPage", () => {
     });
     // The sport is persisted via a separate add-sport call (backend parity).
     expect(createClub).toHaveBeenCalledWith(expect.not.objectContaining({ sport_type: "tennis" }));
-    expect(addSport).toHaveBeenCalledWith({ club_id: 9, sport_name: "tennis" });
+    expect(addSport).toHaveBeenCalledWith({ club_id: "9", sport_name: "tennis" });
     expect(navigate).toHaveBeenCalledWith("/club/9");
   });
 });

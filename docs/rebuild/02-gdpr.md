@@ -20,7 +20,10 @@ static pages + free tooling.
    national digital-consent age (13–16, default 16) block or require parental
    consent. Review `biological_gender` (drives `mixed_sbmm`) for minimization.
 4. **Security:** TLS via **Caddy auto-HTTPS** (or rustls); `argon2`; encrypted
-   volume; signed expiring media URLs; 72-hour breach runbook.
+   volume; signed expiring media URLs; 72-hour breach runbook. **Opaque ids:**
+   internal PKs stay sequential `i64`, but every id on the wire is a Sqids-encoded
+   newtype (`src/id.rs`) so resources can't be enumerated and total counts/growth
+   stay hidden — obfuscation, not authz; ownership checks still apply.
 5. **Processors/residency/paperwork (free but required):** EU primary data; sign
    **DPAs + SCCs** (Resend, Google, Cloudflare, host); maintain **RoPA** +
    sub-processor list + **Privacy/Cookie Policy** static pages in `docs/`

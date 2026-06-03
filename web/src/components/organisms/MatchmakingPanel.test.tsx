@@ -5,7 +5,7 @@ import type { EventDetail, Game, Member } from "../../types";
 
 import { MatchmakingPanel } from "./MatchmakingPanel.tsx";
 
-const member = (id: number, first: string): Member => ({
+const member = (id: string, first: string): Member => ({
   id,
   first_name: first,
   surname: "X",
@@ -14,7 +14,7 @@ const member = (id: number, first: string): Member => ({
 });
 
 const event: EventDetail = {
-  id: 1,
+  id: "1",
   game_type: { name: "badminton doubles" },
   date: "2026-07-01",
   start_time: "18:00",
@@ -23,7 +23,7 @@ const event: EventDetail = {
   sbmm: true,
   guests_allowed: false,
   over_18_under_18_mixed: "all ages",
-  active_members: [member(1, "Ada")],
+  active_members: [member("1", "Ada")],
   in_game_members: [],
   event_active: true,
   event_complete: false,
@@ -34,9 +34,9 @@ const event: EventDetail = {
 
 const games: Game[] = [
   {
-    id: 3,
-    team1: [{ id: 1, first_name: "Ada", surname: "L", username: "ada", elo: 1200 }],
-    team2: [{ id: 2, first_name: "Al", surname: "T", username: "al", elo: 1250 }],
+    id: "3",
+    team1: [{ id: "1", first_name: "Ada", surname: "L", username: "ada", elo: 1200 }],
+    team2: [{ id: "2", first_name: "Al", surname: "T", username: "al", elo: 1250 }],
   },
 ];
 
@@ -51,7 +51,7 @@ function renderPanel(isAdmin: boolean): {
       event={event}
       games={games}
       isAdmin={isAdmin}
-      members={[member(1, "Ada"), member(2, "Al")]}
+      members={[member("1", "Ada"), member("2", "Al")]}
       onCreateGame={onCreateGame}
       onCompleteEvent={vi.fn()}
       onSubmitScore={vi.fn()}
@@ -76,7 +76,7 @@ describe("MatchmakingPanel organism", () => {
     expect(onCreateGame).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: /deactivate ada/i }));
-    expect(onDeactivateMember).toHaveBeenCalledWith(1);
+    expect(onDeactivateMember).toHaveBeenCalledWith("1");
   });
 
   it("warns when there are too few active players", () => {

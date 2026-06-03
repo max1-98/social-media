@@ -16,6 +16,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::auth::AuthUser;
 use crate::error::AppError;
+use crate::id::{ApiPath, ClubId, EventId, MemberId, RequestId, UserId};
 use crate::media::validate_image;
 use crate::state::AppState;
 
@@ -283,7 +284,7 @@ pub struct SportField {
 /// `ManyClubSerializer`.
 #[derive(Debug, Serialize)]
 pub struct ManyClub {
-    id: i64,
+    id: ClubId,
     club_username: String,
     name: String,
     sport_type: Option<SportField>,
@@ -298,7 +299,7 @@ pub struct ManyClub {
 /// `ClubSerializer`.
 #[derive(Debug, Serialize)]
 pub struct ClubDetail {
-    id: i64,
+    id: ClubId,
     club_username: String,
     name: String,
     sport_type: Option<SportField>,
@@ -320,7 +321,7 @@ pub struct ClubDetail {
 /// `MyClubSerializer`.
 #[derive(Debug, Serialize)]
 pub struct MyClub {
-    id: i64,
+    id: ClubId,
     name: String,
     logo: Option<String>,
     sport_type: Option<SportField>,
@@ -330,9 +331,9 @@ pub struct MyClub {
 /// `MemberRequestDetailSerializer`.
 #[derive(Debug, Serialize)]
 pub struct MemberRequestDetail {
-    id: i64,
-    club: i64,
-    user: i64,
+    id: RequestId,
+    club: ClubId,
+    user: UserId,
     username: String,
     date_requested: String,
 }
@@ -340,7 +341,7 @@ pub struct MemberRequestDetail {
 /// `MemberBasicSerializer`.
 #[derive(Debug, Serialize)]
 pub struct MemberBasic {
-    id: i64,
+    id: MemberId,
     first_name: Option<String>,
     surname: Option<String>,
     username: String,
@@ -350,7 +351,7 @@ pub struct MemberBasic {
 /// `MemberEventSerializer`.
 #[derive(Debug, Serialize)]
 pub struct MemberEvent {
-    id: i64,
+    id: MemberId,
     first_name: Option<String>,
     surname: Option<String>,
     username: String,
@@ -499,7 +500,7 @@ async fn list_clubs(
         let upcoming = is_event_upcoming(recent_event_date(app, r.id).await?, now().date());
         let avg = average_attendance_value(app, r.id).await?;
         out.push(ManyClub {
-            id: r.id,
+            id: r.id.into(),
             club_username: r.club_username,
             name: r.name,
             sport_type: r.sport_name.map(|name| SportField { name }),
@@ -537,8 +538,9 @@ pub async fn clubs_by_sport(
 pub async fn club_detail(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<ClubDetail>, AppError> {
+    let pk = pk.inner();
     let r = sqlx::query!(
         r#"SELECT c.id AS "id!: i64", c.club_username, c.name, c.info, c.logo,
                   c.address, c.coordinates, c.date_created,
@@ -574,7 +576,7 @@ pub async fn club_detail(
     let avg = average_attendance_value(&app, pk).await?;
 
     Ok(Json(ClubDetail {
-        id: r.id,
+        id: r.id.into(),
         club_username: r.club_username,
         name: r.name,
         sport_type: r.sport_name.map(|name| SportField { name }),
@@ -598,8 +600,9 @@ pub async fn club_detail(
 pub async fn delete_club(
     State(app): State<AppState>,
     _user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<StatusCode, AppError> {
+    let pk = pk.inner();
     sqlx::query!("DELETE FROM clubs WHERE id = ?", pk)
         .execute(&app.pool)
         .await?;
@@ -661,7 +664,7 @@ pub async fn create_club(
     .execute(&app.pool)
     .await?;
 
-    let detail = club_detail(State(app), user, Path(club_id)).await?;
+    let detail = club_detail(State(app), user, ApiPath(ClubId::from_raw(club_id))).await?;
     Ok((StatusCode::CREATED, detail))
 }
 
@@ -675,9 +678,10 @@ pub struct EditClubRequest {
 pub async fn edit_club(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     Json(req): Json<EditClubRequest>,
 ) -> Result<Json<ClubDetail>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     if let Some(name) = &req.name {
         sqlx::query!("UPDATE clubs SET name = ? WHERE id = ?", name, pk)
@@ -689,7 +693,7 @@ pub async fn edit_club(
             .execute(&app.pool)
             .await?;
     }
-    club_detail(State(app), user, Path(pk)).await
+    club_detail(State(app), user, ApiPath(ClubId::from_raw(pk))).await
 }
 
 /// GET /api/club/my-clubs — clubs the user belongs to (`MyClubSerializer`).
@@ -712,7 +716,7 @@ pub async fn my_clubs(
     let out = rows
         .into_iter()
         .map(|r| MyClub {
-            id: r.id,
+            id: r.id.into(),
             name: r.name,
             logo: logo_url(&app, r.logo),
             sport_type: r.sport_name.map(|name| SportField { name }),
@@ -730,8 +734,9 @@ pub async fn my_clubs(
 pub async fn club_requests(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<Vec<MemberRequestDetail>>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     let rows = sqlx::query!(
         r#"SELECT mr.id AS "id!: i64", mr.club_id AS "club!: i64",
@@ -746,9 +751,9 @@ pub async fn club_requests(
     let out = rows
         .into_iter()
         .map(|r| MemberRequestDetail {
-            id: r.id,
-            club: r.club,
-            user: r.user,
+            id: r.id.into(),
+            club: r.club.into(),
+            user: r.user.into(),
             username: r.username,
             date_requested: r.date_requested,
         })
@@ -760,8 +765,9 @@ pub async fn club_requests(
 pub async fn club_members(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<Vec<MemberBasic>>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     let rows = sqlx::query!(
         r#"SELECT m.id AS "id!: i64", m.is_admin AS "is_admin!: i64",
@@ -775,7 +781,7 @@ pub async fn club_members(
     let out = rows
         .into_iter()
         .map(|r| MemberBasic {
-            id: r.id,
+            id: r.id.into(),
             first_name: r.first_name,
             surname: r.surname,
             username: r.username,
@@ -790,8 +796,9 @@ pub async fn club_members(
 pub async fn club_members_event(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk1): Path<i64>,
+    ApiPath(pk1): ApiPath<EventId>,
 ) -> Result<Json<Vec<MemberEvent>>, AppError> {
+    let pk1 = pk1.inner();
     let event = sqlx::query!(
         r#"SELECT club_id AS "club_id!: i64", game_type_id AS "game_type_id?: i64"
            FROM events WHERE id = ?"#,
@@ -830,7 +837,7 @@ pub async fn club_members_event(
             None => None,
         };
         out.push(MemberEvent {
-            id: r.id,
+            id: r.id.into(),
             first_name: r.first_name,
             surname: r.surname,
             username: r.username,
@@ -842,7 +849,7 @@ pub async fn club_members_event(
 
 #[derive(Deserialize)]
 pub struct MemberRequestCreate {
-    club: i64,
+    club: ClubId,
 }
 
 /// POST /api/club/request/create/ — request to join a club.
@@ -852,8 +859,9 @@ pub async fn create_request(
     Json(req): Json<MemberRequestCreate>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     // 404 if the club is missing (legacy get_object_or_404).
-    club_president(&app, req.club).await?;
-    if is_member(&app, user.id, req.club).await? {
+    let club_id = req.club.inner();
+    club_president(&app, club_id).await?;
+    if is_member(&app, user.id, club_id).await? {
         return Err(AppError::Validation(
             "You are already a member of this club.".into(),
         ));
@@ -861,7 +869,7 @@ pub async fn create_request(
     let date_requested = fmt_ts(now())?;
     sqlx::query!(
         "INSERT INTO member_requests (club_id, user_id, date_requested) VALUES (?, ?, ?)",
-        req.club,
+        club_id,
         user.id,
         date_requested
     )
@@ -872,7 +880,7 @@ pub async fn create_request(
 
 #[derive(Deserialize)]
 pub struct MemberRequestCancel {
-    club: Option<i64>,
+    club: Option<ClubId>,
 }
 
 /// POST /api/club/request/cancel/ — withdraw your own pending request.
@@ -884,6 +892,7 @@ pub async fn cancel_request(
     let Some(club) = req.club else {
         return Err(AppError::Validation("Missing club or user data".into()));
     };
+    let club = club.inner();
     let deleted = sqlx::query!(
         "DELETE FROM member_requests WHERE club_id = ? AND user_id = ?",
         club,
@@ -943,8 +952,9 @@ async fn accept_member_request(app: &AppState, request_id: i64) -> Result<(), Ap
 pub async fn accept_request(
     State(app): State<AppState>,
     user: AuthUser,
-    Path((pk2, pk)): Path<(i64, i64)>,
+    ApiPath((pk2, pk)): ApiPath<(RequestId, ClubId)>,
 ) -> Result<StatusCode, AppError> {
+    let (pk2, pk) = (pk2.inner(), pk.inner());
     require_admin(&app, user.id, pk).await?;
     accept_member_request(&app, pk2).await?;
     Ok(StatusCode::CREATED)
@@ -954,8 +964,9 @@ pub async fn accept_request(
 pub async fn reject_request(
     State(app): State<AppState>,
     user: AuthUser,
-    Path((pk2, pk)): Path<(i64, i64)>,
+    ApiPath((pk2, pk)): ApiPath<(RequestId, ClubId)>,
 ) -> Result<StatusCode, AppError> {
+    let (pk2, pk) = (pk2.inner(), pk.inner());
     require_admin(&app, user.id, pk).await?;
     let deleted = sqlx::query!("DELETE FROM member_requests WHERE id = ?", pk2)
         .execute(&app.pool)
@@ -1037,8 +1048,9 @@ async fn remove_member(
 pub async fn delete_member(
     State(app): State<AppState>,
     user: AuthUser,
-    Path((pk2, pk)): Path<(i64, i64)>,
+    ApiPath((pk2, pk)): ApiPath<(MemberId, ClubId)>,
 ) -> Result<StatusCode, AppError> {
+    let (pk2, pk) = (pk2.inner(), pk.inner());
     require_admin(&app, user.id, pk).await?;
     remove_member(&app, pk2, user.id).await?;
     Ok(StatusCode::NO_CONTENT)
@@ -1048,8 +1060,9 @@ pub async fn delete_member(
 pub async fn leave_club(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<StatusCode, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     let member_id = sqlx::query_scalar!(
         r#"SELECT id AS "id!: i64" FROM members WHERE club_id = ? AND user_id = ? LIMIT 1"#,
@@ -1079,9 +1092,10 @@ fn default_gender() -> String {
 pub async fn create_dummy_user(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     Json(req): Json<CreateDummyUser>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     if !matches!(req.biological_gender.as_str(), "male" | "female") {
         return Err(AppError::Validation(
@@ -1161,8 +1175,9 @@ pub async fn create_dummy_user(
 pub async fn promote_member(
     State(app): State<AppState>,
     user: AuthUser,
-    Path((pk2, pk)): Path<(i64, i64)>,
+    ApiPath((pk2, pk)): ApiPath<(MemberId, ClubId)>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
+    let (pk2, pk) = (pk2.inner(), pk.inner());
     require_president(&app, user.id, pk).await?;
     let is_adm = sqlx::query_scalar!(
         r#"SELECT is_admin AS "is_admin!: i64" FROM members WHERE id = ?"#,
@@ -1189,8 +1204,9 @@ pub async fn promote_member(
 pub async fn demote_member(
     State(app): State<AppState>,
     user: AuthUser,
-    Path((pk2, pk)): Path<(i64, i64)>,
+    ApiPath((pk2, pk)): ApiPath<(MemberId, ClubId)>,
 ) -> Result<StatusCode, AppError> {
+    let (pk2, pk) = (pk2.inner(), pk.inner());
     require_president(&app, user.id, pk).await?;
     let is_adm = sqlx::query_scalar!(
         r#"SELECT is_admin AS "is_admin!: i64" FROM members WHERE id = ?"#,
@@ -1218,7 +1234,7 @@ pub async fn demote_member(
 pub struct AttendanceRequest {
     start_date: Option<String>,
     finish_date: Option<String>,
-    club_id: Option<i64>,
+    club_id: Option<ClubId>,
 }
 
 /// POST /api/member-attendance/ — per-member attendance over a date range.
@@ -1231,6 +1247,7 @@ pub async fn member_attendance(
     else {
         return Err(AppError::Validation("Missing required parameters".into()));
     };
+    let club_id = club_id.inner();
     require_admin(&app, user.id, club_id).await?;
 
     let rows = sqlx::query!(
@@ -1279,7 +1296,7 @@ pub async fn list_sports(State(app): State<AppState>) -> Result<Json<Vec<SportFi
 #[derive(Deserialize)]
 pub struct AddSportRequest {
     sport_name: Option<String>,
-    club_id: Option<i64>,
+    club_id: Option<ClubId>,
 }
 
 /// POST /api/club/add-sport — set a club's sport type.
@@ -1293,6 +1310,7 @@ pub async fn add_sport(
             "Sport name and club ID are required.".into(),
         ));
     };
+    let club_id = club_id.inner();
     let club_exists =
         sqlx::query_scalar!(r#"SELECT 1 AS "x!: i64" FROM clubs WHERE id = ?"#, club_id)
             .fetch_optional(&app.pool)
@@ -1325,8 +1343,9 @@ pub async fn add_sport(
 /// GET /api/clubs/:pk/socials — a club's social links (`ClubSocialSerializer`).
 pub async fn club_socials(
     State(app): State<AppState>,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<ClubSocial>, AppError> {
+    let pk = pk.inner();
     let raw = sqlx::query_scalar!("SELECT socials FROM clubs WHERE id = ?", pk)
         .fetch_optional(&app.pool)
         .await?
@@ -1347,9 +1366,10 @@ pub struct UpdateSocialsRequest {
 pub async fn update_socials(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     Json(req): Json<UpdateSocialsRequest>,
 ) -> Result<Json<Value>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
     let raw = sqlx::query_scalar!("SELECT socials FROM clubs WHERE id = ?", pk)
         .fetch_one(&app.pool)
@@ -1393,9 +1413,10 @@ pub async fn update_socials(
 pub async fn upload_logo(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
     mut multipart: Multipart,
 ) -> Result<Json<Value>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
 
     let mut upload: Option<(String, Vec<u8>)> = None;
@@ -1431,8 +1452,9 @@ pub async fn upload_logo(
 pub async fn remove_logo(
     State(app): State<AppState>,
     user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<ClubId>,
 ) -> Result<Json<Value>, AppError> {
+    let pk = pk.inner();
     require_admin(&app, user.id, pk).await?;
 
     let row = sqlx::query!("SELECT logo FROM clubs WHERE id = ?", pk)
@@ -1451,7 +1473,7 @@ pub async fn remove_logo(
 #[derive(Deserialize)]
 pub struct AddressRequest {
     address: Option<String>,
-    club_id: Option<i64>,
+    club_id: Option<ClubId>,
 }
 
 /// POST /api/club/add-address — geocode + store an address (admin only).
@@ -1463,6 +1485,7 @@ pub async fn add_address(
     let (Some(address), Some(club_id)) = (req.address.clone(), req.club_id) else {
         return Err(AppError::Validation("Address is required".into()));
     };
+    let club_id = club_id.inner();
     require_admin(&app, user.id, club_id).await?;
 
     let loc = app.geocoder.geocode(&address).await?;

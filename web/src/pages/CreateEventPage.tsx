@@ -104,7 +104,7 @@ export function CreateEventPage(): ReactElement {
           over_18_under_18_mixed: ageGroup,
         };
         const created = await eventsApi.createEvent(clubId, payload);
-        void navigate(`/club/${clubId}/event/${String(created.id)}`);
+        void navigate(`/club/${clubId}/event/${created.id}`);
       } else {
         const payload: CreateSeriesPayload = {
           game_type: gameType,
@@ -140,7 +140,7 @@ export function CreateEventPage(): ReactElement {
   }
 
   const clubOptions: SelectOption[] = (adminClubs ?? []).map((club) => ({
-    value: String(club.id),
+    value: club.id,
     label: club.name,
   }));
   const recurring = repeat !== "none";

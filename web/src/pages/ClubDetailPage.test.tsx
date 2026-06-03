@@ -44,7 +44,7 @@ vi.mock("../components/molecules", () => ({
 }));
 
 const adminClub: Club = {
-  id: 5,
+  id: "5",
   club_username: "smashers",
   name: "Smashers",
   sport_type: { name: "tennis" },
@@ -78,7 +78,7 @@ describe("ClubDetailPage", () => {
     clubDetail.mockResolvedValue(adminClub);
     clubSocials.mockResolvedValue([{ platform: "facebook", url: "https://fb.com/x" }]);
     clubMembers.mockResolvedValue([
-      { id: 1, first_name: "Ada", surname: "Lovelace", username: "ada", is_club_admin: true },
+      { id: "1", first_name: "Ada", surname: "Lovelace", username: "ada", is_club_admin: true },
     ]);
     clubRequests.mockResolvedValue([]);
     renderPage();

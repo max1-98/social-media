@@ -19,7 +19,7 @@ vi.mock("../api", () => ({
 }));
 
 const club: ManyClub = {
-  id: 1,
+  id: "1",
   club_username: "smashers",
   name: "Smashers",
   sport_type: { name: "tennis" },

@@ -9,7 +9,7 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use axum::extract::{FromRef, FromRequestParts, Path, State};
+use axum::extract::{FromRef, FromRequestParts, State};
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
@@ -25,6 +25,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::email;
 use crate::error::AppError;
+use crate::id::{ApiPath, ClubId, PostId, UserId};
 use crate::state::AppState;
 
 const ACCESS_COOKIE: &str = "access_token";
@@ -152,7 +153,7 @@ fn default_gender() -> String {
 
 #[derive(Serialize)]
 pub struct UserProfile {
-    pub id: i64,
+    pub id: UserId,
     pub username: String,
     pub email: Option<String>,
     pub first_name: Option<String>,
@@ -204,7 +205,7 @@ pub struct AccountExport {
 
 #[derive(Serialize)]
 pub struct ExportUser {
-    pub id: i64,
+    pub id: UserId,
     pub username: String,
     pub email: Option<String>,
     pub first_name: Option<String>,
@@ -227,7 +228,7 @@ pub struct ConsentEntry {
 
 #[derive(Serialize)]
 pub struct MembershipEntry {
-    pub club_id: i64,
+    pub club_id: ClubId,
     pub club_name: String,
     pub is_admin: bool,
     pub is_member: bool,
@@ -236,9 +237,9 @@ pub struct MembershipEntry {
 
 #[derive(Serialize)]
 pub struct PostEntry {
-    pub id: i64,
+    pub id: PostId,
     pub content: String,
-    pub club_id: Option<i64>,
+    pub club_id: Option<ClubId>,
     pub created_at: String,
 }
 
@@ -398,7 +399,7 @@ pub async fn register(
     Ok((
         axum::http::StatusCode::CREATED,
         Json(UserProfile {
-            id,
+            id: id.into(),
             username,
             email: Some(email),
             first_name: req.first_name,
@@ -448,7 +449,9 @@ pub async fn login(
     let jar = issue_session(&app, jar, user.id).await?;
     Ok((
         jar,
-        Json(json!({ "user": { "id": user.id, "username": user.username } })),
+        Json(json!({
+            "user": { "id": UserId::from_raw(user.id), "username": user.username }
+        })),
     ))
 }
 
@@ -564,7 +567,9 @@ pub async fn refresh(
     ));
     Ok((
         jar,
-        Json(json!({ "user": { "id": row.user_id, "username": row.username } })),
+        Json(json!({
+            "user": { "id": UserId::from_raw(row.user_id), "username": row.username }
+        })),
     ))
 }
 
@@ -772,7 +777,7 @@ pub async fn me(
     .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
 
     Ok(Json(UserProfile {
-        id: row.id,
+        id: row.id.into(),
         username: row.username,
         email: row.email,
         first_name: row.first_name,
@@ -787,7 +792,7 @@ pub async fn me(
 /// Minimal public profile, shaped like Django `SimpleUserSerializer`.
 #[derive(Debug, Serialize)]
 pub struct SimpleUser {
-    pub id: i64,
+    pub id: UserId,
     pub username: String,
 }
 
@@ -796,14 +801,15 @@ pub struct SimpleUser {
 pub async fn simple_profile(
     State(app): State<AppState>,
     _user: AuthUser,
-    Path(pk): Path<i64>,
+    ApiPath(pk): ApiPath<UserId>,
 ) -> Result<Json<SimpleUser>, AppError> {
+    let pk = pk.inner();
     let row = sqlx::query!("SELECT id, username FROM users WHERE id = ?", pk)
         .fetch_optional(&app.pool)
         .await?
         .ok_or_else(|| AppError::NotFound("User not found.".into()))?;
     Ok(Json(SimpleUser {
-        id: row.id,
+        id: row.id.into(),
         username: row.username,
     }))
 }
@@ -890,7 +896,7 @@ pub async fn account_export(
     .await?
     .into_iter()
     .map(|r| MembershipEntry {
-        club_id: r.club_id,
+        club_id: r.club_id.into(),
         club_name: r.club_name,
         is_admin: r.is_admin != 0,
         is_member: r.is_member != 0,
@@ -907,16 +913,16 @@ pub async fn account_export(
     .await?
     .into_iter()
     .map(|r| PostEntry {
-        id: r.id,
+        id: r.id.into(),
         content: r.content,
-        club_id: r.club_id,
+        club_id: r.club_id.map(Into::into),
         created_at: r.created_at,
     })
     .collect();
 
     let export = AccountExport {
         user: ExportUser {
-            id: u.id,
+            id: u.id.into(),
             username: u.username,
             email: u.email,
             first_name: u.first_name,

@@ -84,7 +84,7 @@ export function EditClubPage(): ReactElement {
   const handleAddSport = useCallback(
     async (sportName: string): Promise<void> => {
       if (clubId === undefined) return;
-      await clubsApi.addSport({ club_id: Number(clubId), sport_name: sportName });
+      await clubsApi.addSport({ club_id: clubId, sport_name: sportName });
     },
     [clubId],
   );

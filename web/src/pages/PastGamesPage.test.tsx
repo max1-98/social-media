@@ -14,9 +14,9 @@ vi.mock("../api", async () => {
 });
 
 const game: CompleteGame = {
-  id: 7,
-  team1: [{ id: 1, first_name: "A", surname: "B", username: "alice", elo: 1200 }],
-  team2: [{ id: 2, first_name: "C", surname: "D", username: "bob", elo: 1100 }],
+  id: "7",
+  team1: [{ id: "1", first_name: "A", surname: "B", username: "alice", elo: 1200 }],
+  team2: [{ id: "2", first_name: "C", surname: "D", username: "bob", elo: 1100 }],
   game_type: 1,
   score: "6-4",
   start_time: "2024-05-01",

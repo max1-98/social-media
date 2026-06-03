@@ -36,6 +36,12 @@ pub struct Config {
     /// Identifying `User-Agent` for the Nominatim geocoder (their policy
     /// requires a contactable UA).
     pub geocoder_user_agent: String,
+    /// Custom Sqids alphabet for public-id encoding. When `None`, the library
+    /// default is used; setting a private value makes the id mapping
+    /// unreproducible without it (see `src/id.rs`).
+    pub public_id_alphabet: Option<String>,
+    /// Minimum length of an encoded public id (longer = harder to guess).
+    pub public_id_min_length: u8,
 }
 
 impl Config {
@@ -78,6 +84,10 @@ impl Config {
             media_secret: var("MEDIA_SECRET").unwrap_or_else(|| "dev-insecure-media-secret".into()),
             geocoder_user_agent: var("GEOCODER_USER_AGENT")
                 .unwrap_or_else(|| "social-media-rebuild/0.1 (contact@example.com)".into()),
+            public_id_alphabet: var("PUBLIC_ID_ALPHABET"),
+            public_id_min_length: var("PUBLIC_ID_MIN_LENGTH")
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(crate::id::DEFAULT_MIN_LENGTH),
         }
     }
 }

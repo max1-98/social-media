@@ -55,7 +55,7 @@ export function MyClubsPage(): ReactElement {
               <Card>
                 <CardActionArea
                   onClick={() => {
-                    void navigate(`/club/${String(club.id)}`);
+                    void navigate(`/club/${club.id}`);
                   }}
                   aria-label={`View ${club.name}`}
                 >

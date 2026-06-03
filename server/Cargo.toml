@@ -32,6 +32,11 @@ rand = "0.8"
 time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 
+# Public-id obfuscation. Internal PKs stay sequential `i64`; Sqids encodes them
+# into short opaque strings at the API edge so the raw, enumerable id never leaks
+# to clients (privacy hardening — see `src/id.rs`). Tiny, pure-logic, no deps.
+sqids = "0.4"
+
 # Phase 4 — media signed-URL HMAC. Tiny, no-default-feature crates used to sign
 # expiring media URLs for LocalDiskStorage (R2 SigV4 lands at deploy, Phase 7).
 hmac = "0.12"

@@ -25,14 +25,14 @@ vi.mock("../api", () => ({
 }));
 
 const ADMIN_CLUB: MyClub = {
-  id: 3,
+  id: "3",
   name: "Admin Club",
   logo: "",
   sport_type: null,
   is_club_admin: true,
 };
 const MEMBER_CLUB: MyClub = {
-  id: 4,
+  id: "4",
   name: "Member Club",
   logo: "",
   sport_type: null,
@@ -60,7 +60,7 @@ describe("CreateEventPage", () => {
 
   it("posts a recurring series when a repeat cadence is chosen", async () => {
     myClubs.mockResolvedValue([ADMIN_CLUB]);
-    createSeries.mockResolvedValue({ series_id: 1, events: [] });
+    createSeries.mockResolvedValue({ series_id: "1", events: [] });
     renderPicker();
 
     fireEvent.mouseDown(await screen.findByRole("combobox", { name: /club/i }));

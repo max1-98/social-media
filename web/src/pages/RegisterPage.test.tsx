@@ -16,7 +16,7 @@ vi.mock("../api", async () => {
 
 function baseUser(overrides: Partial<User> = {}): User {
   return {
-    id: 1,
+    id: "1",
     username: "kid",
     email: "k@example.com",
     first_name: null,

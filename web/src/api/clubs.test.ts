@@ -22,7 +22,7 @@ describe("clubSocials", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await clubSocials(1);
+    const result = await clubSocials("1");
 
     expect(result).toEqual([{ platform: "facebook", url: "https://fb.com/x" }]);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -34,6 +34,6 @@ describe("clubSocials", () => {
   it("returns an empty array when the club has no socials", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ socials: [] })));
 
-    await expect(clubSocials(2)).resolves.toEqual([]);
+    await expect(clubSocials("2")).resolves.toEqual([]);
   });
 });
