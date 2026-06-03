@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT club_id AS \"club_id!: i64\" FROM event_series WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6b346b7b5c07e04308bb7d7ef574ecd587c44d02594bd4d796ce3148429ed037"
+}
