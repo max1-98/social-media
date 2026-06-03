@@ -142,7 +142,11 @@ export function EditClubPage(): ReactElement {
       </form>
       <Divider />
       <Text variant="h2">Sport</Text>
-      <SportForm sports={sports} initialSport={club.sport_type.name} onSubmit={handleAddSport} />
+      <SportForm
+        sports={sports}
+        initialSport={club.sport_type?.name ?? ""}
+        onSubmit={handleAddSport}
+      />
       <Divider />
       <Box>
         <Button

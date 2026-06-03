@@ -14,18 +14,21 @@ vi.mock("react-router-dom", async () => {
 
 const listSports = vi.fn<() => Promise<Sport[]>>();
 const createClub = vi.fn<(p: unknown) => Promise<Club>>();
+const addSport = vi.fn<(p: unknown) => Promise<{ message: string }>>();
 vi.mock("../api", () => ({
   ApiRequestError: class extends Error {},
   clubsApi: {
     listSports: () => listSports(),
     createClub: (p: unknown) => createClub(p),
+    addSport: (p: unknown) => addSport(p),
   },
 }));
 
 describe("CreateClubPage", () => {
-  it("submits the form and navigates to the new club", async () => {
+  it("creates the club, sets the chosen sport, then navigates", async () => {
     listSports.mockResolvedValue([{ name: "tennis" }]);
     createClub.mockResolvedValue({ id: 9 } as Club);
+    addSport.mockResolvedValue({ message: "ok" });
     render(
       <MemoryRouter>
         <CreateClubPage />
@@ -42,6 +45,9 @@ describe("CreateClubPage", () => {
         expect.objectContaining({ name: "New Club", club_username: "newc" }),
       );
     });
+    // The sport is persisted via a separate add-sport call (backend parity).
+    expect(createClub).toHaveBeenCalledWith(expect.not.objectContaining({ sport_type: "tennis" }));
+    expect(addSport).toHaveBeenCalledWith({ club_id: 9, sport_name: "tennis" });
     expect(navigate).toHaveBeenCalledWith("/club/9");
   });
 });

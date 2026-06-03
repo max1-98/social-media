@@ -44,7 +44,7 @@ export interface ClubCardProps {
  * Takes data + an `onSelect` callback; the page owns navigation and fetching.
  */
 export function ClubCard({ club, onSelect }: ClubCardProps): ReactElement {
-  const sport = toSportName(club.sport_type.name);
+  const sport = toSportName(club.sport_type?.name ?? "");
 
   const content = (
     <Stack spacing={1} sx={{ p: 2, pt: 2.5, position: "relative" }}>
@@ -76,9 +76,9 @@ export function ClubCard({ club, onSelect }: ClubCardProps): ReactElement {
       ) : null}
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
         {sport ? (
-          <SportIcon sport={sport} title={`${club.sport_type.name} club`} />
+          <SportIcon sport={sport} title={`${club.sport_type?.name ?? ""} club`} />
         ) : (
-          <Text variant="caption">{club.sport_type.name || "No sport"}</Text>
+          <Text variant="caption">{club.sport_type?.name ?? "No sport"}</Text>
         )}
         <Chip
           size="small"
