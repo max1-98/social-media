@@ -21,7 +21,6 @@ import { del, getJson, patchForm, patchJson, postJson } from "./http";
 export interface CreateClubPayload {
   name: string;
   club_username: string;
-  sport_type: string;
   info?: string;
 }
 

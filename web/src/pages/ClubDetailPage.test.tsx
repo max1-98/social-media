@@ -91,6 +91,17 @@ describe("ClubDetailPage", () => {
     expect(screen.getByText("facebook")).toBeInTheDocument();
   });
 
+  it("renders without crashing when the club has no sport set", async () => {
+    clubDetail.mockResolvedValue({ ...adminClub, sport_type: null });
+    clubSocials.mockResolvedValue([]);
+    clubMembers.mockResolvedValue([]);
+    clubRequests.mockResolvedValue([]);
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "Smashers" })).toBeInTheDocument();
+    expect(screen.getByText(/No sport · @smashers/)).toBeInTheDocument();
+  });
+
   it("hides admin sections for a non-admin and offers a join action", async () => {
     clubDetail.mockResolvedValue({
       ...adminClub,

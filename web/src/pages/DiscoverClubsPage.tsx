@@ -35,7 +35,7 @@ function toMarkers(clubs: ManyClub[]): MapClubMarker[] {
       id: club.id,
       name: club.name,
       coordinates: club.coordinates,
-      description: club.sport_type.name ? `${club.sport_type.name} club` : club.info,
+      description: club.sport_type?.name ? `${club.sport_type.name} club` : club.info,
     }));
 }
 

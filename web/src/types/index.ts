@@ -58,7 +58,7 @@ export interface Club {
   id: number;
   club_username: string;
   name: string;
-  sport_type: Sport;
+  sport_type: Sport | null;
   president: string;
   info: string;
   date_created: string;
@@ -78,14 +78,14 @@ export interface MyClub {
   id: number;
   name: string;
   logo: string;
-  sport_type: Sport;
+  sport_type: Sport | null;
 }
 
 export interface ManyClub {
   id: number;
   club_username: string;
   name: string;
-  sport_type: Sport;
+  sport_type: Sport | null;
   info: string;
   logo: string;
   coordinates: Coordinates | null;

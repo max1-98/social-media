@@ -198,7 +198,7 @@ export function ClubDetailPage(): ReactElement {
         <div>
           <Text variant="h1">{club.name}</Text>
           <Text variant="subtitle1" color="text.secondary">
-            {club.sport_type.name} · @{club.club_username}
+            {club.sport_type?.name ?? "No sport"} · @{club.club_username}
           </Text>
         </div>
       </Stack>
