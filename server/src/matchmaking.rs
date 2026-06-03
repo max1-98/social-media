@@ -159,7 +159,7 @@ fn elo_state(elo: i64) -> SkillState {
 /// whichever team is currently weaker and not yet full.
 fn greedy_split(players: &[(i64, i64)], half: usize) -> (Vec<i64>, Vec<i64>) {
     let mut sorted = players.to_vec();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.sort_by_key(|p| std::cmp::Reverse(p.1));
     let (mut t1, mut t2) = (Vec::with_capacity(half), Vec::new());
     let (mut s1, mut s2) = (0i64, 0i64);
     for (id, elo) in sorted {
