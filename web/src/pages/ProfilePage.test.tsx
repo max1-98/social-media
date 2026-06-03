@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AccountExport } from "../api";
+import { fireEvent, render, screen, waitFor } from "../test/renderWithTheme.tsx";
 import type { User } from "../types";
 
 import { ProfilePage } from "./ProfilePage.tsx";

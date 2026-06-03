@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
+import { fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
 import type { EventDetail, Game, Member } from "../../types";
 
 import { MatchmakingPanel } from "./MatchmakingPanel.tsx";

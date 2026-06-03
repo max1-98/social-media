@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Chip from "@mui/material/Chip";
@@ -46,7 +47,17 @@ export function ClubCard({ club, onSelect }: ClubCardProps): ReactElement {
   const sport = toSportName(club.sport_type.name);
 
   const content = (
-    <Stack spacing={1} sx={{ p: 2 }}>
+    <Stack spacing={1} sx={{ p: 2, pt: 2.5, position: "relative" }}>
+      <Box
+        sx={{
+          position: "absolute",
+          insetInline: 0,
+          top: 0,
+          height: 4,
+          background: (t) =>
+            `linear-gradient(90deg, ${t.vars.palette.primary.main}, ${t.vars.palette.secondary.main})`,
+        }}
+      />
       <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
         <Avatar src={club.logo || undefined} alt={`${club.name} logo`}>
           {club.name.charAt(0)}
@@ -71,7 +82,7 @@ export function ClubCard({ club, onSelect }: ClubCardProps): ReactElement {
         )}
         <Chip
           size="small"
-          variant="outlined"
+          variant={club.is_active ? "filled" : "outlined"}
           color={club.is_active ? "success" : "error"}
           label={club.is_active ? "Active" : "Inactive"}
         />

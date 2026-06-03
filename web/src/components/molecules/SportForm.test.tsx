@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
+import { fireEvent, render, screen, waitFor } from "../../test/renderWithTheme.tsx";
 import type { Sport } from "../../types";
 
 import { SportForm } from "./SportForm.tsx";

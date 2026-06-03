@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
+
+import { fireEvent, render, screen, waitFor } from "../../test/renderWithTheme.tsx";
 
 import { AddressForm } from "./AddressForm.tsx";
 import type { AddressResult } from "./AddressForm.tsx";

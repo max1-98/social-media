@@ -72,7 +72,15 @@ export function Navbar({ user, onLogout, items = DEFAULT_NAV_ITEMS }: NavbarProp
   };
 
   return (
-    <AppBar position="static" component="div">
+    <AppBar
+      position="sticky"
+      component="div"
+      sx={{
+        top: 0,
+        backgroundColor: (t) => `rgba(${t.vars.palette.background.paperChannel} / 0.8)`,
+        backdropFilter: "saturate(180%) blur(8px)",
+      }}
+    >
       <Toolbar>
         <IconButton
           edge="start"
@@ -87,8 +95,20 @@ export function Navbar({ user, onLogout, items = DEFAULT_NAV_ITEMS }: NavbarProp
         </IconButton>
 
         <Box sx={{ flexGrow: 1 }}>
-          <RouterLink to="/" style={{ color: "inherit", textDecoration: "none" }}>
-            <Text variant="h6" component="span" sx={{ color: "inherit" }}>
+          <RouterLink to="/" style={{ textDecoration: "none" }}>
+            <Text
+              variant="h6"
+              component="span"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: "-0.01em",
+                background: (t) =>
+                  `linear-gradient(90deg, ${t.vars.palette.primary.main}, ${t.vars.palette.secondary.main})`,
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                color: "transparent",
+              }}
+            >
               Sports Social
             </Text>
           </RouterLink>

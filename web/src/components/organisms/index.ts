@@ -1,5 +1,7 @@
 // Barrel for the organisms layer. May re-export modules composed from atoms +
 // molecules. Cross-layer imports MUST come through this file.
+export { AuthCard } from "./AuthCard";
+export type { AuthCardProps } from "./AuthCard";
 export { ClubCard } from "./ClubCard";
 export type { ClubCardProps } from "./ClubCard";
 export { ClubRequests } from "./ClubRequests";

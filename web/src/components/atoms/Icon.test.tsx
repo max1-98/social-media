@@ -1,5 +1,6 @@
 import HomeIcon from "@mui/icons-material/Home";
-import { render, screen } from "@testing-library/react";
+
+import { render, screen } from "../../test/renderWithTheme.tsx";
 
 import { Icon } from "./Icon.tsx";
 

@@ -6,6 +6,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../api";
 import { Alert, Button, Text } from "../components/atoms";
 import { FormField, PasswordField } from "../components/molecules";
+import { AuthCard } from "../components/organisms";
 import { PageLayout } from "../components/templates";
 import { useAuth } from "../hooks";
 
@@ -48,44 +49,43 @@ export function LoginPage(): ReactElement {
 
   return (
     <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Log in
-      </Text>
-      <form
-        onSubmit={(event) => {
-          void onSubmit(event);
-        }}
-        aria-label="Log in"
-      >
-        <Stack spacing={1} sx={{ maxWidth: 360 }}>
-          {error !== null && <Alert severity="error">{error}</Alert>}
-          <FormField
-            label="Username"
-            name="username"
-            value={username}
-            onChange={setUsername}
-            autoComplete="username"
-            required
-          />
-          <PasswordField
-            label="Password"
-            name="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-            required
-          />
-          <Button type="submit" disabled={submitting}>
-            {submitting ? "Signing in…" : "Log in"}
-          </Button>
-          <Text variant="body2">
-            Need an account? <RouterLink to="/register">Register</RouterLink>
-          </Text>
-          <Text variant="body2">
-            Forgotten your password? <RouterLink to="/reset-password">Reset it</RouterLink>
-          </Text>
-        </Stack>
-      </form>
+      <AuthCard title="Log in" subtitle="Welcome back — sign in to your clubs and events.">
+        <form
+          onSubmit={(event) => {
+            void onSubmit(event);
+          }}
+          aria-label="Log in"
+        >
+          <Stack spacing={2}>
+            {error !== null && <Alert severity="error">{error}</Alert>}
+            <FormField
+              label="Username"
+              name="username"
+              value={username}
+              onChange={setUsername}
+              autoComplete="username"
+              required
+            />
+            <PasswordField
+              label="Password"
+              name="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+              required
+            />
+            <Button type="submit" size="large" fullWidth disabled={submitting}>
+              {submitting ? "Signing in…" : "Log in"}
+            </Button>
+            <Text variant="body2">
+              Need an account? <RouterLink to="/register">Register</RouterLink>
+            </Text>
+            <Text variant="body2">
+              Forgotten your password? <RouterLink to="/reset-password">Reset it</RouterLink>
+            </Text>
+          </Stack>
+        </form>
+      </AuthCard>
     </PageLayout>
   );
 }

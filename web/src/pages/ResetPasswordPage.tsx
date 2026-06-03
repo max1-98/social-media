@@ -6,6 +6,7 @@ import { Link as RouterLink, useNavigate, useParams, useSearchParams } from "rea
 import { ApiRequestError, authApi } from "../api";
 import { Alert, Button, Text } from "../components/atoms";
 import { FormField, PasswordField } from "../components/molecules";
+import { AuthCard } from "../components/organisms";
 import { PageLayout } from "../components/templates";
 
 /**
@@ -65,76 +66,74 @@ export function ResetPasswordPage(): ReactElement {
   if (token !== "") {
     return (
       <PageLayout>
-        <Text variant="h1" gutterBottom>
-          Set a new password
-        </Text>
-        <form
-          onSubmit={(event) => {
-            void onReset(event);
-          }}
-          aria-label="Set a new password"
-        >
-          <Stack spacing={1} sx={{ maxWidth: 360 }}>
-            {error !== null && <Alert severity="error">{error}</Alert>}
-            <PasswordField
-              label="New password"
-              name="password1"
-              value={password1}
-              onChange={setPassword1}
-              autoComplete="new-password"
-              required
-            />
-            <PasswordField
-              label="Confirm new password"
-              name="password2"
-              value={password2}
-              onChange={setPassword2}
-              autoComplete="new-password"
-              required
-            />
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Changing password…" : "Change password"}
-            </Button>
-          </Stack>
-        </form>
+        <AuthCard title="Set a new password">
+          <form
+            onSubmit={(event) => {
+              void onReset(event);
+            }}
+            aria-label="Set a new password"
+          >
+            <Stack spacing={2}>
+              {error !== null && <Alert severity="error">{error}</Alert>}
+              <PasswordField
+                label="New password"
+                name="password1"
+                value={password1}
+                onChange={setPassword1}
+                autoComplete="new-password"
+                required
+              />
+              <PasswordField
+                label="Confirm new password"
+                name="password2"
+                value={password2}
+                onChange={setPassword2}
+                autoComplete="new-password"
+                required
+              />
+              <Button type="submit" size="large" fullWidth disabled={submitting}>
+                {submitting ? "Changing password…" : "Change password"}
+              </Button>
+            </Stack>
+          </form>
+        </AuthCard>
       </PageLayout>
     );
   }
 
   return (
     <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Reset password
-      </Text>
-      <form
-        onSubmit={(event) => {
-          void onRequest(event);
-        }}
-        aria-label="Request a password reset"
+      <AuthCard
+        title="Reset password"
+        subtitle="Enter your email and we will send you a link to reset your password."
       >
-        <Stack spacing={1} sx={{ maxWidth: 360 }}>
-          {error !== null && <Alert severity="error">{error}</Alert>}
-          {info !== null && <Alert severity="success">{info}</Alert>}
-          <Text variant="body2">
-            Enter your email and we will send you a link to reset your password.
-          </Text>
-          <FormField
-            label="Email"
-            name="email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
-          <Button type="submit" disabled={submitting}>
-            {submitting ? "Sending…" : "Send reset link"}
-          </Button>
-          <Text variant="body2">
-            Remembered it? <RouterLink to="/login">Log in</RouterLink>
-          </Text>
-        </Stack>
-      </form>
+        <form
+          onSubmit={(event) => {
+            void onRequest(event);
+          }}
+          aria-label="Request a password reset"
+        >
+          <Stack spacing={2}>
+            {error !== null && <Alert severity="error">{error}</Alert>}
+            {info !== null && <Alert severity="success">{info}</Alert>}
+            <FormField
+              label="Email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
+            />
+            <Button type="submit" size="large" fullWidth disabled={submitting}>
+              {submitting ? "Sending…" : "Send reset link"}
+            </Button>
+            <Text variant="body2">
+              Remembered it? <RouterLink to="/login">Log in</RouterLink>
+            </Text>
+          </Stack>
+        </form>
+      </AuthCard>
     </PageLayout>
   );
 }

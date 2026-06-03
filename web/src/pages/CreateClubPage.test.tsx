@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 
+import { fireEvent, render, screen, waitFor } from "../test/renderWithTheme.tsx";
 import type { Club, Sport } from "../types";
 
 import { CreateClubPage } from "./CreateClubPage.tsx";

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
+
+import { fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
 
 import { MapView } from "./MapView.tsx";
 

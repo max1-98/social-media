@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
+import { fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
 import type { CompleteGame, EventStatsResult } from "../../types";
 
 import { EventComplete } from "./EventComplete.tsx";

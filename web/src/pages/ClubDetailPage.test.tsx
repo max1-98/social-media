@@ -1,7 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 
+import { render, screen, waitFor } from "../test/renderWithTheme.tsx";
 import type { Club, Member, MemberRequest, Social } from "../types";
 
 import { ClubDetailPage } from "./ClubDetailPage.tsx";

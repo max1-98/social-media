@@ -3,15 +3,21 @@ import { describe, expect, it } from "vitest";
 import { theme } from "./theme";
 
 describe("theme", () => {
-  it("builds a light theme with the design tokens", () => {
-    expect(theme.palette.mode).toBe("light");
-    expect(theme.palette.primary.main).toBe("#3949ab");
-    expect(theme.palette.background.default).toBe("#f6f7f9");
+  it("defines vibrant light and dark colour schemes", () => {
+    expect(theme.colorSchemes.light?.palette.primary.main).toBe("#4338ca");
+    expect(theme.colorSchemes.dark?.palette.primary.main).toBe("#818cf8");
+    expect(theme.colorSchemes.light?.palette.background.default).toBe("#f5f6fb");
+    expect(theme.colorSchemes.dark?.palette.background.default).toBe("#0b0d14");
   });
 
-  it("uses an 8px spacing unit and rounded shape", () => {
-    expect(theme.spacing(3)).toBe("24px");
-    expect(theme.shape.borderRadius).toBe(10);
+  it("exposes an energy accent token in both schemes", () => {
+    expect(theme.colorSchemes.light?.palette.energy.main).toBe("#f59e0b");
+    expect(theme.colorSchemes.dark?.palette.energy.main).toBe("#fbbf24");
+  });
+
+  it("drives colour via CSS variables and a rounded shape", () => {
+    expect(theme.cssVariables).not.toBe(false);
+    expect(theme.shape.borderRadius).toBe(12);
   });
 
   it("disables button uppercasing", () => {

@@ -5,6 +5,7 @@ import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom
 
 import { ApiRequestError, authApi } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
+import { AuthCard } from "../components/organisms";
 import { PageLayout } from "../components/templates";
 
 type Status = "verifying" | "success" | "error" | "missing";
@@ -47,27 +48,26 @@ export function VerifyEmailPage(): ReactElement {
 
   return (
     <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Verify email
-      </Text>
-      <Stack spacing={2} sx={{ maxWidth: 420 }}>
-        {status === "verifying" && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Spinner size={20} />
-            <Text>Verifying your email…</Text>
-          </Stack>
-        )}
-        {status === "missing" && (
-          <Alert severity="warning">This link is missing its verification token.</Alert>
-        )}
-        {status === "success" && <Alert severity="success">{message}</Alert>}
-        {status === "error" && <Alert severity="error">{message}</Alert>}
-        {(status === "success" || status === "error") && (
-          <Text variant="body2">
-            <RouterLink to="/login">Continue to log in</RouterLink>
-          </Text>
-        )}
-      </Stack>
+      <AuthCard title="Verify email">
+        <Stack spacing={2}>
+          {status === "verifying" && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Spinner size={20} />
+              <Text>Verifying your email…</Text>
+            </Stack>
+          )}
+          {status === "missing" && (
+            <Alert severity="warning">This link is missing its verification token.</Alert>
+          )}
+          {status === "success" && <Alert severity="success">{message}</Alert>}
+          {status === "error" && <Alert severity="error">{message}</Alert>}
+          {(status === "success" || status === "error") && (
+            <Text variant="body2">
+              <RouterLink to="/login">Continue to log in</RouterLink>
+            </Text>
+          )}
+        </Stack>
+      </AuthCard>
     </PageLayout>
   );
 }

@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { render, screen } from "../test/renderWithTheme.tsx";
 import type { CompleteGame } from "../types";
 
 import { PastGamesPage } from "./PastGamesPage.tsx";
