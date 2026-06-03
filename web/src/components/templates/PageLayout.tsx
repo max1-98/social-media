@@ -34,16 +34,29 @@ export function PageLayout({ children, navbar, consentBanner }: PageLayoutProps)
         {children}
       </Container>
 
-      <Box component="footer" sx={{ borderTop: 1, borderColor: "divider", py: 2 }}>
+      <Box
+        component="footer"
+        sx={{ borderTop: 1, borderColor: "divider", bgcolor: "background.paper", py: 3, mt: 4 }}
+      >
         <Container>
-          <Stack direction="row" spacing={2} component="nav" aria-label="Policies">
-            {/* Policy pages are scaffolded in the Consent + Ads stream. */}
-            <Link href="/privacy-policy">Privacy Policy</Link>
-            <Link href="/cookie-policy">Cookie Policy</Link>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
+          >
+            <Text variant="caption" color="text.secondary">
+              © {new Date().getFullYear()} Sports Social
+            </Text>
+            <Stack direction="row" spacing={3} component="nav" aria-label="Policies">
+              {/* Policy pages are scaffolded in the Consent + Ads stream. */}
+              <Link href="/privacy-policy" variant="body2">
+                Privacy Policy
+              </Link>
+              <Link href="/cookie-policy" variant="body2">
+                Cookie Policy
+              </Link>
+            </Stack>
           </Stack>
-          <Text variant="caption" color="text.secondary">
-            Sports Social
-          </Text>
         </Container>
       </Box>
 

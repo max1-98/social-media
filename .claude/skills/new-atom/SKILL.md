@@ -17,8 +17,13 @@ Add a component to `web/src` honoring boundaries, barrels, and full typing. See
    - Typed props interface; explicit return type (`ReactElement`).
    - Import only allowed lower layers, via their **barrels** (`../atoms`).
    - Accessible markup (correct roles/labels).
-3. Create `web/src/components/<layer>/<Name>.test.tsx` (Vitest + RTL); assert via
-   role/text.
+   - **Style via theme tokens, never hardcoded colours** (`color="primary"`,
+     `bgcolor: "background.paper"`); custom SVG uses `currentColor`. See the
+     `theming` skill.
+3. Create `web/src/components/<layer>/<Name>.test.tsx`; assert via role/text.
+   Import `render`/`screen` from the theme helper, not RTL directly:
+   `import { render, screen } from "../../test/renderWithTheme"` (so `theme.vars`
+   resolves — see the `theming` skill).
 4. Re-export from the layer barrel: add `export { Name } from "./Name";` (and any
    exported types) to `web/src/components/<layer>/index.ts`.
 5. Verify: `npm run lint && npm run typecheck && npm test`. The boundaries and

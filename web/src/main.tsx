@@ -1,3 +1,4 @@
+import "@fontsource-variable/inter/index.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
@@ -11,7 +12,7 @@ if (!rootEl) throw new Error("#root element not found");
 
 createRoot(rootEl).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>
       <CssBaseline />
       <App />
     </ThemeProvider>

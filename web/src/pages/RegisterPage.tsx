@@ -6,6 +6,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { ApiRequestError, authApi } from "../api";
 import { Alert, Button, Select, Text } from "../components/atoms";
 import { FormField, PasswordField } from "../components/molecules";
+import { AuthCard } from "../components/organisms";
 import { PageLayout } from "../components/templates";
 import type { User } from "../types";
 
@@ -88,122 +89,120 @@ export function RegisterPage(): ReactElement {
   if (created !== null) {
     return (
       <PageLayout>
-        <Text variant="h1" gutterBottom>
-          Account created
-        </Text>
-        <Stack spacing={2} sx={{ maxWidth: 480 }}>
-          <Alert severity="success">
-            We have sent a verification link to your email. Open it to confirm your address before
-            signing in.
-          </Alert>
-          {created.parental_consent_required ? (
-            <Alert severity="warning">
-              Because you are under {DIGITAL_CONSENT_AGE}, your account also needs parental consent.
-              Sign-in stays blocked until a parent or guardian completes that step.
+        <AuthCard title="Account created">
+          <Stack spacing={2}>
+            <Alert severity="success">
+              We have sent a verification link to your email. Open it to confirm your address before
+              signing in.
             </Alert>
-          ) : null}
-          <Text variant="body2">
-            Already verified? <RouterLink to="/login">Log in</RouterLink>
-          </Text>
-        </Stack>
+            {created.parental_consent_required ? (
+              <Alert severity="warning">
+                Because you are under {DIGITAL_CONSENT_AGE}, your account also needs parental
+                consent. Sign-in stays blocked until a parent or guardian completes that step.
+              </Alert>
+            ) : null}
+            <Text variant="body2">
+              Already verified? <RouterLink to="/login">Log in</RouterLink>
+            </Text>
+          </Stack>
+        </AuthCard>
       </PageLayout>
     );
   }
 
   return (
     <PageLayout>
-      <Text variant="h1" gutterBottom>
-        Register
-      </Text>
-      <form
-        onSubmit={(event) => {
-          void onSubmit(event);
-        }}
-        aria-label="Register"
-      >
-        <Stack spacing={1} sx={{ maxWidth: 420 }}>
-          {error !== null && <Alert severity="error">{error}</Alert>}
-          <FormField
-            label="Username"
-            name="username"
-            value={username}
-            onChange={setUsername}
-            autoComplete="username"
-            required
-          />
-          <FormField
-            label="Email"
-            name="email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
-          <FormField
-            label="First name"
-            name="first_name"
-            value={firstName}
-            onChange={setFirstName}
-            autoComplete="given-name"
-          />
-          <FormField
-            label="Surname"
-            name="surname"
-            value={surname}
-            onChange={setSurname}
-            autoComplete="family-name"
-          />
-          <FormField
-            label="Date of birth"
-            name="date_of_birth"
-            type="date"
-            value={dateOfBirth}
-            onChange={setDateOfBirth}
-            required
-          />
-          {isMinor ? (
-            <Alert severity="info">
-              You are under {DIGITAL_CONSENT_AGE}, so your account will require parental consent
-              before you can sign in. You can still register now.
-            </Alert>
-          ) : null}
-          <Select
-            label="Biological gender"
-            name="biological_gender"
-            value={biologicalGender}
-            onChange={(event) => {
-              setBiologicalGender(event.target.value);
-            }}
-            options={GENDER_OPTIONS}
-            helperText="Used only for mixed skill-based matchmaking."
-            fullWidth
-            margin="normal"
-          />
-          <PasswordField
-            label="Password"
-            name="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="new-password"
-            required
-          />
-          <PasswordField
-            label="Confirm password"
-            name="confirm_password"
-            value={confirmPassword}
-            onChange={setConfirmPassword}
-            autoComplete="new-password"
-            required
-          />
-          <Button type="submit" disabled={submitting}>
-            {submitting ? "Creating account…" : "Register"}
-          </Button>
-          <Text variant="body2">
-            Already have an account? <RouterLink to="/login">Log in</RouterLink>
-          </Text>
-        </Stack>
-      </form>
+      <AuthCard title="Register" subtitle="Create your account to join clubs and play.">
+        <form
+          onSubmit={(event) => {
+            void onSubmit(event);
+          }}
+          aria-label="Register"
+        >
+          <Stack spacing={2}>
+            {error !== null && <Alert severity="error">{error}</Alert>}
+            <FormField
+              label="Username"
+              name="username"
+              value={username}
+              onChange={setUsername}
+              autoComplete="username"
+              required
+            />
+            <FormField
+              label="Email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
+            />
+            <FormField
+              label="First name"
+              name="first_name"
+              value={firstName}
+              onChange={setFirstName}
+              autoComplete="given-name"
+            />
+            <FormField
+              label="Surname"
+              name="surname"
+              value={surname}
+              onChange={setSurname}
+              autoComplete="family-name"
+            />
+            <FormField
+              label="Date of birth"
+              name="date_of_birth"
+              type="date"
+              value={dateOfBirth}
+              onChange={setDateOfBirth}
+              required
+            />
+            {isMinor ? (
+              <Alert severity="info">
+                You are under {DIGITAL_CONSENT_AGE}, so your account will require parental consent
+                before you can sign in. You can still register now.
+              </Alert>
+            ) : null}
+            <Select
+              label="Biological gender"
+              name="biological_gender"
+              value={biologicalGender}
+              onChange={(event) => {
+                setBiologicalGender(event.target.value);
+              }}
+              options={GENDER_OPTIONS}
+              helperText="Used only for mixed skill-based matchmaking."
+              fullWidth
+              margin="normal"
+            />
+            <PasswordField
+              label="Password"
+              name="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+              required
+            />
+            <PasswordField
+              label="Confirm password"
+              name="confirm_password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
+              required
+            />
+            <Button type="submit" size="large" fullWidth disabled={submitting}>
+              {submitting ? "Creating account…" : "Register"}
+            </Button>
+            <Text variant="body2">
+              Already have an account? <RouterLink to="/login">Log in</RouterLink>
+            </Text>
+          </Stack>
+        </form>
+      </AuthCard>
     </PageLayout>
   );
 }

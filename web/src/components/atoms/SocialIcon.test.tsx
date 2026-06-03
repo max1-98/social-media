@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render } from "../../test/renderWithTheme.tsx";
 
 import { SocialIcon } from "./SocialIcon.tsx";
 

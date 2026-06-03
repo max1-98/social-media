@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+
+import { act, fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
 
 import { ConsentBanner } from "./ConsentBanner.tsx";
 

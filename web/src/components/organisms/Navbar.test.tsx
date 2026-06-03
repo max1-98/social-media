@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
+
+import { fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
 
 import { Navbar } from "./Navbar.tsx";
 

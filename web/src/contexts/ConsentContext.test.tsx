@@ -1,7 +1,8 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
-import { fireEvent } from "@testing-library/react";
 import { useContext } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { act, render, screen, waitFor } from "../test/renderWithTheme.tsx";
+import { fireEvent } from "../test/renderWithTheme.tsx";
 
 import { ConsentContext, ConsentProvider } from "./ConsentContext.tsx";
 

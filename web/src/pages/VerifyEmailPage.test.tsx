@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiRequestError } from "../api";
+import { render, screen } from "../test/renderWithTheme.tsx";
 
 import { VerifyEmailPage } from "./VerifyEmailPage.tsx";
 
