@@ -17,8 +17,9 @@ definition of done**. Every `.md` here stays **under 150 lines** (repo rule).
 
 ## Core idea: dual ELO (anti-cheat by design)
 
-- **Internal ELO** `(user, club, game_type)` — intra-club club-night games; may
-  include `dummy_users`; **sandboxed**, never affects global rank.
+- **Internal ELO** `(user, club, game_type)` — intra-club club-night games;
+  **dummies/placeholders included** (they rank inside a club, never globally);
+  **sandboxed**, never affects global rank.
 - **External ELO** `(user, game_type)`, global — moves **only** from inter-club
   competitions / leagues / club-vs-club fixtures with **real, verified, distinct
   accounts (no dummies)**. Powers tiers, leaderboards, find-at-level, join guard.

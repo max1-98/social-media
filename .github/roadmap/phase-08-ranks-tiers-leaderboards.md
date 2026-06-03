@@ -14,8 +14,9 @@ for the ethics/opt-out rules.
 - [ ] Introduce a rating **scope** (`internal` vs `external`) on games; generalise
       the `sbmm` rating gate in `domain/games.rs:829` to key off scope +
       participant realness (no dummies, verified, distinct accounts).
-- [ ] Flag dummy participants (`dummyuser_*` / `dummy_users`, `clubs.rs:1076`) and
-      **exclude any game with a dummy from external ELO**. Internal ELO still moves.
+- [ ] Flag dummy participants (`dummyuser_*` / `dummy_users`, `clubs.rs:1076`):
+      they keep **internal** ELO + internal/club board positions, but any game with
+      a dummy is **internal-scope** (never moves external ELO).
 - [ ] Scope existing `(user, game_type)` ELO as **internal** (add `club_id`
       context) and add **external** ELO rows per `(user, game_type)`.
 - [ ] σ-guard: cap how much a high-σ / very-new opponent can move external rating.
@@ -34,6 +35,8 @@ for the ethics/opt-out rules.
 - [ ] Indexed reads (`external_elo(game_type_id, conservative DESC)`, club variant);
       optional `leaderboard_snapshots` for lazy materialization.
 - [ ] **Opt-out** + minor privacy: hide minors from public boards by default.
+- [ ] Dummies/placeholders appear on **club/internal** boards but are **excluded
+      from global/external** boards (no leaderboard positions outside a club).
 
 ## Find clubs at your level + join guard
 

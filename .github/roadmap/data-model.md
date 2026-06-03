@@ -77,6 +77,7 @@ leaderboards survive; hard-delete **purely personal** rows.
 | match_signals (ip/device hashes) | — (security) | **hard-delete** |
 | subscriptions | ✓ | retain minimal billing record per tax law, null PII |
 
-Dummies (`dummyuser_*`, `dummy_users`) are not data subjects; they never hold
-external ELO and are cleaned up with their club per existing logic
-(`clubs.rs:1006`).
+Dummies (`dummyuser_*`, `dummy_users`) are not data subjects. They **do** play
+internal games and can hold **internal** ELO + appear on **club/internal**
+leaderboards, but **never** hold external ELO or appear on **global/external**
+leaderboards. They are cleaned up with their club (`clubs.rs:1006`).
