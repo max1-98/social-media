@@ -1,18 +1,15 @@
-import type { ButtonHTMLAttributes, ReactElement, ReactNode } from "react";
+import MuiButton from "@mui/material/Button";
+import type { ButtonProps as MuiButtonProps } from "@mui/material/Button";
+import type { ReactElement } from "react";
 
 /**
- * Atom: the lowest-level button primitive. In Phase 6 this wraps the MUI
- * primitive. Atoms import nothing internal except shared types — consumers
+ * Atom: the lowest-level button primitive, wrapping MUI `Button` so it inherits
+ * the app theme (primary colour, radius, typography). Defaults to the filled
+ * `contained` variant; callers override `variant`/`color` as needed. Consumers
  * import it via the layer barrel (`../atoms`), never the deep path.
  */
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-}
+export type ButtonProps = MuiButtonProps;
 
-export function Button({ children, ...props }: ButtonProps): ReactElement {
-  return (
-    <button type="button" {...props}>
-      {children}
-    </button>
-  );
+export function Button(props: ButtonProps): ReactElement {
+  return <MuiButton variant="contained" {...props} />;
 }
