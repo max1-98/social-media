@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT e.id AS \"id!: i64\",\n                  e.winstreak AS \"winstreak!: i64\", e.best_winstreak AS \"best_winstreak!: i64\",\n                  COALESCE(e.mu, CAST(e.elo AS REAL)) AS \"mu!: f64\",\n                  COALESCE(e.sigma, 350.0 / 3.0) AS \"sigma!: f64\",\n                  e.games_played AS \"games_played!: i64\", e.extra AS \"extra!: String\",\n                  e.last_game AS \"last_game!: String\"\n           FROM user_elos ue JOIN elo e ON e.id = ue.elo_id\n           WHERE ue.user_id = ? AND e.game_type_id IS ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "winstreak!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "best_winstreak!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "mu!: f64",
+        "ordinal": 3,
+        "type_info": "Null"
+      },
+      {
+        "name": "sigma!: f64",
+        "ordinal": 4,
+        "type_info": "Null"
+      },
+      {
+        "name": "games_played!: i64",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "extra!: String",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "last_game!: String",
+        "ordinal": 7,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      null,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d5d76b62d31e088f7ec0445ef30f4608021843cfc54efb00052fcf57b07884bf"
+}

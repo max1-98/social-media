@@ -1,11 +1,12 @@
-//! Pure ELO rating math. Ports `backend/elo/services.py`:
+//! Pure ELO rating primitives. Ports `backend/elo/services.py`:
 //! `prob_win` (b = 1/300), `g`, `result`, `team1Win`, `scoreDifference`,
 //! `update_elo` (k = 40). No I/O — unit-tested against the Python outputs on
 //! identical inputs (the existing Django tests act as the oracle).
 //!
-//! `update_elo` in Django mutates `Elo` rows in place; the parity port keeps the
-//! math pure by *returning* the new values ([`apply_elo_update`]). The DB load /
-//! save lives in `domain::games` / `domain::elo`.
+//! The post-game rating update lives behind the pluggable
+//! [`crate::skill::RatingModel`] trait; [`crate::skill::elo::EloModel`] composes
+//! the `prob_win` / `result` / `K_FACTOR` primitives here. This module keeps the
+//! score parsing (`team1_win`, `score_difference`) used by `domain::games`.
 
 use crate::error::AppError;
 
@@ -21,20 +22,34 @@ pub fn prob_win(elo1: f64, elo2: f64) -> f64 {
     1.0 / (1.0 + (B * (elo2 - elo1)).exp())
 }
 
-/// Outcome multiplier as a step function of the score difference. Mirrors `g`.
+/// Outcome multiplier as a step function of the score difference.
+///
+/// Diverges from the legacy `g` to fix the documented margin-of-victory bug
+/// (`docs/rebuild/06-skill-model.md`): the old buckets were not zero-sum and a
+/// win by exactly one point mapped to `0.35`, producing a *negative* rating
+/// change for the winner against an equal opponent. The replacement is
+/// symmetric — `g(d) + g(-d) == 1` for every `d`, so equal-strength games stay
+/// zero-sum — and any win (`d >= 1`) yields `g > 0.5`, so a 1-point win is
+/// always a (small) gain.
 pub fn g(score_difference: i64) -> f64 {
-    if score_difference > 8 {
-        1.0
-    } else if score_difference > 4 {
-        0.8
-    } else if score_difference > 1 {
-        0.650
-    } else if score_difference > -5 {
-        0.350
-    } else if score_difference > -9 {
-        0.200
+    if score_difference >= 9 {
+        0.95
+    } else if score_difference >= 5 {
+        0.80
+    } else if score_difference >= 2 {
+        0.65
+    } else if score_difference == 1 {
+        0.55
+    } else if score_difference == 0 {
+        0.50
+    } else if score_difference == -1 {
+        0.45
+    } else if score_difference >= -4 {
+        0.35
+    } else if score_difference >= -8 {
+        0.20
     } else {
-        0.0
+        0.05
     }
 }
 
@@ -74,95 +89,6 @@ pub fn score_difference(score: &str) -> Result<i64, AppError> {
     Ok((a - b).abs())
 }
 
-/// A player's rating state going into a game.
-#[derive(Debug, Clone, Copy)]
-pub struct PlayerElo {
-    pub elo: i64,
-    pub winstreak: i64,
-    pub best_winstreak: i64,
-}
-
-/// The recomputed rating state after a game.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct EloOutcome {
-    pub elo: i64,
-    pub winstreak: i64,
-    pub best_winstreak: i64,
-}
-
-/// New rating states for both teams after a completed game.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EloUpdate {
-    pub winners: Vec<EloOutcome>,
-    pub losers: Vec<EloOutcome>,
-}
-
-fn average_elo(team: &[PlayerElo]) -> f64 {
-    let sum: i64 = team.iter().map(|p| p.elo).sum();
-    sum as f64 / team.len() as f64
-}
-
-/// Pure port of `update_elo`. `winners` / `losers` are the rating states of the
-/// teams (winners already determined via [`team1_win`]); `diff` is the positive
-/// [`score_difference`]. With `sbmm` off only winstreaks change, never the elo —
-/// matching the Django behaviour.
-///
-/// Truncation matches Python's `int()` (toward zero): elos stay positive, so the
-/// `as i64` cast on the (positive) float is equivalent.
-pub fn apply_elo_update(
-    winners: &[PlayerElo],
-    losers: &[PlayerElo],
-    diff: i64,
-    sbmm: bool,
-) -> EloUpdate {
-    let (win_change, lose_change) = if sbmm && !winners.is_empty() && !losers.is_empty() {
-        let elow_avg = average_elo(winners);
-        let elol_avg = average_elo(losers);
-        let pw = prob_win(elow_avg, elol_avg);
-        let pl = prob_win(elol_avg, elow_avg);
-        (Some(result(diff, pw)), Some(result(-diff, pl)))
-    } else {
-        (None, None)
-    };
-
-    let winners_out = winners
-        .iter()
-        .map(|p| {
-            let elo = match win_change {
-                Some(c) => (p.elo as f64 + K_FACTOR * c) as i64,
-                None => p.elo,
-            };
-            let winstreak = p.winstreak + 1;
-            let best_winstreak = winstreak.max(p.best_winstreak);
-            EloOutcome {
-                elo,
-                winstreak,
-                best_winstreak,
-            }
-        })
-        .collect();
-
-    let losers_out = losers
-        .iter()
-        .map(|p| {
-            let elo = match lose_change {
-                Some(c) => (p.elo as f64 + K_FACTOR * c) as i64,
-                None => p.elo,
-            };
-            EloOutcome {
-                elo,
-                winstreak: 0,
-                best_winstreak: p.best_winstreak,
-            }
-        })
-        .collect();
-
-    EloUpdate {
-        winners: winners_out,
-        losers: losers_out,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -195,16 +121,40 @@ mod tests {
 
     #[test]
     fn g_step_boundaries() {
-        assert_eq!(g(9), 1.0);
-        assert_eq!(g(8), 0.8);
-        assert_eq!(g(5), 0.8);
-        assert_eq!(g(4), 0.650);
-        assert_eq!(g(2), 0.650);
-        assert_eq!(g(1), 0.350);
-        assert_eq!(g(-4), 0.350);
-        assert_eq!(g(-5), 0.200);
-        assert_eq!(g(-8), 0.200);
-        assert_eq!(g(-9), 0.0);
+        assert_eq!(g(9), 0.95);
+        assert_eq!(g(8), 0.80);
+        assert_eq!(g(5), 0.80);
+        assert_eq!(g(4), 0.65);
+        assert_eq!(g(2), 0.65);
+        assert_eq!(g(1), 0.55);
+        assert_eq!(g(0), 0.50);
+        assert_eq!(g(-1), 0.45);
+        assert_eq!(g(-4), 0.35);
+        assert_eq!(g(-5), 0.20);
+        assert_eq!(g(-8), 0.20);
+        assert_eq!(g(-9), 0.05);
+    }
+
+    #[test]
+    fn g_is_zero_sum() {
+        for d in -25..=25 {
+            assert!((g(d) + g(-d) - 1.0).abs() < 1e-9, "g({d}) not zero-sum");
+        }
+    }
+
+    /// Regression for the documented bug: the outcome term for a win by exactly
+    /// one point against an equal opponent must be positive (the
+    /// `EloModel::update` path asserts the full rating change in `skill::elo`).
+    #[test]
+    fn win_by_one_outcome_is_positive_for_equal_opponent() {
+        let p = prob_win(1000.0, 1000.0); // 0.5
+        assert!(
+            result(1, p) > 0.0,
+            "win-by-1 vs equal opponent went negative"
+        );
+        // A "normal" win (diff 6) still gives the legacy ±12 swing: g(6)=0.80,
+        // p=0.5 -> result = 0.30, ×K(40) = 12.
+        assert!((K_FACTOR * result(6, p) - 12.0).abs() < 1e-9);
     }
 
     // --- team1_win / score_difference (oracle: TestTeam1Win, TestScoreDifference) ---
@@ -228,59 +178,5 @@ mod tests {
             score_difference("21"),
             Err(AppError::Validation(_))
         ));
-    }
-
-    // --- apply_elo_update (oracle: TestUpdateElo) ---
-
-    fn fresh(n: usize) -> Vec<PlayerElo> {
-        vec![
-            PlayerElo {
-                elo: 1000,
-                winstreak: 0,
-                best_winstreak: 0,
-            };
-            n
-        ]
-    }
-
-    #[test]
-    fn updates_elo_with_sbmm() {
-        let winners = fresh(2);
-        let losers = fresh(2);
-        let out = apply_elo_update(&winners, &losers, 6, true);
-
-        for w in &out.winners {
-            assert!(w.elo >= 1000);
-            assert_eq!(w.winstreak, 1);
-            assert_eq!(w.best_winstreak, 1);
-        }
-        for l in &out.losers {
-            assert!(l.elo <= 1000);
-            assert_eq!(l.winstreak, 0);
-        }
-    }
-
-    #[test]
-    fn updates_winstreak_without_sbmm() {
-        let winners = fresh(2);
-        let losers = fresh(2);
-        let out = apply_elo_update(&winners, &losers, 6, false);
-
-        for w in &out.winners {
-            assert_eq!(w.elo, 1000);
-            assert_eq!(w.winstreak, 1);
-        }
-        for l in &out.losers {
-            assert_eq!(l.elo, 1000);
-            assert_eq!(l.winstreak, 0);
-        }
-    }
-
-    #[test]
-    fn elo_change_is_symmetric_for_equal_teams() {
-        // Equal teams, diff 6: g(6)=0.8, p=0.5 -> +0.3*40 = +12 ; losers -0.3*40 = -12.
-        let out = apply_elo_update(&fresh(2), &fresh(2), 6, true);
-        assert_eq!(out.winners[0].elo, 1012);
-        assert_eq!(out.losers[0].elo, 988);
     }
 }

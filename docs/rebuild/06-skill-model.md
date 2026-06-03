@@ -4,13 +4,15 @@ A design for a **growable** skill system: one pluggable rating engine that
 serves both matchmaking (game allocation) and the rankings, chosen so we avoid
 algorithm lock-in as we scale across sports, modes, and team sizes.
 
-> Status: design only (no code yet). The current `server/src/matchmaking.rs` and
-> `server/src/rating.rs` are faithful parity ports of the legacy Django logic;
-> this doc defines the post-parity target. We are free to diverge.
+> Status: **implemented**. The `RatingModel` trait and its three models
+> (`EloModel`, `WengLinModel`, `Glicko2Model`) live in `server/src/skill/`;
+> `even_teams` balances by enumeration, and `domain::games` persists `mu/sigma`
+> per `(user, game_type)` (migration `0008_skill_model.sql`). The limits below
+> were the motivation and are now resolved — see [Resolution](#resolution).
 
 ## Why now
 
-The ported heuristics have hard limits that block growth:
+The ported heuristics had hard limits that blocked growth:
 
 - **The team balancer does not balance.** `even_teams`
   (`matchmaking.rs:89-148`) is a degenerate simulated annealing — its accept
@@ -33,6 +35,23 @@ The ported heuristics have hard limits that block growth:
 The rating loop is also closed **only for SBMM games** (with `sbmm=false` elo is
 frozen, only winstreaks move), and ratings are stored per `(user, game_type)`
 (`migrations/0003_games_elo.sql`).
+
+## Resolution
+
+Each limit above is now fixed behind the [`RatingModel`](06b-architecture.md)
+seam:
+
+- **Balancer** — `even_teams` (`matchmaking.rs`) enumerates every split and
+  picks the most even by `expected_score`; deterministic and optimal.
+- **Uncertainty** — `SkillState` carries `sigma` + `games_played`;
+  cold-start and σ-decay (lazy, from `last_game`) fall out per model.
+- **Team credit** — `WengLinModel` weights each player's update by their own
+  variance (no more flat team-average delta).
+- **Margin of victory** — `rating::g` is now zero-sum (`g(d)+g(-d)=1`) and a
+  win by one point is always a gain; MOV is a model `margin` weight.
+- **Lock-in** — model is selected per game type via `game_types.model_version`;
+  legacy types stay `elo_mov_v1` (1000-scale preserved), new types default to
+  Weng-Lin. Per-game calibration (predicted vs actual) is logged for A/B.
 
 ## Goals
 

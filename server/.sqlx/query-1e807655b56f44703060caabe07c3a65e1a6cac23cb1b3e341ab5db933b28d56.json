@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE elo SET elo = ?, mu = ?, sigma = ?, games_played = ?,\n                                    model_version = ?, extra = ?, winstreak = 0,\n                                    last_game = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "1e807655b56f44703060caabe07c3a65e1a6cac23cb1b3e341ab5db933b28d56"
+}

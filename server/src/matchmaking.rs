@@ -1,21 +1,29 @@
 //! Pure matchmaking / team-balancing. Ports `backend/games/game_creation.py`:
-//! `player_elo` (winstreak bonuses), `even_teams` (simulated annealing),
-//! `mixed_sbmm`, `sbmm`, `social_count` (cubic), `social`. No I/O — the DB load
-//! / save lives in `domain::games`.
+//! `player_elo` (winstreak bonuses), `even_teams` (team balancing), `mixed_sbmm`,
+//! `sbmm`, `social_count` (cubic), `social`. No I/O — the DB load / save lives in
+//! `domain::games`.
 //!
-//! The team-builders are inherently stochastic (the Django code uses Python's
-//! `random`), so exact output parity is neither achievable nor meaningful.
-//! Instead the RNG is injected (`rng: &mut impl Rng`) so tests are reproducible,
-//! the deterministic helpers (`player_elo`, `energy_diff`, `social_count`) are
-//! oracle-tested, and the stochastic fns are checked for invariants (team sizes,
-//! every player placed exactly once, mixed-gender constraints).
+//! `even_teams` no longer ports the legacy simulated annealing (a degenerate,
+//! near-random balancer — see `docs/rebuild/06-skill-model.md`); it now
+//! enumerates every split and picks the most even one via the pluggable
+//! `crate::skill` model, so balancing is deterministic and optimal.
+//!
+//! The *player-selection* steps still use Python's `random`, so exact output
+//! parity is neither achievable nor meaningful. The RNG is injected
+//! (`rng: &mut impl Rng`) so tests are reproducible, the deterministic helpers
+//! (`player_elo`, `even_teams`, `social_count`) are oracle-tested, and the
+//! stochastic fns are checked for invariants (team sizes, every player placed
+//! exactly once, mixed-gender constraints).
 
 use std::collections::HashMap;
 
 use rand::seq::SliceRandom;
 use rand::Rng;
+use serde_json::Value;
 
 use crate::error::AppError;
+use crate::skill::elo::EloModel;
+use crate::skill::{RatingModel, SkillState, TeamSkills};
 
 /// Biological gender, used only by `mixed_sbmm` (per `.claude/rules/gdpr.md`,
 /// minimise `biological_gender` usage to mixed SBMM).
@@ -63,13 +71,6 @@ fn temperature(x: usize) -> f64 {
     1.0 / x as f64
 }
 
-/// Sum-of-elo difference between two teams. Mirrors `energy_diff`.
-fn energy_diff(t1: &[i64], t2: &[i64], elos: &HashMap<i64, i64>) -> i64 {
-    let s1: i64 = t1.iter().map(|id| elos[id]).sum();
-    let s2: i64 = t2.iter().map(|id| elos[id]).sum();
-    (s2 - s1).abs()
-}
-
 /// `ceil(team_size * k)` matching the Django `b` computation.
 fn swap_count(team_size: usize, k: f64) -> usize {
     let v = team_size as f64 * k;
@@ -80,71 +81,97 @@ fn swap_count(team_size: usize, k: f64) -> usize {
     }
 }
 
-/// Split players into two balanced teams via simulated annealing. Mirrors
-/// `even_teams`; `players` is `(id, adjusted_elo)`.
+/// Split players into two balanced teams by **enumerating every possible split**
+/// and keeping the one whose predicted win probability is closest to 50/50.
+/// `players` is `(id, adjusted_elo)`.
 ///
-/// Parity note: the Django accept test `E_1 < E or math.exp(-E_1/T(i))` is always
-/// truthy (the second operand is always > 0), so a swap is *always* accepted.
-/// Replicated faithfully — output is stochastic regardless.
-pub fn even_teams<R: Rng>(players: &[(i64, i64)], rng: &mut R) -> (Vec<i64>, Vec<i64>) {
-    even_teams_tuned(players, 1, 0.5, 50, rng)
+/// This replaces the legacy simulated annealing, whose accept test
+/// (`E_1 < E or math.exp(-E_1/T(i))`) was always true and which kept the *last*
+/// swap rather than the *best* — so it returned a near-random split (documented
+/// in `docs/rebuild/06-skill-model.md`). For the small team sizes here (2v2 → 3
+/// splits, 3v3 → 10) full enumeration is deterministic, optimal, and cheap;
+/// balance is scored through [`RatingModel::expected_score`] so the balancer
+/// stays model-agnostic. Beyond [`ENUMERATION_LIMIT`] players it falls back to a
+/// greedy sort-and-fill split to avoid the `2^n` blow-up.
+pub fn even_teams(players: &[(i64, i64)]) -> (Vec<i64>, Vec<i64>) {
+    let n = players.len();
+    let half = n / 2;
+    if half == 0 {
+        return (players.iter().map(|(id, _)| *id).collect(), Vec::new());
+    }
+    if n > ENUMERATION_LIMIT {
+        return greedy_split(players, half);
+    }
+
+    let model = EloModel;
+    // Default to the natural split so we never need an `expect` on this path.
+    let mut best_t1: Vec<i64> = players[..half].iter().map(|(id, _)| *id).collect();
+    let mut best_t2: Vec<i64> = players[half..].iter().map(|(id, _)| *id).collect();
+    let mut best_cost = f64::INFINITY;
+
+    // Enumerate masks with exactly `half` bits set; require bit 0 set so each
+    // partition (and its team-swapped twin) is scored exactly once.
+    for mask in 0u32..(1u32 << n) {
+        if mask.count_ones() as usize != half || mask & 1 == 0 {
+            continue;
+        }
+        let mut t1 = Vec::with_capacity(half);
+        let mut t2 = Vec::with_capacity(n - half);
+        let mut s1 = Vec::with_capacity(half);
+        let mut s2 = Vec::with_capacity(n - half);
+        for (i, &(id, elo)) in players.iter().enumerate() {
+            let state = elo_state(elo);
+            if mask & (1 << i) != 0 {
+                t1.push(id);
+                s1.push(state);
+            } else {
+                t2.push(id);
+                s2.push(state);
+            }
+        }
+        let p = model.expected_score(&TeamSkills(s1), &TeamSkills(s2));
+        let cost = (p - 0.5).abs();
+        if cost < best_cost {
+            best_cost = cost;
+            best_t1 = t1;
+            best_t2 = t2;
+        }
+    }
+
+    (best_t1, best_t2)
 }
 
-fn even_teams_tuned<R: Rng>(
-    players: &[(i64, i64)],
-    m: usize,
-    k: f64,
-    n: usize,
-    rng: &mut R,
-) -> (Vec<i64>, Vec<i64>) {
-    let elos: HashMap<i64, i64> = players.iter().copied().collect();
-    let ids: Vec<i64> = players.iter().map(|(id, _)| *id).collect();
-    let team_size = ids.len() / 2;
+/// Above this many players, enumeration (`2^n`) is skipped for a greedy split.
+const ENUMERATION_LIMIT: usize = 12;
 
-    // Initial split: keep the highest-energy random split over `m` tries.
-    let mut energy = 0;
-    let mut store_t1 = ids.clone();
-    let mut store_t2: Vec<i64> = Vec::new();
-    for _ in 0..m {
-        let mut t1 = ids.clone();
-        let mut t2 = Vec::with_capacity(team_size);
-        for _ in 0..team_size {
-            let idx = rng.gen_range(0..t1.len());
-            t2.push(t1.remove(idx));
-        }
-        let e1 = energy_diff(&t1, &t2, &elos);
-        if e1 >= energy {
-            energy = e1;
-            store_t1 = t1;
-            store_t2 = t2;
+/// A [`SkillState`] carrying a matchmaking elo as its skill estimate (no
+/// uncertainty — balancing only compares team strengths).
+fn elo_state(elo: i64) -> SkillState {
+    SkillState {
+        mu: elo as f64,
+        sigma: 0.0,
+        games_played: 0,
+        extra: Value::Null,
+    }
+}
+
+/// Greedy balanced split for large rosters: assign players (strongest first) to
+/// whichever team is currently weaker and not yet full.
+fn greedy_split(players: &[(i64, i64)], half: usize) -> (Vec<i64>, Vec<i64>) {
+    let mut sorted = players.to_vec();
+    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    let (mut t1, mut t2) = (Vec::with_capacity(half), Vec::new());
+    let (mut s1, mut s2) = (0i64, 0i64);
+    for (id, elo) in sorted {
+        if t1.len() < half && (s1 <= s2 || t2.len() >= players.len() - half) {
+            t1.push(id);
+            s1 += elo;
+        } else {
+            t2.push(id);
+            s2 += elo;
         }
     }
-
-    let b = swap_count(team_size, k);
-    for i in 1..=n {
-        let mut t1 = store_t1.clone();
-        let mut t2 = store_t2.clone();
-        let from_t1: Vec<i64> = t1.choose_multiple(rng, b).copied().collect();
-        let from_t2: Vec<i64> = t2.choose_multiple(rng, b).copied().collect();
-        for id in &from_t1 {
-            t2.push(*id);
-            t1.retain(|x| x != id);
-        }
-        for id in &from_t2 {
-            t1.push(*id);
-            t2.retain(|x| x != id);
-        }
-        let e1 = energy_diff(&t1, &t2, &elos);
-        // Always-accept (see parity note above); the `temperature` term is here
-        // only to mirror the source and keep `n` meaningful.
-        if e1 < energy || (-(e1 as f64) / temperature(i)).exp() >= 0.0 {
-            energy = e1;
-            store_t1 = t1;
-            store_t2 = t2;
-        }
-    }
-
-    (store_t1, store_t2)
+    (t1, t2)
 }
 
 /// Pick the `take` players whose adjusted elo is closest to `target`. Stable, so
@@ -262,7 +289,7 @@ pub fn sbmm<R: Rng>(
     }
 
     let pairs: Vec<(i64, i64)> = chosen.iter().map(|p| (p.id, player_elo(p))).collect();
-    Ok(even_teams(&pairs, rng))
+    Ok(even_teams(&pairs))
 }
 
 /// Replay-penalty cost. Mirrors `social_count` with `G(x) = (x+1)^3`.
@@ -313,7 +340,7 @@ pub fn social<R: Rng>(
         }
         if et {
             let pairs: Vec<(i64, i64)> = players.iter().map(|p| (p.id, player_elo(p))).collect();
-            return Ok(even_teams(&pairs, rng));
+            return Ok(even_teams(&pairs));
         }
         let team1 = pick_team(&mut players, team_size, rng);
         return Ok((team1, players.iter().map(|p| p.id).collect()));
@@ -364,7 +391,7 @@ pub fn social<R: Rng>(
     chosen.push(*player_1);
     if et {
         let pairs: Vec<(i64, i64)> = chosen.iter().map(|p| (p.id, player_elo(p))).collect();
-        Ok(even_teams(&pairs, rng))
+        Ok(even_teams(&pairs))
     } else {
         let team1 = pick_team(&mut chosen, team_size, rng);
         Ok((team1, chosen.iter().map(|p| p.id).collect()))
@@ -412,15 +439,6 @@ mod tests {
         assert_eq!(player_elo(&player(1, 1000, 10, Gender::Male)), 1200);
     }
 
-    // --- energy_diff (deterministic oracle) ---
-
-    #[test]
-    fn energy_diff_is_abs_sum_difference() {
-        let elos: HashMap<i64, i64> = [(1, 1000), (2, 1100), (3, 900), (4, 1000)].into();
-        assert_eq!(energy_diff(&[1, 2], &[3, 4], &elos), 200);
-        assert_eq!(energy_diff(&[3, 4], &[1, 2], &elos), 200);
-    }
-
     // --- social_count (deterministic oracle) ---
 
     #[test]
@@ -437,17 +455,48 @@ mod tests {
         assert_eq!(social_count(&p1, &players, &pw), 64 + 1);
     }
 
-    // --- even_teams (invariants) ---
+    // --- even_teams (deterministic + optimal) ---
 
     #[test]
     fn even_teams_partitions_all_players() {
         let players: Vec<(i64, i64)> = vec![(1, 1000), (2, 1100), (3, 900), (4, 1050)];
-        let (t1, t2) = even_teams(&players, &mut rng());
+        let (t1, t2) = even_teams(&players);
         assert_eq!(t1.len(), 2);
         assert_eq!(t2.len(), 2);
         let mut all: Vec<i64> = t1.into_iter().chain(t2).collect();
         all.sort_unstable();
         assert_eq!(all, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn even_teams_picks_the_most_balanced_split() {
+        // Sums: {1,4}=2050 vs {2,3}=2000 (diff 50) is the most even of the three
+        // possible splits, and the balancer must find it deterministically.
+        let players: Vec<(i64, i64)> = vec![(1, 1000), (2, 1100), (3, 900), (4, 1050)];
+        let (mut t1, mut t2) = even_teams(&players);
+        t1.sort_unstable();
+        t2.sort_unstable();
+        assert_eq!(t1, vec![1, 4]);
+        assert_eq!(t2, vec![2, 3]);
+        // Stable across repeated calls (no RNG).
+        let (a, _) = even_teams(&players);
+        let mut a = a;
+        a.sort_unstable();
+        assert_eq!(a, vec![1, 4]);
+    }
+
+    #[test]
+    fn even_teams_greedy_fallback_balances_large_rosters() {
+        // Beyond ENUMERATION_LIMIT players the greedy path still splits evenly.
+        let players: Vec<(i64, i64)> = (1..=14).map(|i| (i, 1000 + i * 10)).collect();
+        let (t1, t2) = even_teams(&players);
+        assert_eq!((t1.len(), t2.len()), (7, 7));
+        let s1: i64 = t1.iter().map(|id| 1000 + id * 10).sum();
+        let s2: i64 = t2.iter().map(|id| 1000 + id * 10).sum();
+        assert!(
+            (s1 - s2).abs() <= 20,
+            "greedy split unbalanced: {s1} vs {s2}"
+        );
     }
 
     // --- sbmm (invariants) ---

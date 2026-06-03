@@ -25,6 +25,7 @@ mod geocode;
 mod matchmaking;
 mod media;
 mod rating;
+mod skill;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
