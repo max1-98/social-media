@@ -153,6 +153,28 @@ export async function demoteMember(clubPk: string, memberPk: string): Promise<De
   return del<DetailResponse>(`/club/make-admin/${clubPk}/${memberPk}`);
 }
 
+/** Payload for `POST /api/club/dummy-user/create/:pk` (mirrors Rust `CreateDummyUser`). */
+export interface CreateDummyUserPayload {
+  first_name: string;
+  surname: string;
+  biological_gender?: "male" | "female";
+}
+
+/** The 201 response of `POST /api/club/dummy-user/create/:pk`. */
+export interface DummyUserResult {
+  first_name: string;
+  surname: string;
+  biological_gender: string;
+}
+
+/** POST /api/club/dummy-user/create/:pk — create a placeholder member (admin). */
+export async function createDummyUser(
+  pk: string,
+  payload: CreateDummyUserPayload,
+): Promise<DummyUserResult> {
+  return postJson<DummyUserResult>(`/club/dummy-user/create/${pk}`, payload);
+}
+
 /** GET /api/club/add-sport — the list of selectable sports. */
 export async function listSports(): Promise<Sport[]> {
   return getJson<Sport[]>("/club/add-sport");

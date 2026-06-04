@@ -59,6 +59,7 @@ function renderPanel(isAdmin: boolean): {
       onPausePlayer={vi.fn()}
       onActivateMember={vi.fn()}
       onDeactivateMember={onDeactivateMember}
+      onCreateDummyUser={vi.fn<(draft: unknown) => Promise<void>>().mockResolvedValue()}
     />,
   );
   return { onCreateGame, onDeactivateMember };
@@ -84,9 +85,15 @@ describe("MatchmakingPanel organism", () => {
     expect(screen.getByText(/few available players/i)).toBeInTheDocument();
   });
 
+  it("shows the dummy-user form for admins only", () => {
+    renderPanel(true);
+    expect(screen.getByRole("form", { name: /add a dummy user/i })).toBeInTheDocument();
+  });
+
   it("hides admin controls for non-admins", () => {
     renderPanel(false);
     expect(screen.queryByRole("button", { name: "Create game" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Active members" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("form", { name: /add a dummy user/i })).not.toBeInTheDocument();
   });
 });

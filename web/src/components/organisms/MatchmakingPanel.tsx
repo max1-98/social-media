@@ -8,7 +8,8 @@ import type { ReactElement } from "react";
 
 import type { EventDetail, Game, Member } from "../../types";
 import { Alert, Button, Text } from "../atoms";
-import { GameCard } from "../molecules";
+import { DummyUserForm, GameCard } from "../molecules";
+import type { DummyUserFormProps } from "../molecules";
 
 export interface MatchmakingPanelProps {
   /** The active event being matchmade. */
@@ -31,6 +32,8 @@ export interface MatchmakingPanelProps {
   onActivateMember: (memberId: string) => void;
   /** Deactivate a member (move from active to inactive). */
   onDeactivateMember: (memberId: string) => void;
+  /** Create a dummy (placeholder) member for the club; they appear as inactive. */
+  onCreateDummyUser: DummyUserFormProps["onSubmit"];
   /** All club members eligible for the event (active + inactive). */
   members: Member[];
   /** A recoverable error to surface (e.g. "not enough players"). */
@@ -106,6 +109,7 @@ export function MatchmakingPanel({
   onPausePlayer,
   onActivateMember,
   onDeactivateMember,
+  onCreateDummyUser,
   members,
   error = null,
 }: MatchmakingPanelProps): ReactElement {
@@ -119,7 +123,7 @@ export function MatchmakingPanel({
   return (
     <Stack spacing={2}>
       {isAdmin ? (
-        <Stack spacing={1} sx={{ flexDirection: "row", flexWrap: "wrap" }}>
+        <Stack spacing={1} sx={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
           <Button onClick={onCreateGame}>Create game</Button>
           <Button onClick={onCompleteEvent}>Complete event</Button>
           <Box sx={{ ml: "auto" }}>
@@ -172,6 +176,19 @@ export function MatchmakingPanel({
             onAction={onActivateMember}
           />
         </Grid>
+      ) : null}
+
+      {isAdmin ? (
+        <Paper variant="outlined" sx={{ p: 1 }}>
+          <Text variant="subtitle1" gutterBottom>
+            Add a dummy user
+          </Text>
+          <Text variant="body2" gutterBottom>
+            Create a placeholder member (no account); they appear under inactive members, ready to
+            activate into the night.
+          </Text>
+          <DummyUserForm onSubmit={onCreateDummyUser} />
+        </Paper>
       ) : null}
     </Stack>
   );

@@ -42,6 +42,11 @@ export function EventViewPage(): ReactElement {
     setGames(await gamesApi.eventIncompleteGames(eventId));
   }, [eventId]);
 
+  const refreshMembers = useCallback(async (): Promise<void> => {
+    if (clubId === undefined) return;
+    setMembers(await clubsApi.clubMembers(clubId));
+  }, [clubId]);
+
   useEffect(() => {
     if (clubId === undefined || eventId === undefined) return;
     let active = true;
@@ -174,6 +179,11 @@ export function EventViewPage(): ReactElement {
           }}
           onDeactivateMember={(memberId) => {
             runAction(() => eventsApi.deactivateMember(numericEventId, memberId), refreshEvent);
+          }}
+          onCreateDummyUser={async (draft) => {
+            if (clubId === undefined) return;
+            await clubsApi.createDummyUser(clubId, draft);
+            await refreshMembers();
           }}
         />
       ) : null}
