@@ -35,6 +35,8 @@ export type {
   AddSportPayload,
   ClubBounds,
   CreateClubPayload,
+  CreateDummyUserPayload,
+  DummyUserResult,
   EditClubPayload,
   MessageResponse,
   SocialLinksPayload,

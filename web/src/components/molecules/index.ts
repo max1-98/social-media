@@ -4,6 +4,8 @@ export { AddressForm } from "./AddressForm";
 export type { AddressFormProps, AddressResult } from "./AddressForm";
 export { AdSlot } from "./AdSlot";
 export type { AdSlotProps } from "./AdSlot";
+export { DummyUserForm } from "./DummyUserForm";
+export type { DummyUserDraft, DummyUserFormProps } from "./DummyUserForm";
 export { FormField } from "./FormField";
 export type { FormFieldProps } from "./FormField";
 export { GameCard } from "./GameCard";
