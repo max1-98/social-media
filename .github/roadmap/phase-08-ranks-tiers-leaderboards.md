@@ -21,13 +21,23 @@ for the ethics/opt-out rules.
       context) and add **external** ELO rows per `(user, game_type)`.
 - [ ] σ-guard: cap how much a high-σ / very-new opponent can move external rating.
 
-## Tiers (number + word)
+## Tiers (number + word — percentile-based, **locked**)
 
-- [ ] `tiers` table per `game_type` (Bronze→…→Elite, `min_rating`/`max_rating`,
-      order); seed a default ladder + thresholds (confirm names/cutoffs).
-- [ ] Pure `tier_for(rating, game_type) -> Tier` mapping in a new `domain/ranks.rs`
-      (or `skill/`), using `conservative_rating` (μ−3σ) — **oracle-tested**.
-- [ ] Optional sub-divisions (`Gold II`); design for later **percentile tiers**.
+7 fixed tier words mapped by **percentile of external `conservative_rating`
+(μ−3σ) within each `game_type`** — auto-calibrating, no hard-coded ELO constants.
+Shown as `number · word` (e.g. `1,450 · Gold`). Internal/club boards reuse the
+same words on the internal distribution.
+
+| Tier | Bronze | Silver | Gold | Platinum | Diamond | Master | Elite |
+|---|---|---|---|---|---|---|---|
+| Percentile | 0–20 | 20–40 | 40–65 | 65–85 | 85–95 | 95–99 | 99+ |
+
+- [ ] `tiers` table per `game_type` storing **percentile** band edges + order;
+      seed the ladder above. Rating cutoffs materialized from the live
+      distribution (lazy, cached in `leaderboard_snapshots`).
+- [ ] Pure `tier_for(rating, cutoffs) -> Tier` in new `domain/ranks.rs` —
+      **oracle-tested** on band boundaries (inclusive-low, exclusive-high).
+- [ ] Optional sub-divisions (`Gold II`) later; percentile model supports it.
 
 ## Leaderboards
 

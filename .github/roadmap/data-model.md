@@ -23,9 +23,10 @@ participant realness; the rating-update gate keys off it (generalises the curren
 
 ## New tables by phase
 
-- **P8:** `tiers (game_type_id, name, order, min_rating, max_rating)`;
+- **P8:** `tiers (game_type_id, name, order, min_percentile, max_percentile)`
+  (rating cutoffs materialized into `leaderboard_snapshots`);
   `club_levels (club_id, game_type_id, min_rating, max_rating, guard_mode)`;
-  external-ELO rows (+ scope discriminator); optional `leaderboard_snapshots`.
+  external-ELO rows (+ scope discriminator); `leaderboard_snapshots`.
 - **P9:** `club_fixtures (home_club_id, away_club_id, game_type_id, date, status)`;
   `fixture_games (fixture_id, game_id)`; `club_elo`; `result_confirmations
   (fixture_id, club_id, confirmed_by, status)`.
