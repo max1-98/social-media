@@ -249,6 +249,15 @@ pub struct DeleteAccountRequest {
     pub password: String,
 }
 
+/// `PATCH /api/auth/me` body — GDPR Art. 16 rectification. Every field is
+/// optional so callers can patch a subset; absent fields are left untouched.
+#[derive(Deserialize)]
+pub struct EditProfileRequest {
+    pub first_name: Option<String>,
+    pub surname: Option<String>,
+    pub biological_gender: Option<String>,
+}
+
 // ---------------------------------------------------------------------------
 // Authenticated-user extractor (cookie -> tokens -> user, with lazy expiry)
 // ---------------------------------------------------------------------------
@@ -787,6 +796,59 @@ pub async fn me(
         email_verified: row.email_verified != 0,
         parental_consent_required: row.parental_consent_required != 0,
     }))
+}
+
+/// PATCH /api/auth/me — rectify the authenticated user's own profile (GDPR
+/// Art. 16). Only `first_name`, `surname` and `biological_gender` are editable
+/// here; the updated profile is returned in the same shape as `me`.
+///
+/// Future fields: editing `email` must lowercase/trim it, require an `@`, reset
+/// `email_verified` and map a UNIQUE violation to `AppError::Conflict`; editing
+/// `date_of_birth` must `parse_dob` and re-evaluate the age gate
+/// (`age_on` vs `config.digital_consent_age`) to reset `parental_consent_required`.
+pub async fn update_me(
+    State(app): State<AppState>,
+    user: AuthUser,
+    Json(req): Json<EditProfileRequest>,
+) -> Result<Json<UserProfile>, AppError> {
+    // Validate before any write so a bad value never reaches the DB CHECK.
+    if let Some(gender) = &req.biological_gender {
+        if !matches!(gender.as_str(), "male" | "female") {
+            return Err(AppError::Validation(
+                "biological_gender must be 'male' or 'female'.".into(),
+            ));
+        }
+    }
+
+    if let Some(first_name) = &req.first_name {
+        sqlx::query!(
+            "UPDATE users SET first_name = ? WHERE id = ?",
+            first_name,
+            user.id
+        )
+        .execute(&app.pool)
+        .await?;
+    }
+    if let Some(surname) = &req.surname {
+        sqlx::query!(
+            "UPDATE users SET surname = ? WHERE id = ?",
+            surname,
+            user.id
+        )
+        .execute(&app.pool)
+        .await?;
+    }
+    if let Some(gender) = &req.biological_gender {
+        sqlx::query!(
+            "UPDATE users SET biological_gender = ? WHERE id = ?",
+            gender,
+            user.id
+        )
+        .execute(&app.pool)
+        .await?;
+    }
+
+    me(State(app), user).await
 }
 
 /// Minimal public profile, shaped like Django `SimpleUserSerializer`.

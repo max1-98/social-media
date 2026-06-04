@@ -1,7 +1,7 @@
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AccountExport } from "../api";
+import type { AccountExport, UpdateProfilePayload } from "../api";
 import { fireEvent, render, screen, waitFor } from "../test/renderWithTheme.tsx";
 import type { User } from "../types";
 
@@ -9,7 +9,9 @@ import { ProfilePage } from "./ProfilePage.tsx";
 
 const exportAccount = vi.fn<() => Promise<AccountExport>>();
 const deleteAccount = vi.fn<(password: string) => Promise<{ detail: string }>>();
+const updateProfile = vi.fn<(payload: UpdateProfilePayload) => Promise<User>>();
 const logout = vi.fn<() => Promise<void>>();
+const refresh = vi.fn<() => Promise<User | null>>();
 const navigate = vi.fn();
 
 const user: User = {
@@ -32,11 +34,15 @@ vi.mock("../api", async () => {
       exportAccount: () => exportAccount(),
       deleteAccount: (p: string) => deleteAccount(p),
     },
+    authApi: {
+      ...actual.authApi,
+      updateProfile: (payload: UpdateProfilePayload) => updateProfile(payload),
+    },
   };
 });
 
 vi.mock("../hooks", () => ({
-  useAuth: () => ({ user, loading: false, logout }),
+  useAuth: () => ({ user, loading: false, logout, refresh }),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -80,6 +86,23 @@ describe("ProfilePage", () => {
       expect(exportAccount).toHaveBeenCalledOnce();
     });
     expect(createObjectURL).toHaveBeenCalled();
+  });
+
+  it("edits the profile and refreshes auth state on save", async () => {
+    updateProfile.mockResolvedValue(user);
+    refresh.mockResolvedValue(user);
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /edit profile/i }));
+    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: "Alicia" } });
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    await waitFor(() => {
+      expect(updateProfile).toHaveBeenCalledWith({
+        first_name: "Alicia",
+        surname: "Smith",
+        biological_gender: "female",
+      });
+    });
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("deletes the account after confirming the password", async () => {

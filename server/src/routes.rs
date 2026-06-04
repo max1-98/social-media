@@ -37,7 +37,7 @@ pub fn router(state: AppState) -> Router {
         .route("/request-reset", post(auth::request_reset))
         .route("/reset-password", post(auth::reset_password))
         .route("/consent", post(auth::consent))
-        .route("/me", get(auth::me))
+        .route("/me", get(auth::me).patch(auth::update_me))
         .route("/profile/:pk", get(auth::simple_profile))
         .route("/navbar_info", get(auth::navbar_info));
 
@@ -709,6 +709,48 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(raw.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn update_me_rectifies_profile() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "rectifier").await;
+
+        let res = app
+            .clone()
+            .oneshot(json_with(
+                "PATCH",
+                "/api/auth/me",
+                &cookies,
+                json!({ "first_name": "New", "surname": "Name", "biological_gender": "female" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = body_json(res).await;
+        assert_eq!(body["first_name"], "New");
+        assert_eq!(body["surname"], "Name");
+        assert_eq!(body["biological_gender"], "female");
+        // Identity fields are untouched by rectification.
+        assert_eq!(body["username"], "rectifier");
+        assert_eq!(body["email"], "rectifier@example.com");
+    }
+
+    #[tokio::test]
+    async fn update_me_rejects_invalid_gender() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "badgender").await;
+
+        let res = app
+            .oneshot(json_with(
+                "PATCH",
+                "/api/auth/me",
+                &cookies,
+                json!({ "biological_gender": "other" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
     }
 
     // -----------------------------------------------------------------------
