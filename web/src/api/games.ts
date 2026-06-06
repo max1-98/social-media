@@ -30,8 +30,8 @@ export async function createPeg(eventId: string, memberIds: string[]): Promise<G
 }
 
 /** POST /api/game/delete — delete an in-progress game. */
-export async function deleteGame(gameId: string): Promise<DetailResponse> {
-  return postJson<DetailResponse>("/game/delete", { game_id: gameId });
+export async function deleteGame(gameId: string, eventId: string): Promise<DetailResponse> {
+  return postJson<DetailResponse>("/game/delete", { game_id: gameId, event_id: eventId });
 }
 
 /** POST /api/game/complete — record a game's score (updates ELO). */
