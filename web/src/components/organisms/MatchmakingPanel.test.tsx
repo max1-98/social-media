@@ -60,6 +60,8 @@ function renderPanel(isAdmin: boolean): {
       onActivateMember={vi.fn()}
       onDeactivateMember={onDeactivateMember}
       onCreateDummyUser={vi.fn<(draft: unknown) => Promise<void>>().mockResolvedValue()}
+      onInviteMember={vi.fn<(userId: string) => Promise<void>>().mockResolvedValue()}
+      onSearchUsers={vi.fn().mockResolvedValue({ results: [], page: 1, has_next: false })}
     />,
   );
   return { onCreateGame, onDeactivateMember };
@@ -85,15 +87,17 @@ describe("MatchmakingPanel organism", () => {
     expect(screen.getByText(/few available players/i)).toBeInTheDocument();
   });
 
-  it("shows the dummy-user form for admins only", () => {
+  it("opens the Add user modal for admins", () => {
     renderPanel(true);
-    expect(screen.getByRole("form", { name: /add a dummy user/i })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add user" }));
+    expect(screen.getByRole("dialog", { name: "Add user" })).toBeInTheDocument();
   });
 
   it("hides admin controls for non-admins", () => {
     renderPanel(false);
     expect(screen.queryByRole("button", { name: "Create game" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Active members" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("form", { name: /add a dummy user/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add user" })).not.toBeInTheDocument();
   });
 });

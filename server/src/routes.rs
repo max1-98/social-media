@@ -70,6 +70,7 @@ pub fn router(state: AppState) -> Router {
         .route("/club/requests/:pk", get(clubs::club_requests))
         .route("/club/members/:pk", get(clubs::club_members))
         .route("/club/members/event/:pk1", get(clubs::club_members_event))
+        .route("/club/:pk/user-search", get(clubs::search_users))
         .route(
             "/club/request-accept/:pk2/:pk",
             get(clubs::accept_request).delete(clubs::reject_request),
@@ -111,6 +112,7 @@ pub fn router(state: AppState) -> Router {
         .route("/event/series/:series_id", delete(events::cancel_series))
         .route("/event/activate-member", post(events::activate_member))
         .route("/event/deactivate-member", post(events::deactivate_member))
+        .route("/event/invite-member", post(events::invite_member))
         .route("/event/start", post(events::start_event))
         .route("/event/complete", post(events::complete_event))
         .route("/event/settings/:pk1", patch(events::update_settings))
@@ -999,6 +1001,285 @@ mod tests {
         let body = body_json(ok).await;
         assert_eq!(body[0]["username"], "boss");
         assert_eq!(body[0]["is_club_admin"], true);
+    }
+
+    #[tokio::test]
+    async fn user_search_paginates_and_excludes_members() {
+        let (app, pool) = test_app().await;
+        let prez = register_and_login(&app, "searchprez").await;
+        let club_id = create_test_club(&app, &prez, "searchc", "Search Club").await;
+
+        // 12 searchable users sharing a prefix (more than one page of 10).
+        for i in 1..=12 {
+            register_and_login(&app, &format!("finder{i:02}")).await;
+        }
+
+        // Empty query is rejected (no full-directory enumeration).
+        let empty = app
+            .clone()
+            .oneshot(get_with(
+                &format!("/api/club/{club_id}/user-search?q="),
+                &prez,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(empty.status(), StatusCode::BAD_REQUEST);
+
+        // Non-admin cannot search.
+        let outsider = register_and_login(&app, "searchoutsider").await;
+        let forbidden = app
+            .clone()
+            .oneshot(get_with(
+                &format!("/api/club/{club_id}/user-search?q=finder"),
+                &outsider,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+        // Page 1: 10 results, more to come.
+        let page1 = app
+            .clone()
+            .oneshot(get_with(
+                &format!("/api/club/{club_id}/user-search?q=finder&page=1"),
+                &prez,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(page1.status(), StatusCode::OK);
+        let b1 = body_json(page1).await;
+        assert_eq!(b1["results"].as_array().unwrap().len(), 10);
+        assert_eq!(b1["has_next"], true);
+        assert_eq!(b1["page"], 1);
+        // Opaque ids only — never the raw integer PK.
+        let first_id = b1["results"][0]["id"].as_str().unwrap();
+        assert!(first_id.parse::<i64>().is_err());
+
+        // Page 2: the remaining 2, no further pages.
+        let page2 = app
+            .clone()
+            .oneshot(get_with(
+                &format!("/api/club/{club_id}/user-search?q=finder&page=2"),
+                &prez,
+            ))
+            .await
+            .unwrap();
+        let b2 = body_json(page2).await;
+        assert_eq!(b2["results"].as_array().unwrap().len(), 2);
+        assert_eq!(b2["has_next"], false);
+
+        // Make finder01 a member: they drop out of the results.
+        sqlx::query(
+            "INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
+             SELECT ?, id, 1, 0, '2026-01-01T00:00:00Z' FROM users WHERE username = 'finder01'",
+        )
+        .bind(raw_club(&club_id))
+        .execute(&pool)
+        .await
+        .unwrap();
+        let after = app
+            .oneshot(get_with(
+                &format!("/api/club/{club_id}/user-search?q=finder01"),
+                &prez,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            body_json(after).await["results"].as_array().unwrap().len(),
+            0
+        );
+    }
+
+    #[tokio::test]
+    async fn dummy_user_create_returns_id_and_can_activate() {
+        let (app, _pool) = test_app().await;
+        let prez = register_and_login(&app, "dummyprez").await;
+        let club_id = create_test_club(&app, &prez, "dummyc", "Dummy Club").await;
+        let event_id = create_test_event(&app, &prez, &club_id).await;
+
+        let created = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/club/dummy-user/create/{club_id}"),
+                &prez,
+                json!({ "first_name": "Casey", "surname": "Stand-in" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(created.status(), StatusCode::CREATED);
+        let body = body_json(created).await;
+        assert_eq!(body["first_name"], "Casey");
+        let member_id = body["id"].as_str().unwrap().to_string();
+        assert!(member_id.parse::<i64>().is_err(), "id must be opaque");
+
+        // The returned id can be activated straight into the event.
+        let activate = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/event/activate-member",
+                &prez,
+                json!({ "event_id": event_id, "member_id": member_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(activate.status(), StatusCode::OK);
+        let detail = app
+            .oneshot(get_with(&format!("/api/event/{event_id}"), &prez))
+            .await
+            .unwrap();
+        assert_eq!(
+            body_json(detail).await["active_members"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn invite_member_records_pending_invite_and_adds_to_event() {
+        let (app, pool) = test_app().await;
+        let prez = register_and_login(&app, "inviteprez").await;
+        let club_id = create_test_club(&app, &prez, "invitec", "Invite Club").await;
+        let event_id = create_test_event(&app, &prez, &club_id).await;
+
+        // A platform user who isn't in the club yet.
+        register_and_login(&app, "invitee").await;
+        let invitee_raw: i64 =
+            sqlx::query_scalar("SELECT id FROM users WHERE username = 'invitee'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        let invitee_id = UserId::from_raw(invitee_raw).to_string();
+
+        // Outsider cannot invite.
+        let outsider = register_and_login(&app, "inviteoutsider").await;
+        let forbidden = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/event/invite-member",
+                &outsider,
+                json!({ "event_id": event_id, "user_id": invitee_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+        // Unknown user -> 404.
+        let missing = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/event/invite-member",
+                &prez,
+                json!({ "event_id": event_id, "user_id": UserId::from_raw(999_999).to_string() }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+        // Admin invites: 201, returns the member id.
+        let invite = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/event/invite-member",
+                &prez,
+                json!({ "event_id": event_id, "user_id": invitee_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(invite.status(), StatusCode::CREATED);
+        assert!(body_json(invite).await["member_id"].as_str().is_some());
+
+        // A pending membership invite exists; the membership row is is_member = 0;
+        // and the invitee is in the event's active set.
+        let requests: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM member_requests WHERE club_id = ? AND user_id = ?",
+        )
+        .bind(raw_club(&club_id))
+        .bind(invitee_raw)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(requests, 1);
+        let is_member: i64 =
+            sqlx::query_scalar("SELECT is_member FROM members WHERE club_id = ? AND user_id = ?")
+                .bind(raw_club(&club_id))
+                .bind(invitee_raw)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(is_member, 0);
+        let active = app
+            .clone()
+            .oneshot(get_with(&format!("/api/event/{event_id}"), &prez))
+            .await
+            .unwrap();
+        assert_eq!(
+            body_json(active).await["active_members"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+
+        // Idempotent: inviting again neither duplicates the request nor the member.
+        let again = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                "/api/event/invite-member",
+                &prez,
+                json!({ "event_id": event_id, "user_id": invitee_id }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(again.status(), StatusCode::CREATED);
+        let request_rows: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM member_requests WHERE club_id = ? AND user_id = ?",
+        )
+        .bind(raw_club(&club_id))
+        .bind(invitee_raw)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(request_rows, 1);
+        let member_rows: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM members WHERE club_id = ? AND user_id = ?")
+                .bind(raw_club(&club_id))
+                .bind(invitee_raw)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(member_rows, 1);
+
+        // Accepting the pending invite upgrades them to a full member.
+        let reqs = app
+            .clone()
+            .oneshot(get_with(&format!("/api/club/requests/{club_id}"), &prez))
+            .await
+            .unwrap();
+        let request_id = body_json(reqs).await[0]["id"].as_str().unwrap().to_string();
+        let accept = app
+            .oneshot(get_with(
+                &format!("/api/club/request-accept/{request_id}/{club_id}"),
+                &prez,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(accept.status(), StatusCode::CREATED);
+        let is_member_after: i64 =
+            sqlx::query_scalar("SELECT is_member FROM members WHERE club_id = ? AND user_id = ?")
+                .bind(raw_club(&club_id))
+                .bind(invitee_raw)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(is_member_after, 1);
     }
 
     #[tokio::test]

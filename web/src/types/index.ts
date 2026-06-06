@@ -119,6 +119,21 @@ export interface MemberRequest {
   date_requested: string;
 }
 
+/** A platform user surfaced by the admin member search (minimal fields). */
+export interface SearchedUser {
+  id: string;
+  username: string;
+  first_name: string | null;
+  surname: string | null;
+}
+
+/** One page of {@link SearchedUser} results from `GET /api/club/:pk/user-search`. */
+export interface UserSearchPage {
+  results: SearchedUser[];
+  page: number;
+  has_next: boolean;
+}
+
 export interface EventClub {
   id: string;
   name: string;

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO member_requests (club_id, user_id, date_requested)\n         VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "2b16454202ca1f6cd3f5b8b5f4eb7fdeb5688309a6b07c3e5ef67a0027dfcf3d"
+}

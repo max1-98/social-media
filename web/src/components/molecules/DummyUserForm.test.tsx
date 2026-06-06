@@ -39,4 +39,24 @@ describe("DummyUserForm molecule", () => {
     fireEvent.click(screen.getByRole("button", { name: /add dummy user/i }));
     expect(await screen.findByText(/could not add that dummy user/i)).toBeInTheDocument();
   });
+
+  it("hides its own button and adopts the form id when embedded", async () => {
+    const onSubmit = vi.fn<Submit>().mockResolvedValue();
+    render(<DummyUserForm onSubmit={onSubmit} formId="embedded-form" />);
+    // No internal submit button — an external footer button drives submission.
+    expect(screen.queryByRole("button", { name: /add dummy user/i })).not.toBeInTheDocument();
+    const form = screen.getByRole("form", { name: /add a dummy user/i });
+    expect(form).toHaveAttribute("id", "embedded-form");
+
+    fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Ada" } });
+    fireEvent.change(screen.getByLabelText("Surname"), { target: { value: "Lovelace" } });
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        first_name: "Ada",
+        surname: "Lovelace",
+        biological_gender: "male",
+      });
+    });
+  });
 });

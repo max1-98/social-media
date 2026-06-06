@@ -17,15 +17,22 @@ export interface DummyUserFormProps {
    * the molecule stays free of the `api` layer per atomic-design boundaries.
    */
   onSubmit: (draft: DummyUserDraft) => Promise<void>;
+  /**
+   * When set, the `<form>` adopts this id and the internal submit button is
+   * hidden, letting an external footer button drive submission via
+   * `<button type="submit" form={formId}>`. Used when embedded in a modal.
+   */
+  formId?: string;
 }
 
 /**
- * Molecule: create a dummy/placeholder member for a club inline on the event
- * page. A club admin adds people who don't have an account so they can be
- * activated into the night. Surfaces a friendly error if the submission fails
- * and clears the fields on success.
+ * Molecule: create a dummy/placeholder member for a club. A club admin adds
+ * people who don't have an account so they can be activated into the night.
+ * Surfaces a friendly error if the submission fails and clears the fields on
+ * success. Renders its own submit button standalone, or hides it when `formId`
+ * is supplied so a modal footer can drive the submit.
  */
-export function DummyUserForm({ onSubmit }: DummyUserFormProps): ReactElement {
+export function DummyUserForm({ onSubmit, formId }: DummyUserFormProps): ReactElement {
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [gender, setGender] = useState<"male" | "female">("male");
@@ -57,7 +64,7 @@ export function DummyUserForm({ onSubmit }: DummyUserFormProps): ReactElement {
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} aria-label="Add a dummy user">
+    <form id={formId} onSubmit={(event) => void handleSubmit(event)} aria-label="Add a dummy user">
       <Stack spacing={2} sx={{ maxWidth: 320 }}>
         {error !== null && <Alert severity="error">{error}</Alert>}
         <Input
@@ -88,9 +95,11 @@ export function DummyUserForm({ onSubmit }: DummyUserFormProps): ReactElement {
           ]}
           fullWidth
         />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Adding…" : "Add dummy user"}
-        </Button>
+        {formId === undefined ? (
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Adding…" : "Add dummy user"}
+          </Button>
+        ) : null}
       </Stack>
     </form>
   );

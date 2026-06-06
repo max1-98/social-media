@@ -4,12 +4,15 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import { useState } from "react";
 import type { ReactElement } from "react";
 
 import type { EventDetail, Game, Member } from "../../types";
 import { Alert, Button, Text } from "../atoms";
-import { DummyUserForm, GameCard } from "../molecules";
-import type { DummyUserFormProps } from "../molecules";
+import { GameCard } from "../molecules";
+import type { DummyUserFormProps, MemberSearchFormProps } from "../molecules";
+
+import { AddUserModal } from "./AddUserModal";
 
 export interface MatchmakingPanelProps {
   /** The active event being matchmade. */
@@ -32,8 +35,12 @@ export interface MatchmakingPanelProps {
   onActivateMember: (memberId: string) => void;
   /** Deactivate a member (move from active to inactive). */
   onDeactivateMember: (memberId: string) => void;
-  /** Create a dummy (placeholder) member for the club; they appear as inactive. */
+  /** Create a dummy (placeholder) member; the page auto-activates them. */
   onCreateDummyUser: DummyUserFormProps["onSubmit"];
+  /** Invite a platform user to the club + event by their opaque id. */
+  onInviteMember: (userId: string) => Promise<void>;
+  /** Run a paginated username search for members to invite. */
+  onSearchUsers: MemberSearchFormProps["onSearch"];
   /** All club members eligible for the event (active + inactive). */
   members: Member[];
   /** A recoverable error to surface (e.g. "not enough players"). */
@@ -110,9 +117,12 @@ export function MatchmakingPanel({
   onActivateMember,
   onDeactivateMember,
   onCreateDummyUser,
+  onInviteMember,
+  onSearchUsers,
   members,
   error = null,
 }: MatchmakingPanelProps): ReactElement {
+  const [addUserOpen, setAddUserOpen] = useState(false);
   const activeIds = new Set(event.active_members.map((m) => m.id));
   const inGameIds = new Set(event.in_game_members.map((m) => m.id));
   const activeMembers = members.filter((m) => activeIds.has(m.id));
@@ -179,16 +189,24 @@ export function MatchmakingPanel({
       ) : null}
 
       {isAdmin ? (
-        <Paper variant="outlined" sx={{ p: 1 }}>
-          <Text variant="subtitle1" gutterBottom>
-            Add a dummy user
-          </Text>
-          <Text variant="body2" gutterBottom>
-            Create a placeholder member (no account); they appear under inactive members, ready to
-            activate into the night.
-          </Text>
-          <DummyUserForm onSubmit={onCreateDummyUser} />
-        </Paper>
+        <Box>
+          <Button
+            onClick={() => {
+              setAddUserOpen(true);
+            }}
+          >
+            Add user
+          </Button>
+          <AddUserModal
+            open={addUserOpen}
+            onClose={() => {
+              setAddUserOpen(false);
+            }}
+            onCreateDummyUser={onCreateDummyUser}
+            onInviteMember={onInviteMember}
+            onSearch={onSearchUsers}
+          />
+        </Box>
       ) : null}
     </Stack>
   );
