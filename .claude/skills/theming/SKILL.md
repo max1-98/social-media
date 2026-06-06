@@ -15,8 +15,8 @@ of truth for colour, typography, shape and component defaults. Restyle the app
 - **Light + dark, system-matched.** `createTheme({ cssVariables: { colorSchemeSelector: "data" }, colorSchemes: { light, dark } })`. `main.tsx` mounts it with `<ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>` + `<CssBaseline/>`, so the active scheme follows the device and flips with no React re-render.
 - **No FOUC.** `index.html` has a tiny inline script that stamps `data-mui-color-scheme` on `<html>` before first paint, reading storage key `mui-mode` (defaults to `system`). Keep that key/attribute in sync with MUI's defaults.
 - **Self-hosted fonts.** Two faces, both via `@fontsource` (imported in `main.tsx`): **Inter** (`"Inter Variable"`) for body/UI and **Sora** (`"Sora Variable"`) for display headings (`h1`–`h4`, via `DISPLAY_STACK`). Body sets `font-variant-numeric: tabular-nums` so stat columns align. **Never** load Google Fonts over the network (GDPR / EU residency — see `rules/gdpr.md`).
-- **"Sunrise Run" palette.** Warm plum base, coral→magenta `primary`/`secondary`, gold `energy` accent. Dark is the hero scheme (`background.default #160b14`); light is `#fff4f6`. The `primary→secondary` gradient (Navbar/Auth/ClubCard) reads coral→magenta.
-- **`energy` accent.** A vibrant extra palette token (highlights, scores), declared via module augmentation in `theme.ts` and present in both schemes. Use it like any colour: `sx={{ color: "energy.main" }}`.
+- **"Court Side" palette.** Neutral slate surfaces carrying a sporty teal→cyan `primary`/`secondary` and a warm amber `energy` accent. Dark is the hero scheme (deep slate `background.default #0b1117`); light is near-white `#f8fafc`. The `primary→secondary` gradient (Navbar/Auth/ClubCard) reads teal→cyan.
+- **`energy` accent.** A warm amber palette token (highlights, scores) that pops against the cool neutrals, declared via module augmentation in `theme.ts` and present in both schemes. Use it like any colour: `sx={{ color: "energy.main" }}`.
 
 ## Rules for code
 
