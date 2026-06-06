@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT c.id AS \"club_id!: i64\", c.name AS \"name!: String\",\n                  c.club_username AS \"club_username!: String\",\n                  ce.elo AS \"elo!: i64\", ce.games_played AS \"games_played!: i64\"\n           FROM club_elo ce JOIN clubs c ON c.id = ce.club_id\n           WHERE ce.game_type_id IS ?\n           ORDER BY ce.elo DESC, c.id ASC",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name!: String",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "club_username!: String",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "elo!: i64",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "games_played!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "931dde6db2b178f85c18dfb907a1249b4b499f2ac3fc7908d0117b50b13ac6f4"
+}

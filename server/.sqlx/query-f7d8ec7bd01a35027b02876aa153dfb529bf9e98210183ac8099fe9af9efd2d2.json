@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT game_id AS \"game_id!: i64\" FROM fixture_games WHERE fixture_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "game_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f7d8ec7bd01a35027b02876aa153dfb529bf9e98210183ac8099fe9af9efd2d2"
+}

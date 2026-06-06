@@ -267,6 +267,64 @@ export interface Elo {
   wins: number;
 }
 
+/** Lifecycle of a club-vs-club fixture (mirrors the Rust `FixtureStatus`). */
+export type FixtureStatus =
+  | "proposed"
+  | "accepted"
+  | "declined"
+  | "cancelled"
+  | "played"
+  | "confirmed";
+
+/**
+ * A club-vs-club fixture summary. `game_type` is the numeric game-type id on the
+ * wire (or `null`); `game_type_name` is its display name. All club ids are opaque
+ * strings.
+ */
+export interface Fixture {
+  id: string;
+  home_club: string;
+  away_club: string;
+  home_club_name: string;
+  away_club_name: string;
+  game_type: number | null;
+  game_type_name: string | null;
+  date: string | null;
+  status: FixtureStatus;
+  created_at: string;
+}
+
+/** One recorded game within a fixture: two teams of member ids and a score. */
+export interface FixtureGame {
+  id: string;
+  home_team: string[];
+  away_team: string[];
+  score: string | null;
+}
+
+/** A per-club confirmation of a played fixture's recorded result. */
+export interface FixtureConfirmation {
+  club: string;
+  status: string;
+  confirmed_at: string | null;
+}
+
+/** Full fixture view: the summary plus its games and per-club confirmations. */
+export interface FixtureDetail extends Fixture {
+  games: FixtureGame[];
+  confirmations: FixtureConfirmation[];
+}
+
+/** One row of the club ELO ladder (`GET /api/leaderboards/clubs`). */
+export interface ClubLadderEntry {
+  id: string;
+  name: string;
+  club_username: string;
+  elo: number;
+  games_played: number;
+  member_strength: number | null;
+}
+
 /** The stable error envelope returned by every Rust handler on failure. */
 export interface ApiError {
   error: {

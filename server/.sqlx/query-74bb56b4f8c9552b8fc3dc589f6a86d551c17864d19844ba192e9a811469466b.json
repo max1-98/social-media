@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT e.elo AS \"elo!: i64\"\n           FROM members m\n           JOIN users u ON u.id = m.user_id\n           JOIN user_elos ue ON ue.user_id = u.id\n           JOIN elo e ON e.id = ue.elo_id\n           WHERE m.club_id = ? AND m.is_member = 1\n             AND u.is_active = 1 AND u.email_verified = 1\n             AND u.username NOT LIKE 'dummyuser\\_%' ESCAPE '\\'\n             AND e.scope = 'external' AND e.game_type_id IS ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "elo!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "74bb56b4f8c9552b8fc3dc589f6a86d551c17864d19844ba192e9a811469466b"
+}

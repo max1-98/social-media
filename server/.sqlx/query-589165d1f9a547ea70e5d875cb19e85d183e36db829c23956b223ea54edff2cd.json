@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT COUNT(*) AS \"n!: i64\" FROM result_confirmations\n           WHERE fixture_id = ? AND status = 'confirmed' AND club_id IN (?, ?)",
+  "describe": {
+    "columns": [
+      {
+        "name": "n!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "589165d1f9a547ea70e5d875cb19e85d183e36db829c23956b223ea54edff2cd"
+}

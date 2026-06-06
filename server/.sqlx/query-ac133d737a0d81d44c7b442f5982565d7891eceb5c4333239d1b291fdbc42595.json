@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT club_id AS \"club_id!: i64\", status AS \"status!: String\",\n                  confirmed_at AS \"confirmed_at?: String\"\n           FROM result_confirmations WHERE fixture_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "club_id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "status!: String",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "confirmed_at?: String",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "ac133d737a0d81d44c7b442f5982565d7891eceb5c4333239d1b291fdbc42595"
+}

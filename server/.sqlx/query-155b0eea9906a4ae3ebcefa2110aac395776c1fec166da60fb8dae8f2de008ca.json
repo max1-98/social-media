@@ -1,0 +1,74 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT f.id AS \"id!: i64\", f.home_club_id AS \"home_club_id!: i64\",\n                  f.away_club_id AS \"away_club_id!: i64\", f.game_type_id AS \"game_type_id?: i64\",\n                  f.date AS \"date?: String\", f.status AS \"status!: String\",\n                  f.created_at AS \"created_at!: String\",\n                  hc.name AS \"home_name!: String\", ac.name AS \"away_name!: String\",\n                  gt.name AS \"game_type_name?: String\"\n           FROM club_fixtures f\n           JOIN clubs hc ON hc.id = f.home_club_id\n           JOIN clubs ac ON ac.id = f.away_club_id\n           LEFT JOIN game_types gt ON gt.id = f.game_type_id\n           WHERE f.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "home_club_id!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "away_club_id!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "game_type_id?: i64",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date?: String",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "status!: String",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "created_at!: String",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "home_name!: String",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "away_name!: String",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "game_type_name?: String",
+        "ordinal": 9,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "155b0eea9906a4ae3ebcefa2110aac395776c1fec166da60fb8dae8f2de008ca"
+}

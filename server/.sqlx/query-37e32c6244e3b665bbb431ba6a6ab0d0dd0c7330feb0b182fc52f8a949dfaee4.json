@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO club_fixtures\n             (home_club_id, away_club_id, game_type_id, date, status, created_by, created_at)\n           VALUES (?, ?, ?, ?, 'proposed', ?, ?)\n           RETURNING id AS \"id!: i64\"",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "37e32c6244e3b665bbb431ba6a6ab0d0dd0c7330feb0b182fc52f8a949dfaee4"
+}

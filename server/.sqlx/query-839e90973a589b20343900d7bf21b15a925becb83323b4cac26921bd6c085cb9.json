@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE club_fixtures SET created_by = NULL WHERE created_by = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "839e90973a589b20343900d7bf21b15a925becb83323b4cac26921bd6c085cb9"
+}

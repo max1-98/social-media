@@ -1221,7 +1221,7 @@ async fn add_member_to_active_set(
         let existing = sqlx::query_scalar!(
             r#"SELECT e.elo AS "elo!: i64"
                FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
-               WHERE ue.user_id = ? AND e.game_type_id = ? LIMIT 1"#,
+               WHERE ue.user_id = ? AND e.game_type_id = ? AND e.scope = 'internal' LIMIT 1"#,
             member.user_id,
             game_type_id
         )
@@ -1517,7 +1517,7 @@ pub async fn complete_event(
                     sqlx::query_scalar!(
                         r#"SELECT e.elo AS "elo!: i64" FROM user_elos ue
                        JOIN elo e ON e.id = ue.elo_id
-                       WHERE ue.user_id = ? AND e.game_type_id = ? LIMIT 1"#,
+                       WHERE ue.user_id = ? AND e.game_type_id = ? AND e.scope = 'internal' LIMIT 1"#,
                         member.user_id,
                         gt
                     )

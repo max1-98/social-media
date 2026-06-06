@@ -17,6 +17,7 @@ import {
   DiscoverClubsPage,
   EditClubPage,
   EventViewPage,
+  FixturesPage,
   GameTypeElosPage,
   LoginPage,
   MyClubsPage,
@@ -101,6 +102,7 @@ export default function App(): ReactElement {
               <Route path="/club/edit/:clubId" element={<EditClubPage />} />
               <Route path="/club/:clubId" element={<ClubDetailPage />} />
               <Route path="/club/:clubId/events" element={<ClubEventsPage />} />
+              <Route path="/club/:clubId/fixtures" element={<FixturesPage />} />
               <Route path="/club/:clubId/event/create" element={<CreateEventPage />} />
               <Route path="/club/:clubId/event/:eventId" element={<EventViewPage />} />
               <Route path="/event/create" element={<CreateEventPage />} />

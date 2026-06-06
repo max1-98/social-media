@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO elo (game_type_id, last_game, elo, mu, sigma, games_played, model_version, extra, scope)\n           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n           RETURNING id AS \"id!: i64\"",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "04764679fb633fa5d4d69924c1ed0b1fc52711b49f8b36e30083b92ed2e511dd"
+}

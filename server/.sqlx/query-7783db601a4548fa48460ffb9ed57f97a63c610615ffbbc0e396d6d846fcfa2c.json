@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO result_confirmations (fixture_id, club_id, confirmed_by, status, confirmed_at)\n           VALUES (?, ?, ?, 'confirmed', ?)\n           ON CONFLICT (fixture_id, club_id)\n           DO UPDATE SET status = 'confirmed', confirmed_by = excluded.confirmed_by,\n                         confirmed_at = excluded.confirmed_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "7783db601a4548fa48460ffb9ed57f97a63c610615ffbbc0e396d6d846fcfa2c"
+}

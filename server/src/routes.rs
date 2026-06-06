@@ -16,7 +16,7 @@ use serde_json::{json, Value};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::domain::{auth, clubs, elo, events, games};
+use crate::domain::{auth, clubs, elo, events, fixtures, games};
 use crate::state::AppState;
 
 /// Directory the frontend is built into (`web/dist`). Overridable for deploys.
@@ -131,6 +131,20 @@ pub fn router(state: AppState) -> Router {
         .route("/game/event/games/:pk1", get(games::event_complete_games))
         .route("/game/users/games", get(games::user_games));
 
+    // Club-vs-club fixtures + club ELO (Phase 9). Flat under /api like clubs.
+    let fixtures = Router::new()
+        .route(
+            "/club/:pk/fixtures",
+            post(fixtures::propose_fixture).get(fixtures::list_club_fixtures),
+        )
+        .route("/fixture/:id", get(fixtures::fixture_detail))
+        .route("/fixture/:id/accept", post(fixtures::accept_fixture))
+        .route("/fixture/:id/decline", post(fixtures::decline_fixture))
+        .route("/fixture/:id/cancel", post(fixtures::cancel_fixture))
+        .route("/fixture/:id/confirm", post(fixtures::confirm_fixture))
+        .route("/fixture/:id/games", post(fixtures::record_fixture_game))
+        .route("/leaderboards/clubs", get(fixtures::club_leaderboard));
+
     let api = Router::new()
         .route("/health", get(health))
         .route("/hello", get(hello))
@@ -139,7 +153,8 @@ pub fn router(state: AppState) -> Router {
         .merge(account)
         .merge(clubs)
         .merge(events)
-        .merge(games);
+        .merge(games)
+        .merge(fixtures);
 
     // Real files (JS/CSS/assets) are served by ServeDir; anything it can't find
     // falls back to the SPA shell so deep links / client routes resolve. If the
@@ -2695,5 +2710,359 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(login.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    // =====================================================================
+    // Phase 9: club-vs-club fixtures + club ELO.
+    // =====================================================================
+
+    fn raw_fixture(id: &str) -> i64 {
+        serde_json::from_value::<crate::id::FixtureId>(json!(id))
+            .unwrap()
+            .inner()
+    }
+
+    /// Insert a verified, active member of `club_id` and return its member id.
+    /// `verified` toggles the email-verified flag (eligibility gate input).
+    async fn seed_club_member(
+        pool: &SqlitePool,
+        club_id: &str,
+        username: &str,
+        verified: bool,
+        active: bool,
+    ) -> i64 {
+        let club_id = raw_club(club_id);
+        let verified = i64::from(verified);
+        let active = i64::from(active);
+        sqlx::query(
+            "INSERT INTO users (username, email, password_hash, first_name, surname,
+                                date_of_birth, biological_gender, is_active, email_verified,
+                                date_joined)
+             VALUES (?, ?, 'x', 'F', 'L', '1995-01-01', 'male', ?, ?, '2026-01-01T00:00:00Z')",
+        )
+        .bind(username)
+        .bind(format!("{username}@example.com"))
+        .bind(active)
+        .bind(verified)
+        .execute(pool)
+        .await
+        .unwrap();
+        let user_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = ?")
+            .bind(username)
+            .fetch_one(pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
+             VALUES (?, ?, 1, 0, '2026-01-01T00:00:00Z')",
+        )
+        .bind(club_id)
+        .bind(user_id)
+        .execute(pool)
+        .await
+        .unwrap();
+        sqlx::query_scalar("SELECT id FROM members WHERE user_id = ? AND club_id = ?")
+            .bind(user_id)
+            .bind(club_id)
+            .fetch_one(pool)
+            .await
+            .unwrap()
+    }
+
+    /// Read the legacy display elo for a member at a scope (None if no row).
+    async fn member_elo(pool: &SqlitePool, member_id: i64, scope: &str) -> Option<i64> {
+        sqlx::query_scalar(
+            "SELECT e.elo FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
+             JOIN members m ON m.user_id = ue.user_id
+             WHERE m.id = ? AND e.game_type_id = 1 AND e.scope = ?",
+        )
+        .bind(member_id)
+        .bind(scope)
+        .fetch_optional(pool)
+        .await
+        .unwrap()
+    }
+
+    /// Drive propose -> accept and return the fixture id string.
+    async fn propose_and_accept(
+        app: &Router,
+        home_cookies: &str,
+        away_cookies: &str,
+        home_club: &str,
+        away_club: &str,
+    ) -> String {
+        let propose = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/club/{home_club}/fixtures"),
+                home_cookies,
+                json!({ "away_club": away_club, "game_type": "badminton singles" }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(propose.status(), StatusCode::CREATED);
+        let fixture = body_json(propose).await;
+        assert_eq!(fixture["status"], "proposed");
+        let fixture_id = fixture["id"].as_str().unwrap().to_string();
+
+        let accept = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/accept"),
+                away_cookies,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(accept.status(), StatusCode::OK);
+        assert_eq!(body_json(accept).await["status"], "accepted");
+        fixture_id
+    }
+
+    #[tokio::test]
+    async fn fixture_full_flow_moves_external_and_club_elo_only() {
+        let (app, pool) = test_app().await;
+        let home_admin = register_and_login(&app, "fix_home_admin").await;
+        let away_admin = register_and_login(&app, "fix_away_admin").await;
+        let home = create_test_club(&app, &home_admin, "fixhome", "Fix Home").await;
+        let away = create_test_club(&app, &away_admin, "fixaway", "Fix Away").await;
+
+        // One verified real player per club.
+        let hp = seed_club_member(&pool, &home, "fix_hp", true, true).await;
+        let ap = seed_club_member(&pool, &away, "fix_ap", true, true).await;
+
+        let fixture_id = propose_and_accept(&app, &home_admin, &away_admin, &home, &away).await;
+
+        // Record a game: home player beats away player 21-15 (diff 6).
+        let rec = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/games"),
+                &home_admin,
+                json!({
+                    "home_team": [MemberId::from_raw(hp).to_string()],
+                    "away_team": [MemberId::from_raw(ap).to_string()],
+                    "score": "21,15",
+                }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(rec.status(), StatusCode::CREATED);
+
+        // External elo moved; internal untouched (no internal row exists).
+        let hp_ext = member_elo(&pool, hp, "external").await.unwrap();
+        let ap_ext = member_elo(&pool, ap, "external").await.unwrap();
+        assert!(hp_ext > ap_ext, "winner external elo should exceed loser");
+        assert!(member_elo(&pool, hp, "internal").await.is_none());
+        assert!(member_elo(&pool, ap, "internal").await.is_none());
+
+        // One-sided confirm: nothing settles, no club_elo yet.
+        let c1 = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/confirm"),
+                &home_admin,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(c1.status(), StatusCode::OK);
+        assert_eq!(body_json(c1).await["status"], "played");
+        let club_rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM club_elo")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(club_rows, 0, "one-sided confirm must not move club elo");
+
+        // Second confirm settles: both club_elo rows created, status confirmed.
+        let c2 = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/confirm"),
+                &away_admin,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(c2.status(), StatusCode::OK);
+        assert_eq!(body_json(c2).await["status"], "confirmed");
+
+        let (home_elo, away_elo): (i64, i64) = sqlx::query_as(
+            "SELECT
+               (SELECT elo FROM club_elo WHERE club_id = ?),
+               (SELECT elo FROM club_elo WHERE club_id = ?)",
+        )
+        .bind(raw_club(&home))
+        .bind(raw_club(&away))
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        // Winning club's conservative rating exceeds the losing club's.
+        assert!(home_elo > away_elo, "home {home_elo} away {away_elo}");
+        let club_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM club_elo")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(club_count, 2);
+    }
+
+    #[tokio::test]
+    async fn fixture_rejects_dummy_or_unverified_players() {
+        let (app, pool) = test_app().await;
+        let home_admin = register_and_login(&app, "rej_home_admin").await;
+        let away_admin = register_and_login(&app, "rej_away_admin").await;
+        let home = create_test_club(&app, &home_admin, "rejhome", "Rej Home").await;
+        let away = create_test_club(&app, &away_admin, "rejaway", "Rej Away").await;
+
+        let hp = seed_club_member(&pool, &home, "rej_hp", true, true).await;
+        // Unverified away player -> ineligible.
+        let ap = seed_club_member(&pool, &away, "rej_ap", false, true).await;
+
+        let fixture_id = propose_and_accept(&app, &home_admin, &away_admin, &home, &away).await;
+
+        let rec = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/games"),
+                &home_admin,
+                json!({
+                    "home_team": [MemberId::from_raw(hp).to_string()],
+                    "away_team": [MemberId::from_raw(ap).to_string()],
+                    "score": "21,15",
+                }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(rec.status(), StatusCode::BAD_REQUEST);
+
+        // No game or external rating was persisted.
+        let games: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM games WHERE scope = 'external'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(games, 0);
+        assert!(member_elo(&pool, hp, "external").await.is_none());
+    }
+
+    #[tokio::test]
+    async fn decline_and_cancel_block_recording() {
+        let (app, pool) = test_app().await;
+        let home_admin = register_and_login(&app, "dc_home_admin").await;
+        let away_admin = register_and_login(&app, "dc_away_admin").await;
+        let home = create_test_club(&app, &home_admin, "dchome", "DC Home").await;
+        let away = create_test_club(&app, &away_admin, "dcaway", "DC Away").await;
+        let hp = seed_club_member(&pool, &home, "dc_hp", true, true).await;
+        let ap = seed_club_member(&pool, &away, "dc_ap", true, true).await;
+
+        // Propose, then the away club declines.
+        let propose = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/club/{home}/fixtures"),
+                &home_admin,
+                json!({ "away_club": away, "game_type": "badminton singles" }),
+            ))
+            .await
+            .unwrap();
+        let fixture_id = body_json(propose).await["id"].as_str().unwrap().to_string();
+        let decline = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/decline"),
+                &away_admin,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(decline.status(), StatusCode::OK);
+        assert_eq!(body_json(decline).await["status"], "declined");
+
+        // Recording on a declined fixture is rejected.
+        let rec = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/games"),
+                &home_admin,
+                json!({
+                    "home_team": [MemberId::from_raw(hp).to_string()],
+                    "away_team": [MemberId::from_raw(ap).to_string()],
+                    "score": "21,15",
+                }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(rec.status(), StatusCode::BAD_REQUEST);
+        let _ = raw_fixture(&fixture_id);
+    }
+
+    #[tokio::test]
+    async fn propose_requires_home_admin_and_accept_requires_away_admin() {
+        let (app, _pool) = test_app().await;
+        let home_admin = register_and_login(&app, "pa_home_admin").await;
+        let away_admin = register_and_login(&app, "pa_away_admin").await;
+        let outsider = register_and_login(&app, "pa_outsider").await;
+        let home = create_test_club(&app, &home_admin, "pahome", "PA Home").await;
+        let away = create_test_club(&app, &away_admin, "paaway", "PA Away").await;
+
+        // Outsider cannot propose for the home club.
+        let bad = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/club/{home}/fixtures"),
+                &outsider,
+                json!({ "away_club": away }),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(bad.status(), StatusCode::FORBIDDEN);
+
+        let fixture_id = {
+            let propose = app
+                .clone()
+                .oneshot(json_with(
+                    "POST",
+                    &format!("/api/club/{home}/fixtures"),
+                    &home_admin,
+                    json!({ "away_club": away }),
+                ))
+                .await
+                .unwrap();
+            body_json(propose).await["id"].as_str().unwrap().to_string()
+        };
+
+        // The home admin cannot accept their own proposal (away-admin only).
+        let self_accept = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/accept"),
+                &home_admin,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(self_accept.status(), StatusCode::FORBIDDEN);
+
+        let ok = app
+            .clone()
+            .oneshot(json_with(
+                "POST",
+                &format!("/api/fixture/{fixture_id}/accept"),
+                &away_admin,
+                json!({}),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(ok.status(), StatusCode::OK);
     }
 }

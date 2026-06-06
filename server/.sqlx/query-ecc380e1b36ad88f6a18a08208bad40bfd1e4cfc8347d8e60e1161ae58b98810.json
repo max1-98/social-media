@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT gt.name AS \"game_type?: String\", e.elo AS \"elo!: i64\",\n                  e.mu AS \"mu!: f64\", e.sigma AS \"sigma!: f64\",\n                  e.games_played AS \"games_played!: i64\"\n           FROM user_elos ue JOIN elo e ON e.id = ue.elo_id\n           LEFT JOIN game_types gt ON gt.id = e.game_type_id\n           WHERE ue.user_id = ? AND e.scope = 'external' ORDER BY e.id",
+  "describe": {
+    "columns": [
+      {
+        "name": "game_type?: String",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "elo!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "mu!: f64",
+        "ordinal": 2,
+        "type_info": "Float"
+      },
+      {
+        "name": "sigma!: f64",
+        "ordinal": 3,
+        "type_info": "Float"
+      },
+      {
+        "name": "games_played!: i64",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ecc380e1b36ad88f6a18a08208bad40bfd1e4cfc8347d8e60e1161ae58b98810"
+}
