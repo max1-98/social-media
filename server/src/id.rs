@@ -163,6 +163,10 @@ public_id!(
     /// Public id for a recurring event series (`event_series.id`).
     SeriesId = 8
 );
+public_id!(
+    /// Public id for a club-vs-club fixture (`club_fixtures.id`).
+    FixtureId = 9
+);
 
 /// Path extractor that decodes tagged public ids and maps **any** failure
 /// (malformed string, wrong entity tag, missing segment) to a uniform `404`, so

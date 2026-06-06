@@ -232,6 +232,15 @@ export function ClubDetailPage(): ReactElement {
             View events
           </Button>
         )}
+        {club.membership_status === MEMBERSHIP_MEMBER && (
+          <Button
+            onClick={() => {
+              void navigate(`/club/${club.id}/fixtures`);
+            }}
+          >
+            View fixtures
+          </Button>
+        )}
         {club.is_club_admin && (
           <Button
             onClick={() => {

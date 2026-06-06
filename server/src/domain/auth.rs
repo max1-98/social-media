@@ -25,7 +25,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::email;
 use crate::error::AppError;
-use crate::id::{ApiPath, ClubId, PostId, UserId};
+use crate::id::{ApiPath, ClubId, FixtureId, PostId, UserId};
 use crate::state::AppState;
 
 const ACCESS_COOKIE: &str = "access_token";
@@ -201,6 +201,12 @@ pub struct AccountExport {
     pub consents: Vec<ConsentEntry>,
     pub memberships: Vec<MembershipEntry>,
     pub posts: Vec<PostEntry>,
+    /// Club-vs-club fixtures the user proposed (Phase 9).
+    pub fixtures_created: Vec<FixtureExportEntry>,
+    /// Fixture result confirmations the user made (Phase 9).
+    pub fixture_confirmations: Vec<ConfirmationExportEntry>,
+    /// The user's external (club-vs-club) ELO rows (Phase 9).
+    pub external_elo: Vec<ExternalEloEntry>,
 }
 
 #[derive(Serialize)]
@@ -241,6 +247,32 @@ pub struct PostEntry {
     pub content: String,
     pub club_id: Option<ClubId>,
     pub created_at: String,
+}
+
+#[derive(Serialize)]
+pub struct FixtureExportEntry {
+    pub id: FixtureId,
+    pub home_club: ClubId,
+    pub away_club: ClubId,
+    pub status: String,
+    pub created_at: String,
+}
+
+#[derive(Serialize)]
+pub struct ConfirmationExportEntry {
+    pub fixture: FixtureId,
+    pub club: ClubId,
+    pub status: String,
+    pub confirmed_at: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct ExternalEloEntry {
+    pub game_type: Option<String>,
+    pub elo: i64,
+    pub mu: f64,
+    pub sigma: f64,
+    pub games_played: i64,
 }
 
 /// `DELETE /account` body — re-confirms the caller's password before erasure.
@@ -982,6 +1014,63 @@ pub async fn account_export(
     })
     .collect();
 
+    let fixtures_created = sqlx::query!(
+        r#"SELECT id AS "id!: i64", home_club_id AS "home_club_id!: i64",
+                  away_club_id AS "away_club_id!: i64", status AS "status!: String",
+                  created_at AS "created_at!: String"
+           FROM club_fixtures WHERE created_by = ? ORDER BY id"#,
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| FixtureExportEntry {
+        id: r.id.into(),
+        home_club: r.home_club_id.into(),
+        away_club: r.away_club_id.into(),
+        status: r.status,
+        created_at: r.created_at,
+    })
+    .collect();
+
+    let fixture_confirmations = sqlx::query!(
+        r#"SELECT fixture_id AS "fixture_id!: i64", club_id AS "club_id!: i64",
+                  status AS "status!: String", confirmed_at AS "confirmed_at?: String"
+           FROM result_confirmations WHERE confirmed_by = ? ORDER BY id"#,
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| ConfirmationExportEntry {
+        fixture: r.fixture_id.into(),
+        club: r.club_id.into(),
+        status: r.status,
+        confirmed_at: r.confirmed_at,
+    })
+    .collect();
+
+    let external_elo = sqlx::query!(
+        r#"SELECT gt.name AS "game_type?: String", e.elo AS "elo!: i64",
+                  e.mu AS "mu!: f64", e.sigma AS "sigma!: f64",
+                  e.games_played AS "games_played!: i64"
+           FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
+           LEFT JOIN game_types gt ON gt.id = e.game_type_id
+           WHERE ue.user_id = ? AND e.scope = 'external' ORDER BY e.id"#,
+        user.id
+    )
+    .fetch_all(&app.pool)
+    .await?
+    .into_iter()
+    .map(|r| ExternalEloEntry {
+        game_type: r.game_type,
+        elo: r.elo,
+        mu: r.mu,
+        sigma: r.sigma,
+        games_played: r.games_played,
+    })
+    .collect();
+
     let export = AccountExport {
         user: ExportUser {
             id: u.id.into(),
@@ -998,6 +1087,9 @@ pub async fn account_export(
         consents,
         memberships,
         posts,
+        fixtures_created,
+        fixture_confirmations,
+        external_elo,
     };
 
     // Offer it as a file download; the client can still read the JSON inline.
@@ -1060,6 +1152,22 @@ pub async fn account_delete(
     sqlx::query!("DELETE FROM tokens WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
+
+    // Phase 9: keep shared club fixtures + confirmations (so the other club's
+    // history and club ELO survive) but null the actor PII (who proposed /
+    // confirmed). External ELO rows stay — they're pseudonymous via user_elos.
+    sqlx::query!(
+        "UPDATE club_fixtures SET created_by = NULL WHERE created_by = ?",
+        user.id
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query!(
+        "UPDATE result_confirmations SET confirmed_by = NULL WHERE confirmed_by = ?",
+        user.id
+    )
+    .execute(&mut *tx)
+    .await?;
 
     tx.commit().await?;
 

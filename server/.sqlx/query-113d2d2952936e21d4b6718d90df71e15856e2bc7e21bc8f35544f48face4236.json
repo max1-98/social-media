@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT e.elo            AS \"elo!: i64\",\n               e.winstreak      AS \"winstreak!: i64\",\n               e.last_game      AS \"last_game!: String\",\n               e.best_winstreak AS \"best_winstreak!: i64\",\n               gt.name          AS \"game_type_name?: String\",\n               s.name           AS \"sport_name?: String\",\n               (SELECT COUNT(*) FROM elo_game_wins w WHERE w.elo_id = e.id)  AS \"wins!: i64\",\n               (SELECT COUNT(*) FROM elo_game_loses l WHERE l.elo_id = e.id) AS \"loses!: i64\"\n        FROM user_elos ue\n        JOIN elo e ON e.id = ue.elo_id\n        LEFT JOIN game_types gt ON gt.id = e.game_type_id\n        LEFT JOIN sports s ON s.id = gt.sport_id\n        WHERE ue.user_id = ?\n        ORDER BY e.id\n        ",
+  "query": "\n        SELECT e.elo            AS \"elo!: i64\",\n               e.winstreak      AS \"winstreak!: i64\",\n               e.last_game      AS \"last_game!: String\",\n               e.best_winstreak AS \"best_winstreak!: i64\",\n               gt.name          AS \"game_type_name?: String\",\n               s.name           AS \"sport_name?: String\",\n               (SELECT COUNT(*) FROM elo_game_wins w WHERE w.elo_id = e.id)  AS \"wins!: i64\",\n               (SELECT COUNT(*) FROM elo_game_loses l WHERE l.elo_id = e.id) AS \"loses!: i64\"\n        FROM user_elos ue\n        JOIN elo e ON e.id = ue.elo_id\n        LEFT JOIN game_types gt ON gt.id = e.game_type_id\n        LEFT JOIN sports s ON s.id = gt.sport_id\n        WHERE ue.user_id = ? AND e.scope = 'internal'\n        ORDER BY e.id\n        ",
   "describe": {
     "columns": [
       {
@@ -58,5 +58,5 @@
       null
     ]
   },
-  "hash": "d5fa5f3c4aac427fa409e5be498e1e44b5e2aca359929b86e7b8370637910321"
+  "hash": "113d2d2952936e21d4b6718d90df71e15856e2bc7e21bc8f35544f48face4236"
 }

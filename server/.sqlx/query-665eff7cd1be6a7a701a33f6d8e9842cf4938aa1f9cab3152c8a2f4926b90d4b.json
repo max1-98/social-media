@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id AS \"id!: i64\" FROM club_fixtures\n           WHERE home_club_id = ? OR away_club_id = ? ORDER BY id DESC",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "665eff7cd1be6a7a701a33f6d8e9842cf4938aa1f9cab3152c8a2f4926b90d4b"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE result_confirmations SET confirmed_by = NULL WHERE confirmed_by = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "dba2d42c351882970db1c5d3308f824b25d4906a9a0ebfbc4446a633b7ca2a09"
+}

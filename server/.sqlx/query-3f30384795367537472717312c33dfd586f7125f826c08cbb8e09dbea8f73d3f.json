@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT e.id AS \"id!: i64\",\n                  e.winstreak AS \"winstreak!: i64\", e.best_winstreak AS \"best_winstreak!: i64\",\n                  COALESCE(e.mu, CAST(e.elo AS REAL)) AS \"mu!: f64\",\n                  COALESCE(e.sigma, 350.0 / 3.0) AS \"sigma!: f64\",\n                  e.games_played AS \"games_played!: i64\", e.extra AS \"extra!: String\",\n                  e.last_game AS \"last_game!: String\"\n           FROM user_elos ue JOIN elo e ON e.id = ue.elo_id\n           WHERE ue.user_id = ? AND e.game_type_id IS ? LIMIT 1",
+  "query": "SELECT e.id AS \"id!: i64\",\n                  e.winstreak AS \"winstreak!: i64\", e.best_winstreak AS \"best_winstreak!: i64\",\n                  COALESCE(e.mu, CAST(e.elo AS REAL)) AS \"mu!: f64\",\n                  COALESCE(e.sigma, 350.0 / 3.0) AS \"sigma!: f64\",\n                  e.games_played AS \"games_played!: i64\", e.extra AS \"extra!: String\",\n                  e.last_game AS \"last_game!: String\"\n           FROM user_elos ue JOIN elo e ON e.id = ue.elo_id\n           WHERE ue.user_id = ? AND e.game_type_id IS ? AND e.scope = ? LIMIT 1",
   "describe": {
     "columns": [
       {
@@ -45,7 +45,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       true,
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "d5d76b62d31e088f7ec0445ef30f4608021843cfc54efb00052fcf57b07884bf"
+  "hash": "3f30384795367537472717312c33dfd586f7125f826c08cbb8e09dbea8f73d3f"
 }

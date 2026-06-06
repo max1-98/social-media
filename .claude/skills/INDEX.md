@@ -9,6 +9,7 @@ skill** (see `update-a-skill`). Each `SKILL.md` has `name` + `description`.
 - @.claude/skills/theming/SKILL.md — the app theme: light/dark colour-schemes, tokens, component styling.
 - @.claude/skills/new-endpoint/SKILL.md — add an Axum route end-to-end with parity.
 - @.claude/skills/new-migration/SKILL.md — create + apply a sqlx migration safely.
+- @.claude/skills/club-fixtures/SKILL.md — club-vs-club fixtures, external rating scope, and club ELO (Phase 9).
 - @.claude/skills/port-django-logic/SKILL.md — port pure logic with oracle tests.
 - @.claude/skills/run-standards/SKILL.md — run the full local standards bar.
 - @.claude/skills/run-with-docker/SKILL.md — build + run the rebuild locally with Docker.

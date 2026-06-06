@@ -12,6 +12,7 @@ export * as clubsApi from "./clubs";
 export * as consentApi from "./consent";
 export * as eloApi from "./elo";
 export * as eventsApi from "./events";
+export * as fixturesApi from "./fixtures";
 export * as gamesApi from "./games";
 
 export type {
@@ -47,4 +48,5 @@ export type {
   EventSettingsPayload,
   EventStats,
 } from "./events";
+export type { ProposeFixturePayload, RecordFixtureGamePayload } from "./fixtures";
 export type { CompleteGamePayload, UserGamesParams } from "./games";

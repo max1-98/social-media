@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE club_fixtures SET status = 'cancelled' WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "a44276a55fc0cbdca2431d3b5f8873c7180ed1f1410252563177abba5d7fc9ca"
+}

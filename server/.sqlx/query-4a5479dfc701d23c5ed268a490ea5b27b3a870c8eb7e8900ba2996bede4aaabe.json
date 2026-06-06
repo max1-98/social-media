@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO club_elo\n             (club_id, game_type_id, mu, sigma, games_played, model_version, extra, elo, updated_at)\n           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n           ON CONFLICT (club_id, game_type_id)\n           DO UPDATE SET mu = excluded.mu, sigma = excluded.sigma,\n                         games_played = club_elo.games_played + ?,\n                         model_version = excluded.model_version, extra = excluded.extra,\n                         elo = excluded.elo, updated_at = excluded.updated_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "4a5479dfc701d23c5ed268a490ea5b27b3a870c8eb7e8900ba2996bede4aaabe"
+}

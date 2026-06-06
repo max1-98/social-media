@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO fixture_games (fixture_id, game_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "f27c99cbfc05944d3fb92e9761ae746ccde08cccf07f45dbc5ced4f25c14b6b4"
+}

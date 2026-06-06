@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT score AS \"score?: String\" FROM games WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "score?: String",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "7fe7fdcbc5516e4179bf283193704f97929a28225b24c87020fe1730d67312ac"
+}

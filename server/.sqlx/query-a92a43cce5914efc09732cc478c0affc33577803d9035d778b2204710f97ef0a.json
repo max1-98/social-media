@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT u.username AS \"username!: String\",\n                      u.is_active AS \"is_active!: i64\",\n                      u.email_verified AS \"email_verified!: i64\"\n               FROM members m JOIN users u ON u.id = m.user_id\n               WHERE m.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "username!: String",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_active!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "email_verified!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a92a43cce5914efc09732cc478c0affc33577803d9035d778b2204710f97ef0a"
+}

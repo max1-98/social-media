@@ -227,7 +227,7 @@ async fn load_active_members(
             Some(gt) => sqlx::query!(
                 r#"SELECT e.elo AS "elo!: i64", e.winstreak AS "winstreak!: i64"
                    FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
-                   WHERE ue.user_id = ? AND e.game_type_id = ? LIMIT 1"#,
+                   WHERE ue.user_id = ? AND e.game_type_id = ? AND e.scope = 'internal' LIMIT 1"#,
                 r.user_id,
                 gt
             )
@@ -736,6 +736,7 @@ pub async fn complete_game(
         team1_won,
         diff,
         event.sbmm,
+        "internal",
     )
     .await?;
 
@@ -799,7 +800,7 @@ fn parse_score(score: &str) -> Result<(i64, i64), AppError> {
 /// `game_types.model_version`, so old game types keep the Elo math and new ones
 /// can adopt Weng-Lin/Glicko-2 without disturbing existing ratings.
 #[allow(clippy::too_many_arguments)]
-async fn update_elo(
+pub(crate) async fn update_elo(
     app: &AppState,
     game_id: i64,
     game_type_id: Option<i64>,
@@ -808,6 +809,7 @@ async fn update_elo(
     team1_won: bool,
     diff: i64,
     sbmm: bool,
+    scope: &str,
 ) -> Result<(), AppError> {
     let (winners, losers) = if team1_won {
         (team1, team2)
@@ -821,11 +823,13 @@ async fn update_elo(
     // Skill rows per member (in order) for each side.
     let mut win_rows = Vec::new();
     for &member_id in winners {
-        win_rows.push(elo_row_for_member(app, member_id, game_type_id, model.as_ref()).await?);
+        win_rows
+            .push(elo_row_for_member(app, member_id, game_type_id, scope, model.as_ref()).await?);
     }
     let mut lose_rows = Vec::new();
     for &member_id in losers {
-        lose_rows.push(elo_row_for_member(app, member_id, game_type_id, model.as_ref()).await?);
+        lose_rows
+            .push(elo_row_for_member(app, member_id, game_type_id, scope, model.as_ref()).await?);
     }
 
     // Lazy decay: inflate uncertainty for players who have been inactive, based
@@ -998,6 +1002,7 @@ async fn elo_row_for_member(
     app: &AppState,
     member_id: i64,
     game_type_id: Option<i64>,
+    scope: &str,
     model: &dyn RatingModel,
 ) -> Result<EloRow, AppError> {
     let member = sqlx::query!(
@@ -1019,9 +1024,10 @@ async fn elo_row_for_member(
                   e.games_played AS "games_played!: i64", e.extra AS "extra!: String",
                   e.last_game AS "last_game!: String"
            FROM user_elos ue JOIN elo e ON e.id = ue.elo_id
-           WHERE ue.user_id = ? AND e.game_type_id IS ? LIMIT 1"#,
+           WHERE ue.user_id = ? AND e.game_type_id IS ? AND e.scope = ? LIMIT 1"#,
         member.user_id,
-        game_type_id
+        game_type_id,
+        scope
     )
     .fetch_optional(&app.pool)
     .await?
@@ -1045,8 +1051,8 @@ async fn elo_row_for_member(
     let games_played = default.games_played as i64;
     let last_game = fmt_ts(now())?;
     let new_id = sqlx::query_scalar!(
-        r#"INSERT INTO elo (game_type_id, last_game, elo, mu, sigma, games_played, model_version, extra)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        r#"INSERT INTO elo (game_type_id, last_game, elo, mu, sigma, games_played, model_version, extra, scope)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            RETURNING id AS "id!: i64""#,
         game_type_id,
         last_game,
@@ -1055,7 +1061,8 @@ async fn elo_row_for_member(
         default.sigma,
         games_played,
         version,
-        extra
+        extra,
+        scope
     )
     .fetch_one(&app.pool)
     .await?;
@@ -1301,7 +1308,7 @@ async fn team_members_out(
                     r#"SELECT e.elo AS "elo!: i64" FROM user_elos ue
                    JOIN elo e ON e.id = ue.elo_id
                    JOIN game_types gt ON gt.id = e.game_type_id
-                   WHERE ue.user_id = ? AND gt.name = ? LIMIT 1"#,
+                   WHERE ue.user_id = ? AND gt.name = ? AND e.scope = 'internal' LIMIT 1"#,
                     r.user_id,
                     name
                 )

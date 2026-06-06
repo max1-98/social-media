@@ -79,7 +79,7 @@ pub async fn list_for_user(
         JOIN elo e ON e.id = ue.elo_id
         LEFT JOIN game_types gt ON gt.id = e.game_type_id
         LEFT JOIN sports s ON s.id = gt.sport_id
-        WHERE ue.user_id = ?
+        WHERE ue.user_id = ? AND e.scope = 'internal'
         ORDER BY e.id
         "#,
         user.id

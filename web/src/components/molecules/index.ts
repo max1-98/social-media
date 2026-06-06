@@ -8,6 +8,8 @@ export { DummyUserForm } from "./DummyUserForm";
 export type { DummyUserDraft, DummyUserFormProps } from "./DummyUserForm";
 export { EventMemberRow, memberInitials, memberName } from "./EventMemberRow";
 export type { EventMemberRowProps } from "./EventMemberRow";
+export { FixtureCard } from "./FixtureCard";
+export type { FixtureCardProps } from "./FixtureCard";
 export { FormField } from "./FormField";
 export type { FormFieldProps } from "./FormField";
 export { GameCard } from "./GameCard";

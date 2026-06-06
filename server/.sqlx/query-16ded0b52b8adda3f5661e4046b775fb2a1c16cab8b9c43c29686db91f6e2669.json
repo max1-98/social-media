@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT mu AS \"mu!: f64\", sigma AS \"sigma!: f64\",\n                  games_played AS \"games_played!: i64\", extra AS \"extra!: String\"\n           FROM club_elo WHERE club_id = ? AND game_type_id IS ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "mu!: f64",
+        "ordinal": 0,
+        "type_info": "Float"
+      },
+      {
+        "name": "sigma!: f64",
+        "ordinal": 1,
+        "type_info": "Float"
+      },
+      {
+        "name": "games_played!: i64",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "extra!: String",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "16ded0b52b8adda3f5661e4046b775fb2a1c16cab8b9c43c29686db91f6e2669"
+}
