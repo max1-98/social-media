@@ -147,6 +147,9 @@ export function EventViewPage(): ReactElement {
           onCompleteEvent={() => {
             runAction(() => eventsApi.completeEvent(numericEventId), refreshEvent);
           }}
+          onChangeSelectionMode={(mode) => {
+            runAction(() => eventsApi.updateSettings(numericEventId, { mode }), refreshEvent);
+          }}
           onSubmitScore={(gameId, score) => {
             runAction(
               () => gamesApi.completeGame({ game_id: gameId, score }),

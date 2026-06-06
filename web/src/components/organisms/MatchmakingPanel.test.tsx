@@ -43,9 +43,11 @@ const games: Game[] = [
 function renderPanel(isAdmin: boolean): {
   onCreateGame: ReturnType<typeof vi.fn>;
   onDeactivateMember: ReturnType<typeof vi.fn>;
+  onChangeSelectionMode: ReturnType<typeof vi.fn>;
 } {
   const onCreateGame = vi.fn();
   const onDeactivateMember = vi.fn();
+  const onChangeSelectionMode = vi.fn();
   render(
     <MatchmakingPanel
       event={event}
@@ -54,6 +56,7 @@ function renderPanel(isAdmin: boolean): {
       members={[member("1", "Ada"), member("2", "Al")]}
       onCreateGame={onCreateGame}
       onCompleteEvent={vi.fn()}
+      onChangeSelectionMode={onChangeSelectionMode}
       onSubmitScore={vi.fn()}
       onDeleteGame={vi.fn()}
       onPausePlayer={vi.fn()}
@@ -64,7 +67,7 @@ function renderPanel(isAdmin: boolean): {
       onSearchUsers={vi.fn().mockResolvedValue({ results: [], page: 1, has_next: false })}
     />,
   );
-  return { onCreateGame, onDeactivateMember };
+  return { onCreateGame, onDeactivateMember, onChangeSelectionMode };
 }
 
 describe("MatchmakingPanel organism", () => {
@@ -80,6 +83,17 @@ describe("MatchmakingPanel organism", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /deactivate ada/i }));
     expect(onDeactivateMember).toHaveBeenCalledWith("1");
+  });
+
+  it("shows the game type as a disabled control and persists mode changes", () => {
+    const { onChangeSelectionMode } = renderPanel(true);
+
+    const gameType = screen.getByRole("combobox", { name: "Game type" });
+    expect(gameType).toHaveAttribute("aria-disabled", "true");
+
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Selection mode" }));
+    fireEvent.click(screen.getByRole("option", { name: "Social" }));
+    expect(onChangeSelectionMode).toHaveBeenCalledWith("social");
   });
 
   it("warns when there are too few active players", () => {

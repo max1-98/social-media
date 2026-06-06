@@ -8,11 +8,18 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 
 import type { EventDetail, Game, Member } from "../../types";
-import { Alert, Button, Text } from "../atoms";
+import { Alert, Button, Select, Text } from "../atoms";
+import type { SelectOption } from "../atoms";
 import { GameCard } from "../molecules";
 import type { DummyUserFormProps, MemberSearchFormProps } from "../molecules";
 
 import { AddUserModal } from "./AddUserModal";
+
+/** Selection modes wired to a create-game strategy (sbmm vs social). */
+const SELECTION_MODES: SelectOption[] = [
+  { value: "sbmm", label: "Skill-based" },
+  { value: "social", label: "Social" },
+];
 
 export interface MatchmakingPanelProps {
   /** The active event being matchmade. */
@@ -25,6 +32,8 @@ export interface MatchmakingPanelProps {
   onCreateGame: () => void;
   /** Complete (finish) the event. */
   onCompleteEvent: () => void;
+  /** Persist a new selection mode for the event (PATCH settings). */
+  onChangeSelectionMode: (mode: string) => void;
   /** Submit a game's score (`"t1,t2"`). */
   onSubmitScore: (gameId: string, score: string) => void;
   /** Delete an in-progress game. */
@@ -111,6 +120,7 @@ export function MatchmakingPanel({
   isAdmin,
   onCreateGame,
   onCompleteEvent,
+  onChangeSelectionMode,
   onSubmitScore,
   onDeleteGame,
   onPausePlayer,
@@ -129,17 +139,40 @@ export function MatchmakingPanel({
   const inactiveMembers = members.filter((m) => !activeIds.has(m.id) && !inGameIds.has(m.id));
   const lowPlayers =
     isAdmin && event.mode !== "peg_board" && event.active_members.length < 2 * event.team_size + 2;
+  // Always surface the event's current mode, even if it isn't one of the
+  // create-game strategies (e.g. a legacy "peg_board" value).
+  const modeOptions = SELECTION_MODES.some((m) => m.value === event.mode)
+    ? SELECTION_MODES
+    : [{ value: event.mode, label: event.mode }, ...SELECTION_MODES];
 
   return (
     <Stack spacing={2}>
       {isAdmin ? (
-        <Stack spacing={1} sx={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
-          <Button onClick={onCreateGame}>Create game</Button>
-          <Button onClick={onCompleteEvent}>Complete event</Button>
-          <Box sx={{ ml: "auto" }}>
-            <Text variant="body2">Game type: {event.game_type.name}</Text>
-            <Text variant="body2">Selection mode: {event.mode}</Text>
-          </Box>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
+        >
+          <Select
+            label="Game type"
+            options={[{ value: event.game_type.name, label: event.game_type.name }]}
+            value={event.game_type.name}
+            disabled
+          />
+          <Select
+            label="Selection mode"
+            options={modeOptions}
+            value={event.mode}
+            onChange={(e) => {
+              onChangeSelectionMode(e.target.value);
+            }}
+          />
+          <Stack direction="row" spacing={1} sx={{ ml: { sm: "auto" } }}>
+            <Button onClick={onCreateGame}>Create game</Button>
+            <Button variant="outlined" onClick={onCompleteEvent}>
+              Complete event
+            </Button>
+          </Stack>
         </Stack>
       ) : null}
 

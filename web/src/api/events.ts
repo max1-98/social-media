@@ -44,6 +44,7 @@ export interface EventSettingsPayload {
   sbmm?: boolean;
   guests_allowed?: boolean;
   over_18_under_18_mixed?: string;
+  mode?: string;
 }
 
 /**
