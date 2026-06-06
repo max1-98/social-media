@@ -1,16 +1,17 @@
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
-import type { EventDetail, Game, Member } from "../../types";
-import { Alert, Button, Select, Text } from "../atoms";
+import type { EventDetail, Game, MemberEvent } from "../../types";
+import { Alert, Button, Chip, Icon, Select, Text } from "../atoms";
 import type { SelectOption } from "../atoms";
-import { GameCard } from "../molecules";
+import { EventMemberRow, GameCard, SortControl, memberName } from "../molecules";
 import type { DummyUserFormProps, MemberSearchFormProps } from "../molecules";
 
 import { AddUserModal } from "./AddUserModal";
@@ -20,6 +21,32 @@ const SELECTION_MODES: SelectOption[] = [
   { value: "sbmm", label: "Skill-based" },
   { value: "social", label: "Social" },
 ];
+
+/** Member sort keys offered in each panel. */
+const SORT_OPTIONS: SelectOption[] = [
+  { value: "elo", label: "ELO" },
+  { value: "name", label: "Name" },
+];
+
+export type SortKey = "elo" | "name";
+export type SortDir = "asc" | "desc";
+
+/**
+ * Order two members by `key`/`dir`. ELO sorts numerically with unranked members
+ * (`elo === null`) always last regardless of direction; name uses locale compare.
+ */
+export function compareMembers(a: MemberEvent, b: MemberEvent, key: SortKey, dir: SortDir): number {
+  let base: number;
+  if (key === "elo") {
+    if (a.elo === null && b.elo === null) base = 0;
+    else if (a.elo === null) return 1;
+    else if (b.elo === null) return -1;
+    else base = a.elo - b.elo;
+  } else {
+    base = memberName(a).localeCompare(memberName(b));
+  }
+  return dir === "asc" ? base : -base;
+}
 
 export interface MatchmakingPanelProps {
   /** The active event being matchmade. */
@@ -50,14 +77,10 @@ export interface MatchmakingPanelProps {
   onInviteMember: (userId: string) => Promise<void>;
   /** Run a paginated username search for members to invite. */
   onSearchUsers: MemberSearchFormProps["onSearch"];
-  /** All club members eligible for the event (active + inactive). */
-  members: Member[];
+  /** All club members eligible for the event (active + inactive), with ELO. */
+  members: MemberEvent[];
   /** A recoverable error to surface (e.g. "not enough players"). */
   error?: string | null;
-}
-
-function memberName(member: Member): string {
-  return `${member.first_name} ${member.surname}`.trim() || member.username;
 }
 
 function MemberColumn({
@@ -65,40 +88,65 @@ function MemberColumn({
   members,
   actionLabel,
   onAction,
+  accentColor,
+  countColor,
 }: {
   title: string;
-  members: Member[];
+  members: MemberEvent[];
   actionLabel: string;
   onAction: (memberId: string) => void;
+  accentColor: string;
+  countColor: "success" | "default";
 }): ReactElement {
+  const [sortKey, setSortKey] = useState<SortKey>("elo");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const sorted = useMemo(
+    () => [...members].sort((a, b) => compareMembers(a, b, sortKey, sortDir)),
+    [members, sortKey, sortDir],
+  );
+
   return (
     <Grid size={{ xs: 12, lg: 6 }}>
-      <Paper variant="outlined" sx={{ p: 1 }}>
-        <Text variant="subtitle1" gutterBottom>
-          {title}
-        </Text>
+      <Paper variant="outlined" sx={{ p: 1.5, borderLeft: 3, borderColor: accentColor }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: "center", justifyContent: "space-between", mb: 1, flexWrap: "wrap" }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Text variant="subtitle1">{title}</Text>
+            <Chip size="small" color={countColor} label={String(members.length)} />
+          </Stack>
+          <SortControl
+            sortKey={sortKey}
+            direction={sortDir}
+            options={SORT_OPTIONS}
+            onSortKeyChange={(key) => {
+              setSortKey(key === "name" ? "name" : "elo");
+            }}
+            onDirectionToggle={() => {
+              setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+            }}
+          />
+        </Stack>
         <List aria-label={title} dense>
-          {members.length === 0 ? (
+          {sorted.length === 0 ? (
             <ListItem>
-              <Text variant="body2">None.</Text>
+              <Text
+                variant="body2"
+                sx={{ color: "text.secondary", textAlign: "center", width: "100%", py: 2 }}
+              >
+                None.
+              </Text>
             </ListItem>
           ) : (
-            members.map((member) => (
-              <ListItem
+            sorted.map((member) => (
+              <EventMemberRow
                 key={member.id}
-                secondaryAction={
-                  <Button
-                    aria-label={`${actionLabel} ${memberName(member)}`}
-                    onClick={() => {
-                      onAction(member.id);
-                    }}
-                  >
-                    {actionLabel}
-                  </Button>
-                }
-              >
-                <Text>{memberName(member)}</Text>
-              </ListItem>
+                member={member}
+                actionLabel={actionLabel}
+                onAction={onAction}
+              />
             ))
           )}
         </List>
@@ -110,9 +158,9 @@ function MemberColumn({
 /**
  * Organism: the active-event matchmaking surface. Shows admin controls (create a
  * game in the event's mode, complete the event), the in-progress games as
- * {@link GameCard}s, and the active/inactive member lists with activate/
- * deactivate actions. Mirrors the legacy `ActiveEvent` view but stays purely
- * data + callback driven — no `api`/`hooks` imports.
+ * {@link GameCard}s, and the active/inactive member lists — each showing every
+ * member's ELO and sortable by ELO or name — with activate/deactivate actions.
+ * Mirrors the legacy `ActiveEvent` view but stays purely data + callback driven.
  */
 export function MatchmakingPanel({
   event,
@@ -146,34 +194,40 @@ export function MatchmakingPanel({
     : [{ value: event.mode, label: event.mode }, ...SELECTION_MODES];
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={3}>
       {isAdmin ? (
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
-        >
-          <Select
-            label="Game type"
-            options={[{ value: event.game_type.name, label: event.game_type.name }]}
-            value={event.game_type.name}
-            disabled
-          />
-          <Select
-            label="Selection mode"
-            options={modeOptions}
-            value={event.mode}
-            onChange={(e) => {
-              onChangeSelectionMode(e.target.value);
-            }}
-          />
-          <Stack direction="row" spacing={1} sx={{ ml: { sm: "auto" } }}>
-            <Button onClick={onCreateGame}>Create game</Button>
-            <Button variant="outlined" onClick={onCompleteEvent}>
-              Complete event
-            </Button>
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
+          >
+            <Select
+              label="Game type"
+              options={[{ value: event.game_type.name, label: event.game_type.name }]}
+              value={event.game_type.name}
+              disabled
+              sx={{ minWidth: 180 }}
+            />
+            <Select
+              label="Selection mode"
+              options={modeOptions}
+              value={event.mode}
+              onChange={(e) => {
+                onChangeSelectionMode(e.target.value);
+              }}
+              sx={{ minWidth: 180 }}
+            />
+            <Stack direction="row" spacing={1} sx={{ ml: { sm: "auto" } }}>
+              <Button variant="contained" onClick={onCreateGame}>
+                Create game
+              </Button>
+              <Button variant="outlined" color="error" onClick={onCompleteEvent}>
+                Complete event
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
+        </Paper>
       ) : null}
 
       {lowPlayers ? (
@@ -184,52 +238,70 @@ export function MatchmakingPanel({
       ) : null}
       {error !== null ? <Alert severity="error">{error}</Alert> : null}
 
-      <Grid container spacing={1} component="section" aria-label="In-progress games">
-        {games.length === 0 ? (
-          <Grid size={12}>
-            <Text variant="body2">No games in progress.</Text>
-          </Grid>
-        ) : (
-          games.map((game) => (
-            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={game.id}>
-              <GameCard
-                game={game}
-                isAdmin={isAdmin}
-                onSubmitScore={onSubmitScore}
-                onDelete={onDeleteGame}
-                onPausePlayer={onPausePlayer}
-              />
+      <Box component="section" aria-label="In-progress games">
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+          <Text variant="h6">In-progress games</Text>
+          <Chip size="small" label={String(games.length)} />
+        </Stack>
+        <Grid container spacing={2}>
+          {games.length === 0 ? (
+            <Grid size={12}>
+              <Text variant="body2" sx={{ color: "text.secondary" }}>
+                No games in progress.
+              </Text>
             </Grid>
-          ))
-        )}
-      </Grid>
-
-      {isAdmin ? (
-        <Grid container spacing={1}>
-          <MemberColumn
-            title="Active members"
-            members={activeMembers}
-            actionLabel="Deactivate"
-            onAction={onDeactivateMember}
-          />
-          <MemberColumn
-            title="Inactive members"
-            members={inactiveMembers}
-            actionLabel="Activate"
-            onAction={onActivateMember}
-          />
+          ) : (
+            games.map((game) => (
+              <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={game.id}>
+                <GameCard
+                  game={game}
+                  isAdmin={isAdmin}
+                  onSubmitScore={onSubmitScore}
+                  onDelete={onDeleteGame}
+                  onPausePlayer={onPausePlayer}
+                />
+              </Grid>
+            ))
+          )}
         </Grid>
-      ) : null}
+      </Box>
 
       {isAdmin ? (
-        <Box>
-          <Button
-            onClick={() => {
-              setAddUserOpen(true);
-            }}
+        <Box component="section">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}
           >
-            Add user
-          </Button>
+            <Text variant="h6">Members</Text>
+            <Button
+              variant="contained"
+              startIcon={<Icon as={PersonAddIcon} fontSize="small" />}
+              onClick={() => {
+                setAddUserOpen(true);
+              }}
+            >
+              Add user
+            </Button>
+          </Stack>
+          <Grid container spacing={2}>
+            <MemberColumn
+              title="Active members"
+              members={activeMembers}
+              actionLabel="Deactivate"
+              onAction={onDeactivateMember}
+              accentColor="success.main"
+              countColor="success"
+            />
+            <MemberColumn
+              title="Inactive members"
+              members={inactiveMembers}
+              actionLabel="Activate"
+              onAction={onActivateMember}
+              accentColor="divider"
+              countColor="default"
+            />
+          </Grid>
           <AddUserModal
             open={addUserOpen}
             onClose={() => {

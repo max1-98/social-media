@@ -1,5 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { act, fireEvent, render as rtlRender, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { RenderOptions, RenderResult } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 
@@ -24,6 +31,6 @@ function render(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">): Ren
   return rtlRender(ui, { wrapper: Wrapper, ...options });
 }
 
-export { act, fireEvent, render, screen, waitFor };
+export { act, fireEvent, render, screen, waitFor, within };
 /** Explicit alias for callers that prefer the descriptive name. */
 export const renderWithTheme = render;

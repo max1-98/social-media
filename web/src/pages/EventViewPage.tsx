@@ -6,7 +6,7 @@ import { useParams } from "react-router-dom";
 import { clubsApi, eventsApi, gamesApi, ApiRequestError } from "../api";
 import { Alert, Spinner, Text } from "../components/atoms";
 import { EventComplete, EventPending, MatchmakingPanel } from "../components/organisms";
-import type { CompleteGame, EventDetail, EventStatsResult, Game, Member } from "../types";
+import type { CompleteGame, EventDetail, EventStatsResult, Game, MemberEvent } from "../types";
 
 function messageOf(err: unknown, fallback: string): string {
   return err instanceof ApiRequestError ? err.message : fallback;
@@ -23,7 +23,7 @@ function messageOf(err: unknown, fallback: string): string {
 export function EventViewPage(): ReactElement {
   const { clubId, eventId } = useParams<{ clubId: string; eventId: string }>();
   const [event, setEvent] = useState<EventDetail | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberEvent[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [completedGames, setCompletedGames] = useState<CompleteGame[]>([]);
   const [stats, setStats] = useState<EventStatsResult | null>(null);
@@ -43,9 +43,9 @@ export function EventViewPage(): ReactElement {
   }, [eventId]);
 
   const refreshMembers = useCallback(async (): Promise<void> => {
-    if (clubId === undefined) return;
-    setMembers(await clubsApi.clubMembers(clubId));
-  }, [clubId]);
+    if (eventId === undefined) return;
+    setMembers(await clubsApi.clubMembersForEvent(eventId));
+  }, [eventId]);
 
   useEffect(() => {
     if (clubId === undefined || eventId === undefined) return;
@@ -54,7 +54,7 @@ export function EventViewPage(): ReactElement {
     Promise.all([
       eventsApi.eventDetail(eventId),
       clubsApi.clubDetail(clubId),
-      clubsApi.clubMembers(clubId),
+      clubsApi.clubMembersForEvent(eventId),
       gamesApi.eventIncompleteGames(eventId),
       gamesApi.eventCompleteGames(eventId),
     ])

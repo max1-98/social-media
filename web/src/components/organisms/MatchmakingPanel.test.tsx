@@ -1,9 +1,9 @@
 import { vi } from "vitest";
 
-import { fireEvent, render, screen } from "../../test/renderWithTheme.tsx";
-import type { EventDetail, Game, Member } from "../../types";
+import { fireEvent, render, screen, within } from "../../test/renderWithTheme.tsx";
+import type { EventDetail, Game, Member, MemberEvent } from "../../types";
 
-import { MatchmakingPanel } from "./MatchmakingPanel.tsx";
+import { MatchmakingPanel, compareMembers } from "./MatchmakingPanel.tsx";
 
 const member = (id: string, first: string): Member => ({
   id,
@@ -11,6 +11,14 @@ const member = (id: string, first: string): Member => ({
   surname: "X",
   username: first.toLowerCase(),
   is_club_admin: false,
+});
+
+const em = (id: string, first: string, elo: number | null): MemberEvent => ({
+  id,
+  first_name: first,
+  surname: "X",
+  username: first.toLowerCase(),
+  elo,
 });
 
 const event: EventDetail = {
@@ -40,7 +48,11 @@ const games: Game[] = [
   },
 ];
 
-function renderPanel(isAdmin: boolean): {
+function renderPanel(
+  isAdmin: boolean,
+  members: MemberEvent[] = [em("1", "Ada", 1200), em("2", "Al", 1400)],
+  detail: EventDetail = event,
+): {
   onCreateGame: ReturnType<typeof vi.fn>;
   onDeactivateMember: ReturnType<typeof vi.fn>;
   onChangeSelectionMode: ReturnType<typeof vi.fn>;
@@ -50,10 +62,10 @@ function renderPanel(isAdmin: boolean): {
   const onChangeSelectionMode = vi.fn();
   render(
     <MatchmakingPanel
-      event={event}
+      event={detail}
       games={games}
       isAdmin={isAdmin}
-      members={[member("1", "Ada"), member("2", "Al")]}
+      members={members}
       onCreateGame={onCreateGame}
       onCompleteEvent={vi.fn()}
       onChangeSelectionMode={onChangeSelectionMode}
@@ -68,6 +80,14 @@ function renderPanel(isAdmin: boolean): {
     />,
   );
   return { onCreateGame, onDeactivateMember, onChangeSelectionMode };
+}
+
+/** Names of the members in a panel list, in render order. */
+function panelOrder(listName: string): (string | null)[] {
+  const list = screen.getByRole("list", { name: listName });
+  return within(list)
+    .getAllByRole("listitem")
+    .map((li) => li.textContent);
 }
 
 describe("MatchmakingPanel organism", () => {
@@ -104,14 +124,69 @@ describe("MatchmakingPanel organism", () => {
   it("opens the Add user modal for admins", () => {
     renderPanel(true);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Add user" }));
+    fireEvent.click(screen.getByRole("button", { name: /add user/i }));
     expect(screen.getByRole("dialog", { name: "Add user" })).toBeInTheDocument();
   });
 
   it("hides admin controls for non-admins", () => {
     renderPanel(false);
     expect(screen.queryByRole("button", { name: "Create game" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Active members" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add user" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Active members" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add user/i })).not.toBeInTheDocument();
+  });
+
+  it("shows each member's ELO and an Unranked chip when missing", () => {
+    renderPanel(true, [em("1", "Ada", 1200), em("2", "Al", 1400), em("3", "Bo", null)]);
+    expect(screen.getByText("1200")).toBeInTheDocument();
+    expect(screen.getByText("1400")).toBeInTheDocument();
+    expect(screen.getByText("Unranked")).toBeInTheDocument();
+  });
+
+  it("defaults to ELO descending with unranked members last", () => {
+    const detail: EventDetail = { ...event, active_members: [] };
+    renderPanel(true, [em("1", "Al", 1400), em("2", "Bo", null), em("3", "Cy", 1100)], detail);
+    const order = panelOrder("Inactive members");
+    expect(order[0]).toContain("Al X");
+    expect(order[1]).toContain("Cy X");
+    expect(order[2]).toContain("Bo X");
+  });
+
+  it("re-sorts a panel by name when chosen", () => {
+    const detail: EventDetail = { ...event, active_members: [] };
+    renderPanel(true, [em("1", "Al", 1100), em("2", "Cy", 1400), em("3", "Bo", null)], detail);
+    // The inactive panel is the only one with members; pick its sort dropdown.
+    const sortSelects = screen.getAllByRole("combobox", { name: "Sort by" });
+    const inactiveSort = sortSelects[sortSelects.length - 1];
+    fireEvent.mouseDown(inactiveSort);
+    fireEvent.click(screen.getByRole("option", { name: "Name" }));
+    // Direction stays descending, so names sort Cy, Bo, Al.
+    const order = panelOrder("Inactive members");
+    expect(order[0]).toContain("Cy X");
+    expect(order[2]).toContain("Al X");
+  });
+});
+
+describe("compareMembers", () => {
+  it("orders by ELO with the requested direction", () => {
+    const a = em("1", "A", 1200);
+    const b = em("2", "B", 1400);
+    expect(compareMembers(a, b, "elo", "desc")).toBeGreaterThan(0);
+    expect(compareMembers(a, b, "elo", "asc")).toBeLessThan(0);
+  });
+
+  it("always sorts unranked members last regardless of direction", () => {
+    const ranked = em("1", "A", 1200);
+    const unranked = em("2", "B", null);
+    expect(compareMembers(ranked, unranked, "elo", "asc")).toBeLessThan(0);
+    expect(compareMembers(ranked, unranked, "elo", "desc")).toBeLessThan(0);
+    expect(compareMembers(unranked, ranked, "elo", "asc")).toBeGreaterThan(0);
+    expect(compareMembers(unranked, ranked, "elo", "desc")).toBeGreaterThan(0);
+  });
+
+  it("orders by name using locale compare", () => {
+    const ada = em("1", "Ada", 1000);
+    const bo = em("2", "Bo", 2000);
+    expect(compareMembers(ada, bo, "name", "asc")).toBeLessThan(0);
+    expect(compareMembers(ada, bo, "name", "desc")).toBeGreaterThan(0);
   });
 });
