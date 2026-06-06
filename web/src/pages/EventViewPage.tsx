@@ -152,7 +152,7 @@ export function EventViewPage(): ReactElement {
           }}
           onSubmitScore={(gameId, score) => {
             runAction(
-              () => gamesApi.completeGame({ game_id: gameId, score }),
+              () => gamesApi.completeGame({ game_id: gameId, event_id: numericEventId, score }),
               async () => {
                 await Promise.all([refreshGames(), refreshEvent()]);
               },

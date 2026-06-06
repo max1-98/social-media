@@ -10,6 +10,7 @@ import { getJson, postJson } from "./http";
 
 export interface CompleteGamePayload {
   game_id: string;
+  event_id: string;
   score: string;
 }
 
