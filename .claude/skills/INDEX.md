@@ -5,6 +5,7 @@ skill** (see `update-a-skill`). Each `SKILL.md` has `name` + `description`.
 
 - @.claude/skills/update-a-skill/SKILL.md — the meta-skill: create/update skills + index.
 - @.claude/skills/new-atom/SKILL.md — scaffold an Atomic Design component + test.
+- @.claude/skills/data-grid/SKILL.md — reusable virtualised DataGrid + page stats helpers.
 - @.claude/skills/theming/SKILL.md — the app theme: light/dark colour-schemes, tokens, component styling.
 - @.claude/skills/new-endpoint/SKILL.md — add an Axum route end-to-end with parity.
 - @.claude/skills/new-migration/SKILL.md — create + apply a sqlx migration safely.

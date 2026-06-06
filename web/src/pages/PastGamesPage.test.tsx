@@ -1,8 +1,8 @@
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { render, screen } from "../test/renderWithTheme.tsx";
-import type { CompleteGame } from "../types";
+import { fireEvent, render, screen, waitFor } from "../test/renderWithTheme.tsx";
+import type { CompleteGame, User } from "../types";
 
 import { PastGamesPage } from "./PastGamesPage.tsx";
 
@@ -13,14 +13,41 @@ vi.mock("../api", async () => {
   return { ...actual, gamesApi: { userGames: () => userGames() } };
 });
 
-const game: CompleteGame = {
-  id: "7",
-  team1: [{ id: "1", first_name: "A", surname: "B", username: "alice", elo: 1200 }],
-  team2: [{ id: "2", first_name: "C", surname: "D", username: "bob", elo: 1100 }],
-  game_type: 1,
-  score: "6-4",
-  start_time: "2024-05-01",
+const me: User = {
+  id: "1",
+  username: "alice",
+  email: null,
+  first_name: "A",
+  surname: "B",
+  date_of_birth: null,
+  biological_gender: "unknown",
+  email_verified: true,
+  parental_consent_required: false,
 };
+
+vi.mock("../hooks", () => ({
+  useAuth: () => ({ user: me, loading: false }),
+}));
+
+function makeGame(
+  id: string,
+  score: string,
+  type: string,
+  start: string,
+  team1 = ["alice"],
+  team2 = ["bob"],
+): CompleteGame {
+  const member = (u: string) => ({ id: u, first_name: u, surname: "X", username: u, elo: 1000 });
+  return {
+    id,
+    team1: team1.map(member),
+    team2: team2.map(member),
+    game_type: 1,
+    game_type_name: type,
+    score,
+    start_time: start,
+  };
+}
 
 function renderPage(): void {
   render(
@@ -35,13 +62,43 @@ describe("PastGamesPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the user's completed games in a table", async () => {
-    userGames.mockResolvedValue([game]);
+  it("renders the games grid with game type and a Won/Lost result", async () => {
+    userGames.mockResolvedValue([
+      makeGame("1", "21,15", "badminton singles", "2026-06-01T10:00:00Z"),
+    ]);
     renderPage();
-    expect(await screen.findByText("6-4")).toBeInTheDocument();
-    expect(screen.getByText("alice")).toBeInTheDocument();
+    expect(await screen.findByRole("grid", { name: /completed games/i })).toBeInTheDocument();
+    expect(screen.getAllByText("badminton singles").length).toBeGreaterThan(0);
+    // alice is on team1 which scored 21 > 15, so she won.
+    expect(screen.getByText("Won")).toBeInTheDocument();
+  });
+
+  it("shows the win rate in the stats panel", async () => {
+    userGames.mockResolvedValue([
+      makeGame("1", "21,15", "badminton singles", "2026-06-01T10:00:00Z"), // win
+      makeGame("2", "10,21", "badminton singles", "2026-06-02T10:00:00Z"), // loss
+    ]);
+    renderPage();
+    expect(await screen.findByText("50%")).toBeInTheDocument();
+  });
+
+  it("filters the grid by game type", async () => {
+    userGames.mockResolvedValue([
+      makeGame("1", "21,15", "badminton singles", "2026-06-01T10:00:00Z"),
+      makeGame("2", "21,9", "tennis singles", "2026-06-02T10:00:00Z", ["alice"], ["carol"]),
+    ]);
+    renderPage();
+    await screen.findByRole("grid", { name: /completed games/i });
     expect(screen.getByText("bob")).toBeInTheDocument();
-    expect(screen.getByRole("table", { name: /completed games/i })).toBeInTheDocument();
+    expect(screen.getByText("carol")).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByRole("combobox", { name: /game type/i }));
+    fireEvent.click(screen.getByRole("option", { name: "tennis singles" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("bob")).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("carol")).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no games", async () => {

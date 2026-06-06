@@ -67,12 +67,16 @@ pub struct GameOut {
 }
 
 /// `CompleteGameSerializer`: GameSerializer + game_type id, score, start_time.
+/// `game_type_name` is an additive convenience so clients can display/group/
+/// filter by the game type without a second lookup; the legacy `game_type` id
+/// is kept for parity.
 #[derive(Debug, Serialize)]
 pub struct CompleteGameOut {
     id: GameId,
     team1: Vec<MemberOut>,
     team2: Vec<MemberOut>,
     game_type: Option<i64>,
+    game_type_name: Option<String>,
     score: Option<String>,
     start_time: String,
 }
@@ -1346,6 +1350,7 @@ async fn complete_game_out(
         team1: team_members_out(app, game_id, 1, game_type_name).await?,
         team2: team_members_out(app, game_id, 2, game_type_name).await?,
         game_type: g.game_type_id,
+        game_type_name: game_type_name.map(str::to_owned),
         score: g.score,
         start_time: g.start_time,
     })

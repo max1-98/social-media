@@ -19,6 +19,7 @@ const completedGames: CompleteGame[] = [
     team1: [{ id: "1", first_name: "Ada", surname: "Lovelace", username: "ada", elo: 1200 }],
     team2: [{ id: "2", first_name: "Alan", surname: "Turing", username: "alan", elo: 1300 }],
     game_type: 1,
+    game_type_name: "badminton singles",
     score: "21,15",
     start_time: "18:30",
   },

@@ -15,6 +15,7 @@ export { LoginPage } from "./LoginPage";
 export { MyClubsPage } from "./MyClubsPage";
 export { MyEventsPage } from "./MyEventsPage";
 export { PastGamesPage } from "./PastGamesPage";
+export { pastGamesStats, userResult } from "./pastGamesStats";
 export { PrivacyPolicy } from "./PrivacyPolicy";
 export { ProfilePage } from "./ProfilePage";
 export { RegisterPage } from "./RegisterPage";
