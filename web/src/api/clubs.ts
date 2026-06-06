@@ -13,6 +13,7 @@ import type {
   MyClub,
   Social,
   Sport,
+  UserSearchPage,
 } from "../types";
 
 import type { DetailResponse } from "./auth";
@@ -162,9 +163,20 @@ export interface CreateDummyUserPayload {
 
 /** The 201 response of `POST /api/club/dummy-user/create/:pk`. */
 export interface DummyUserResult {
+  /** Opaque id of the new club membership, ready to activate into an event. */
+  id: string;
   first_name: string;
   surname: string;
   biological_gender: string;
+}
+
+/**
+ * GET /api/club/:pk/user-search — find active platform users by username who are
+ * not already members of the club, paginated (admin only). `q` must be non-empty.
+ */
+export async function searchUsers(pk: string, q: string, page = 1): Promise<UserSearchPage> {
+  const params = new URLSearchParams({ q, page: String(page) });
+  return getJson<UserSearchPage>(`/club/${pk}/user-search?${params.toString()}`);
 }
 
 /** POST /api/club/dummy-user/create/:pk — create a placeholder member (admin). */

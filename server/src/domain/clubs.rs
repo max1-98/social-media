@@ -791,6 +791,110 @@ pub async fn club_members(
     Ok(Json(out))
 }
 
+/// Fixed page size for the admin user search. Kept server-side so a client can't
+/// request an unbounded page and enumerate the user directory.
+const USER_SEARCH_LIMIT: i64 = 10;
+
+#[derive(Deserialize)]
+pub struct UserSearchQuery {
+    /// Username search term (required, non-empty) — we never enumerate all users.
+    q: Option<String>,
+    /// 1-based page index; defaults to 1.
+    page: Option<i64>,
+}
+
+#[derive(Serialize)]
+pub struct UserSearchResult {
+    id: UserId,
+    username: String,
+    first_name: Option<String>,
+    surname: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct UserSearchPage {
+    results: Vec<UserSearchResult>,
+    page: i64,
+    has_next: bool,
+}
+
+/// Escape SQLite `LIKE` wildcards in user input so a search term is matched
+/// literally (with `ESCAPE '\'` on the query).
+fn escape_like(term: &str) -> String {
+    term.replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+}
+
+/// GET /api/club/:pk/user-search?q=&page= — find active platform users (by
+/// username) who are not already members of the club, paginated (admin only).
+///
+/// GDPR: admin-gated, requires a non-empty query (no full-directory enumeration),
+/// returns minimal fields with opaque ids, and excludes inactive/dummy users.
+pub async fn search_users(
+    State(app): State<AppState>,
+    user: AuthUser,
+    ApiPath(pk): ApiPath<ClubId>,
+    Query(params): Query<UserSearchQuery>,
+) -> Result<Json<UserSearchPage>, AppError> {
+    let pk = pk.inner();
+    require_admin(&app, user.id, pk).await?;
+
+    let q = params.q.unwrap_or_default();
+    let q = q.trim();
+    if q.is_empty() {
+        return Err(AppError::Validation("Enter a username to search.".into()));
+    }
+    let page = params.page.unwrap_or(1).max(1);
+    let pattern = format!("%{}%", escape_like(q));
+    let offset = (page - 1) * USER_SEARCH_LIMIT;
+    // Fetch one extra row to detect whether a further page exists.
+    let probe = USER_SEARCH_LIMIT + 1;
+
+    let mut rows = sqlx::query!(
+        r#"SELECT u.id AS "id!: i64", u.username AS "username!: String",
+                  u.first_name, u.surname
+           FROM users u
+           WHERE u.is_active = 1
+             AND u.username LIKE ? ESCAPE '\'
+             AND NOT EXISTS (
+                 SELECT 1 FROM members m
+                 WHERE m.user_id = u.id AND m.club_id = ? AND m.is_member = 1
+             )
+             AND NOT EXISTS (SELECT 1 FROM club_bots cb WHERE cb.user_id = u.id)
+             AND NOT EXISTS (
+                 SELECT 1 FROM member_requests mr
+                 WHERE mr.user_id = u.id AND mr.club_id = ?
+             )
+           ORDER BY u.username
+           LIMIT ? OFFSET ?"#,
+        pattern,
+        pk,
+        pk,
+        probe,
+        offset
+    )
+    .fetch_all(&app.pool)
+    .await?;
+
+    let has_next = rows.len() as i64 > USER_SEARCH_LIMIT;
+    rows.truncate(USER_SEARCH_LIMIT as usize);
+    let results = rows
+        .into_iter()
+        .map(|r| UserSearchResult {
+            id: r.id.into(),
+            username: r.username,
+            first_name: r.first_name,
+            surname: r.surname,
+        })
+        .collect();
+    Ok(Json(UserSearchPage {
+        results,
+        page,
+        has_next,
+    }))
+}
+
 /// GET /api/club/members/event/:pk1 — a club's members with the event's
 /// game-type ELO attached (admin only).
 pub async fn club_members_event(
@@ -1144,14 +1248,14 @@ pub async fn create_dummy_user(
     )
     .fetch_one(&app.pool)
     .await?;
-    sqlx::query!(
-        "INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
-         VALUES (?, ?, 1, 0, ?)",
+    let member_id = sqlx::query_scalar!(
+        r#"INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
+           VALUES (?, ?, 1, 0, ?) RETURNING id AS "id!: i64""#,
         pk,
         new_user_id,
         date_joined
     )
-    .execute(&app.pool)
+    .fetch_one(&app.pool)
     .await?;
     sqlx::query!(
         "INSERT INTO club_bots (club_id, user_id) VALUES (?, ?)",
@@ -1164,6 +1268,7 @@ pub async fn create_dummy_user(
     Ok((
         StatusCode::CREATED,
         Json(json!({
+            "id": MemberId::from(member_id),
             "first_name": req.first_name,
             "surname": req.surname,
             "biological_gender": req.biological_gender,

@@ -20,7 +20,7 @@ use time::{Date, Duration, OffsetDateTime};
 
 use crate::domain::auth::AuthUser;
 use crate::error::AppError;
-use crate::id::{ApiPath, ClubId, EventId, MemberId, SeriesId};
+use crate::id::{ApiPath, ClubId, EventId, MemberId, SeriesId, UserId};
 use crate::state::AppState;
 
 // ===========================================================================
@@ -1187,23 +1187,16 @@ pub struct MemberActionRequest {
     member_id: Option<MemberId>,
 }
 
-/// POST /api/event/activate-member — add a member to the active set (admin).
-/// Port of `ActivateMemberSerializer`: ensures an ELO row exists for the event's
-/// game type, snapshots `initial_elo` once, and seeds the player's match count to
-/// the current minimum if they haven't yet played a match.
-pub async fn activate_member(
-    State(app): State<AppState>,
-    user: AuthUser,
-    Json(req): Json<MemberActionRequest>,
-) -> Result<Json<Value>, AppError> {
-    let (Some(event_id), Some(member_id)) = (req.event_id, req.member_id) else {
-        return Err(AppError::Validation("This field is required.".into()));
-    };
-    let event_id = event_id.inner();
-    let member_id = member_id.inner();
-    let club_id = event_club_id(&app, event_id).await?;
-    require_admin(&app, user.id, club_id).await?;
-
+/// Ensure an ELO row exists for the event's game type, snapshot `initial_elo`
+/// once, seed the member's match count to the current minimum if they haven't
+/// played yet, then add them to the active set (idempotent). Shared seeding path
+/// for both `activate_member` and `invite_member`. Assumes the caller has already
+/// performed the admin authorization check.
+async fn add_member_to_active_set(
+    app: &AppState,
+    event_id: i64,
+    member_id: i64,
+) -> Result<(), AppError> {
     let event = sqlx::query!(
         r#"SELECT game_type_id AS "game_type_id?: i64",
                   initial_elo, player_match_counts
@@ -1269,7 +1262,7 @@ pub async fn activate_member(
             == 0
         {
             initial_elo.insert(member_id.to_string(), elo_value);
-            persist_int_map(&app, event_id, StatColumn::InitialElo, &initial_elo).await?;
+            persist_int_map(app, event_id, StatColumn::InitialElo, &initial_elo).await?;
         }
     }
 
@@ -1287,7 +1280,7 @@ pub async fn activate_member(
         let mut counts = parse_int_map(&event.player_match_counts);
         let minima = min_matches(&counts);
         counts.insert(member_id.to_string(), minima);
-        persist_int_map(&app, event_id, StatColumn::PlayerMatchCounts, &counts).await?;
+        persist_int_map(app, event_id, StatColumn::PlayerMatchCounts, &counts).await?;
     }
 
     // Add to the active set (idempotent).
@@ -1299,7 +1292,116 @@ pub async fn activate_member(
     .execute(&app.pool)
     .await?;
 
+    Ok(())
+}
+
+/// POST /api/event/activate-member — add a member to the active set (admin).
+/// Port of `ActivateMemberSerializer`: ensures an ELO row exists for the event's
+/// game type, snapshots `initial_elo` once, and seeds the player's match count to
+/// the current minimum if they haven't yet played a match.
+pub async fn activate_member(
+    State(app): State<AppState>,
+    user: AuthUser,
+    Json(req): Json<MemberActionRequest>,
+) -> Result<Json<Value>, AppError> {
+    let (Some(event_id), Some(member_id)) = (req.event_id, req.member_id) else {
+        return Err(AppError::Validation("This field is required.".into()));
+    };
+    let event_id = event_id.inner();
+    let member_id = member_id.inner();
+    let club_id = event_club_id(&app, event_id).await?;
+    require_admin(&app, user.id, club_id).await?;
+
+    add_member_to_active_set(&app, event_id, member_id).await?;
+
     Ok(Json(json!({ "message": "Member activated successfully" })))
+}
+
+#[derive(Deserialize)]
+pub struct InviteMemberRequest {
+    event_id: Option<EventId>,
+    user_id: Option<UserId>,
+}
+
+/// POST /api/event/invite-member — invite a platform user (not yet in the club)
+/// to the club and add them to the event's active set in one step (admin only).
+///
+/// Records a pending club-membership invite (`member_requests`, awaiting the
+/// user's consent to fully join) and creates an event-participation membership
+/// row (`is_member = 0`) so they can play tonight; accepting the request later
+/// upgrades them to a full member (`is_member = 1`).
+pub async fn invite_member(
+    State(app): State<AppState>,
+    user: AuthUser,
+    Json(req): Json<InviteMemberRequest>,
+) -> Result<(StatusCode, Json<Value>), AppError> {
+    let (Some(event_id), Some(target_user_id)) = (req.event_id, req.user_id) else {
+        return Err(AppError::Validation("This field is required.".into()));
+    };
+    let event_id = event_id.inner();
+    let target_user_id = target_user_id.inner();
+    let club_id = event_club_id(&app, event_id).await?;
+    require_admin(&app, user.id, club_id).await?;
+
+    // The target must be a real, active user.
+    let exists = sqlx::query_scalar!(
+        r#"SELECT 1 AS "x!: i64" FROM users WHERE id = ? AND is_active = 1 LIMIT 1"#,
+        target_user_id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    .is_some();
+    if !exists {
+        return Err(AppError::NotFound(
+            "No User matches the given query.".into(),
+        ));
+    }
+
+    let now_ts = fmt_ts(now())?;
+    // Pending club-membership invite (idempotent via UNIQUE(club_id, user_id)).
+    sqlx::query!(
+        "INSERT OR IGNORE INTO member_requests (club_id, user_id, date_requested)
+         VALUES (?, ?, ?)",
+        club_id,
+        target_user_id,
+        now_ts
+    )
+    .execute(&app.pool)
+    .await?;
+
+    // Reuse an existing membership row if any (never downgrade a real member);
+    // otherwise create an event-participation row with is_member = 0.
+    let member_id = match sqlx::query_scalar!(
+        r#"SELECT id AS "id!: i64" FROM members WHERE club_id = ? AND user_id = ? LIMIT 1"#,
+        club_id,
+        target_user_id
+    )
+    .fetch_optional(&app.pool)
+    .await?
+    {
+        Some(id) => id,
+        None => {
+            sqlx::query_scalar!(
+                r#"INSERT INTO members (club_id, user_id, is_member, is_admin, date_joined)
+                   VALUES (?, ?, 0, 0, ?) RETURNING id AS "id!: i64""#,
+                club_id,
+                target_user_id,
+                now_ts
+            )
+            .fetch_one(&app.pool)
+            .await?
+        }
+    };
+
+    add_member_to_active_set(&app, event_id, member_id).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(json!({
+            "member_id": MemberId::from(member_id),
+            "message": "Invited and added to the event.",
+        })),
+    ))
 }
 
 /// POST /api/event/deactivate-member — remove a member from the active set.

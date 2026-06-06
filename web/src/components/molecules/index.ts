@@ -14,6 +14,8 @@ export { LogoUploader } from "./LogoUploader";
 export type { LogoUploaderProps } from "./LogoUploader";
 export { MemberRow } from "./MemberRow";
 export type { MemberRowProps } from "./MemberRow";
+export { MemberSearchForm } from "./MemberSearchForm";
+export type { MemberSearchFormProps } from "./MemberSearchForm";
 export { PasswordField } from "./PasswordField";
 export type { PasswordFieldProps } from "./PasswordField";
 export { ScoreInput } from "./ScoreInput";

@@ -185,8 +185,18 @@ export function EventViewPage(): ReactElement {
           }}
           onCreateDummyUser={async (draft) => {
             if (clubId === undefined) return;
-            await clubsApi.createDummyUser(clubId, draft);
-            await refreshMembers();
+            const created = await clubsApi.createDummyUser(clubId, draft);
+            await eventsApi.activateMember(numericEventId, created.id);
+            await Promise.all([refreshMembers(), refreshEvent()]);
+          }}
+          onInviteMember={async (userId) => {
+            await eventsApi.inviteMember(numericEventId, userId);
+            await Promise.all([refreshMembers(), refreshEvent()]);
+          }}
+          onSearchUsers={(q, page) => {
+            if (clubId === undefined)
+              return Promise.resolve({ results: [], page, has_next: false });
+            return clubsApi.searchUsers(clubId, q, page);
           }}
         />
       ) : null}

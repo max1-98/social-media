@@ -26,8 +26,10 @@ Add an HTTP endpoint to `server/`. See `.claude/rules/rust.md` and
    oracle assertion against the Django output on identical fixtures.
 6. If you added/changed any `sqlx::query!`/`query_as!`/`query_scalar!` macro,
    regenerate the offline cache (CI runs `SQLX_OFFLINE=true`):
-   `export DATABASE_URL="sqlite://$(pwd)/data/dev.db" && cargo sqlx prepare`,
-   then commit the new `server/.sqlx/*.json`.
+   `export DATABASE_URL="sqlite://$(pwd)/data/app.db" && cargo sqlx prepare -- --all-targets`,
+   then commit the new `server/.sqlx/*.json`. **Use `-- --all-targets`** so
+   `#[cfg(test)]` queries are captured too — a plain `prepare` drops their cache
+   entries and breaks offline test compilation.
 7. Verify: `cargo fmt --check && cargo clippy --all-targets -- -D warnings &&
    cargo test`.
 8. Update this skill if the pattern changed (`update-a-skill`).
@@ -49,6 +51,11 @@ Add an HTTP endpoint to `server/`. See `.claude/rules/rust.md` and
   interpolated SQL. See `domain::events` stat helpers.
 - Deprecated legacy stubs that returned 501 map to `AppError::NotImplemented`
   (the events `active/` route mirrors this).
+- **Paginated reads**: take a `Query<…>` with a required search term and 1-based
+  `page`; keep the page size a server-side `const` (clients can't widen it). Fetch
+  `limit + 1` rows to set `has_next`, truncate to `limit`, and return
+  `{ results, page, has_next }`. Require a non-empty query (no full-table
+  enumeration / count leakage). See `clubs::search_users`.
 
 ## Done when
 

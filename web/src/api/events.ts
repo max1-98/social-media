@@ -106,6 +106,23 @@ export async function deactivateMember(eventId: string, memberId: string): Promi
   });
 }
 
+/** The 201 response of `POST /api/event/invite-member`. */
+export interface InviteMemberResult {
+  member_id: string;
+  message: string;
+}
+
+/**
+ * POST /api/event/invite-member — invite a platform user to the club (pending
+ * membership) and add them to the event's active set in one step (admin only).
+ */
+export async function inviteMember(eventId: string, userId: string): Promise<InviteMemberResult> {
+  return postJson<InviteMemberResult>("/event/invite-member", {
+    event_id: eventId,
+    user_id: userId,
+  });
+}
+
 /** POST /api/event/start — begin an event. */
 export async function startEvent(eventId: string): Promise<DetailResponse> {
   return postJson<DetailResponse>("/event/start", { event_id: eventId });
