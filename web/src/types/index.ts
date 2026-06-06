@@ -194,8 +194,45 @@ export interface CompleteGame {
   team1: MemberEvent[];
   team2: MemberEvent[];
   game_type: number;
+  game_type_name: string | null;
   score: string;
   start_time: string;
+}
+
+/** Win/loss record with a derived win rate (0–1). Used by the Past games page. */
+export interface RecordStats {
+  total: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+}
+
+/** Per-game-type record, keyed by the game type's display name. */
+export interface TypeStats extends RecordStats {
+  name: string;
+}
+
+/** Streak and recent-form summary for the signed-in user. */
+export interface FormStats {
+  currentWinStreak: number;
+  bestWinStreak: number;
+  /** Most-recent-first list of results. */
+  lastN: ("W" | "L")[];
+}
+
+/** A tally of games shared with another player. */
+export interface PlayerTally {
+  username: string;
+  games: number;
+}
+
+/** The full set of stats surfaced on the Past games page. */
+export interface PastGamesStats {
+  record: RecordStats;
+  byType: TypeStats[];
+  form: FormStats;
+  partners: PlayerTally[];
+  opponents: PlayerTally[];
 }
 
 /** One leaderboard entry in an event's stats (name + the relevant metric). */

@@ -14,6 +14,12 @@ export interface CompleteGamePayload {
   score: string;
 }
 
+/** Optional filters for {@link userGames}. `game_type` filters by type name. */
+export interface UserGamesParams {
+  num_of_games?: number;
+  game_type?: string;
+}
+
 /** POST /api/game/create-sbmm — create a skill-based matchmaking game. */
 export async function createSbmm(eventId: string): Promise<Game> {
   return postJson<Game>("/game/create-sbmm", { event_id: eventId });
@@ -50,6 +56,14 @@ export async function eventCompleteGames(pk: string): Promise<CompleteGame[]> {
 }
 
 /** GET /api/game/users/games — the caller's completed games. */
-export async function userGames(): Promise<CompleteGame[]> {
-  return getJson<CompleteGame[]>("/game/users/games");
+export async function userGames(params?: UserGamesParams): Promise<CompleteGame[]> {
+  const query = new URLSearchParams();
+  if (params?.num_of_games !== undefined) {
+    query.set("num_of_games", String(params.num_of_games));
+  }
+  if (params?.game_type !== undefined) {
+    query.set("game_type", params.game_type);
+  }
+  const qs = query.toString();
+  return getJson<CompleteGame[]>(`/game/users/games${qs === "" ? "" : `?${qs}`}`);
 }

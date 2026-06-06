@@ -47,4 +47,4 @@ export type {
   EventSettingsPayload,
   EventStats,
 } from "./events";
-export type { CompleteGamePayload } from "./games";
+export type { CompleteGamePayload, UserGamesParams } from "./games";

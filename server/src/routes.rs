@@ -2525,6 +2525,10 @@ mod tests {
         let body = body_json(res).await;
         assert_eq!(body.as_array().unwrap().len(), 1);
         assert_eq!(body[0]["score"], "21,15");
+        // `game_type_name` is the additive convenience field; the legacy
+        // `game_type` id is still present.
+        assert_eq!(body[0]["game_type_name"], "badminton singles");
+        assert!(body[0]["game_type"].is_number());
     }
 
     // -----------------------------------------------------------------------
