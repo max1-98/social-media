@@ -229,7 +229,15 @@ export function DataGrid<T>({
                   <Box
                     key={column.key}
                     role="gridcell"
-                    sx={{ px: 2, py: 1, textAlign: column.align ?? "left", minWidth: 0 }}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      textAlign: column.align ?? "left",
+                      minWidth: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
                   >
                     {column.render(row)}
                   </Box>
