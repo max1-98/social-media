@@ -160,7 +160,7 @@ export function EventViewPage(): ReactElement {
           }}
           onDeleteGame={(gameId) => {
             runAction(
-              () => gamesApi.deleteGame(gameId),
+              () => gamesApi.deleteGame(gameId, numericEventId),
               async () => {
                 await Promise.all([refreshGames(), refreshEvent()]);
               },
@@ -169,7 +169,7 @@ export function EventViewPage(): ReactElement {
           onPausePlayer={(gameId, memberId) => {
             runAction(
               async () => {
-                await gamesApi.deleteGame(gameId);
+                await gamesApi.deleteGame(gameId, numericEventId);
                 await eventsApi.deactivateMember(numericEventId, memberId);
               },
               async () => {
