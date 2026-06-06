@@ -18,7 +18,7 @@ declare module "@mui/material/styles" {
   interface CssThemeVariables {
     enabled: true;
   }
-  // A vibrant "energy" accent used sparingly for highlights (scores, active nav).
+  // A warm "energy" accent (amber) used sparingly for highlights (scores, active nav).
   interface Palette {
     energy: Palette["primary"];
   }
@@ -46,9 +46,9 @@ const SANS_STACK = ['"Inter Variable"', '"Inter"', ...SANS_FALLBACKS].join(", ")
 const DISPLAY_STACK = ['"Sora Variable"', '"Sora"', ...SANS_FALLBACKS].join(", ");
 
 /**
- * A soft, slightly indigo-tinted elevation scale (25 entries, as MUI requires).
+ * A soft, slightly slate-tinted elevation scale (25 entries, as MUI requires).
  * Lighter and more modern than MUI's default greys; the same scale reads well in
- * both schemes because it is built from translucent black.
+ * both schemes because it is built from translucent slate.
  */
 const shadows = Array.from({ length: 25 }, (_, i) => {
   if (i === 0) return "none";
@@ -57,42 +57,42 @@ const shadows = Array.from({ length: 25 }, (_, i) => {
   const spread = Math.max(-1, Math.round(i * -0.2));
   const a1 = Math.min(0.18, 0.05 + i * 0.006).toFixed(3);
   const a2 = Math.min(0.12, 0.03 + i * 0.004).toFixed(3);
-  const ambient = `0px ${y.toString()}px ${blur.toString()}px ${spread.toString()}px rgba(74, 20, 45, ${a1})`;
-  const key = `0px ${Math.round(y / 2).toString()}px ${Math.round(blur / 2).toString()}px ${spread.toString()}px rgba(22, 11, 20, ${a2})`;
+  const ambient = `0px ${y.toString()}px ${blur.toString()}px ${spread.toString()}px rgba(15, 23, 42, ${a1})`;
+  const key = `0px ${Math.round(y / 2).toString()}px ${Math.round(blur / 2).toString()}px ${spread.toString()}px rgba(2, 6, 23, ${a2})`;
   return `${ambient}, ${key}`;
 }) as unknown as Shadows;
 
 export const theme: Theme = createTheme({
   cssVariables: { colorSchemeSelector: "data" },
   colorSchemes: {
-    // "Sunrise Run": warm plum base, coral→magenta primary/secondary, gold accent.
+    // "Court Side": neutral slate surfaces, teal→cyan primary/secondary, amber accent.
     light: {
       palette: {
-        primary: { main: "#ce1a4e", light: "#ff4d6d", dark: "#a30e3b", contrastText: "#ffffff" },
-        secondary: { main: "#a21caf", light: "#c026d3", dark: "#7a1486", contrastText: "#ffffff" },
-        energy: { main: "#f5b43c", light: "#ffcf73", dark: "#b26b00", contrastText: "#3a2400" },
-        success: { main: "#1a7f46" },
-        warning: { main: "#b9590a" },
+        primary: { main: "#0f766e", light: "#14b8a6", dark: "#115e59", contrastText: "#ffffff" },
+        secondary: { main: "#0e7490", light: "#22a7c7", dark: "#155e75", contrastText: "#ffffff" },
+        energy: { main: "#f59e0b", light: "#fbbf24", dark: "#b45309", contrastText: "#3a2400" },
+        success: { main: "#15803d" },
+        warning: { main: "#b45309" },
         error: { main: "#c81e2b" },
         info: { main: "#1d63d1" },
-        background: { default: "#fff4f6", paper: "#ffffff" },
-        text: { primary: "#1a0710", secondary: "#74495a" },
-        divider: "rgba(26, 7, 16, 0.12)",
+        background: { default: "#f8fafc", paper: "#ffffff" },
+        text: { primary: "#0f172a", secondary: "#475569" },
+        divider: "rgba(15, 23, 42, 0.12)",
       },
     },
-    // Dark is the hero scheme: deep plum-black surfaces, brighter coral/magenta.
+    // Dark is the hero scheme: deep slate surfaces, brighter teal/cyan.
     dark: {
       palette: {
-        primary: { main: "#ff6b85", light: "#ff9bab", dark: "#ff4d6d", contrastText: "#2a0510" },
-        secondary: { main: "#e15bec", light: "#f0a6f5", dark: "#c026d3", contrastText: "#2a0510" },
-        energy: { main: "#ffc65a", light: "#ffd98a", dark: "#f5b43c", contrastText: "#2a1a00" },
+        primary: { main: "#2dd4bf", light: "#5eead4", dark: "#14b8a6", contrastText: "#04231f" },
+        secondary: { main: "#22d3ee", light: "#67e8f9", dark: "#0e7490", contrastText: "#04231f" },
+        energy: { main: "#fbbf24", light: "#fcd34d", dark: "#f59e0b", contrastText: "#2a1a00" },
         success: { main: "#34d17c" },
         warning: { main: "#fbbf3c" },
         error: { main: "#ff6b6b" },
         info: { main: "#5b9cff" },
-        background: { default: "#160b14", paper: "#21121d" },
-        text: { primary: "#fceef3", secondary: "#cdafbd" },
-        divider: "rgba(252, 238, 243, 0.14)",
+        background: { default: "#0b1117", paper: "#131c26" },
+        text: { primary: "#e6edf3", secondary: "#9fb0c0" },
+        divider: "rgba(230, 237, 243, 0.14)",
       },
     },
   },

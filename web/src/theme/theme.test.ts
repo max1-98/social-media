@@ -17,16 +17,16 @@ function contrast(a: string, b: string): number {
 }
 
 describe("theme", () => {
-  it('defines the "Sunrise Run" light and dark colour schemes', () => {
-    expect(theme.colorSchemes.light?.palette.primary.main).toBe("#ce1a4e");
-    expect(theme.colorSchemes.dark?.palette.primary.main).toBe("#ff6b85");
-    expect(theme.colorSchemes.light?.palette.background.default).toBe("#fff4f6");
-    expect(theme.colorSchemes.dark?.palette.background.default).toBe("#160b14");
+  it('defines the "Court Side" light and dark colour schemes', () => {
+    expect(theme.colorSchemes.light?.palette.primary.main).toBe("#0f766e");
+    expect(theme.colorSchemes.dark?.palette.primary.main).toBe("#2dd4bf");
+    expect(theme.colorSchemes.light?.palette.background.default).toBe("#f8fafc");
+    expect(theme.colorSchemes.dark?.palette.background.default).toBe("#0b1117");
   });
 
   it("exposes an energy accent token in both schemes", () => {
-    expect(theme.colorSchemes.light?.palette.energy.main).toBe("#f5b43c");
-    expect(theme.colorSchemes.dark?.palette.energy.main).toBe("#ffc65a");
+    expect(theme.colorSchemes.light?.palette.energy.main).toBe("#f59e0b");
+    expect(theme.colorSchemes.dark?.palette.energy.main).toBe("#fbbf24");
   });
 
   it("clears WCAG AA contrast in both schemes", () => {
