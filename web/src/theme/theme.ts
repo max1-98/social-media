@@ -27,9 +27,7 @@ declare module "@mui/material/styles" {
   }
 }
 
-const SANS_STACK = [
-  '"Inter Variable"',
-  '"Inter"',
+const SANS_FALLBACKS = [
   "system-ui",
   "-apple-system",
   '"Segoe UI"',
@@ -37,7 +35,15 @@ const SANS_STACK = [
   '"Helvetica Neue"',
   "Arial",
   "sans-serif",
-].join(", ");
+];
+
+// Body / UI text: Inter — highly legible, tabular numerals for stats tables.
+const SANS_STACK = ['"Inter Variable"', '"Inter"', ...SANS_FALLBACKS].join(", ");
+
+// Headings / scores: Sora — a modern geometric display face that gives the app
+// its sporting character. Both fonts are self-hosted via @fontsource (no Google
+// CDN — GDPR / EU residency; see rules/gdpr.md).
+const DISPLAY_STACK = ['"Sora Variable"', '"Sora"', ...SANS_FALLBACKS].join(", ");
 
 /**
  * A soft, slightly indigo-tinted elevation scale (25 entries, as MUI requires).
@@ -51,40 +57,42 @@ const shadows = Array.from({ length: 25 }, (_, i) => {
   const spread = Math.max(-1, Math.round(i * -0.2));
   const a1 = Math.min(0.18, 0.05 + i * 0.006).toFixed(3);
   const a2 = Math.min(0.12, 0.03 + i * 0.004).toFixed(3);
-  const ambient = `0px ${y.toString()}px ${blur.toString()}px ${spread.toString()}px rgba(49, 46, 158, ${a1})`;
-  const key = `0px ${Math.round(y / 2).toString()}px ${Math.round(blur / 2).toString()}px ${spread.toString()}px rgba(15, 23, 42, ${a2})`;
+  const ambient = `0px ${y.toString()}px ${blur.toString()}px ${spread.toString()}px rgba(74, 20, 45, ${a1})`;
+  const key = `0px ${Math.round(y / 2).toString()}px ${Math.round(blur / 2).toString()}px ${spread.toString()}px rgba(22, 11, 20, ${a2})`;
   return `${ambient}, ${key}`;
 }) as unknown as Shadows;
 
 export const theme: Theme = createTheme({
   cssVariables: { colorSchemeSelector: "data" },
   colorSchemes: {
+    // "Sunrise Run": warm plum base, coral→magenta primary/secondary, gold accent.
     light: {
       palette: {
-        primary: { main: "#4338ca", light: "#6366f1", dark: "#312e9e", contrastText: "#ffffff" },
-        secondary: { main: "#0891b2", light: "#22d3ee", dark: "#0e7490", contrastText: "#ffffff" },
-        energy: { main: "#f59e0b", light: "#fbbf24", dark: "#b45309", contrastText: "#1a1205" },
-        success: { main: "#16a34a" },
-        warning: { main: "#d97706" },
-        error: { main: "#dc2626" },
-        info: { main: "#2563eb" },
-        background: { default: "#f5f6fb", paper: "#ffffff" },
-        text: { primary: "#13131a", secondary: "#4b5366" },
-        divider: "rgba(19, 19, 26, 0.10)",
+        primary: { main: "#ce1a4e", light: "#ff4d6d", dark: "#a30e3b", contrastText: "#ffffff" },
+        secondary: { main: "#a21caf", light: "#c026d3", dark: "#7a1486", contrastText: "#ffffff" },
+        energy: { main: "#f5b43c", light: "#ffcf73", dark: "#b26b00", contrastText: "#3a2400" },
+        success: { main: "#1a7f46" },
+        warning: { main: "#b9590a" },
+        error: { main: "#c81e2b" },
+        info: { main: "#1d63d1" },
+        background: { default: "#fff4f6", paper: "#ffffff" },
+        text: { primary: "#1a0710", secondary: "#74495a" },
+        divider: "rgba(26, 7, 16, 0.12)",
       },
     },
+    // Dark is the hero scheme: deep plum-black surfaces, brighter coral/magenta.
     dark: {
       palette: {
-        primary: { main: "#818cf8", light: "#a5b4fc", dark: "#6366f1", contrastText: "#0b0b12" },
-        secondary: { main: "#22d3ee", light: "#67e8f9", dark: "#0891b2", contrastText: "#04232b" },
-        energy: { main: "#fbbf24", light: "#fcd34d", dark: "#f59e0b", contrastText: "#1a1205" },
-        success: { main: "#22c55e" },
-        warning: { main: "#f59e0b" },
-        error: { main: "#f87171" },
-        info: { main: "#60a5fa" },
-        background: { default: "#0b0d14", paper: "#141826" },
-        text: { primary: "#f4f6fb", secondary: "#a3acc2" },
-        divider: "rgba(244, 246, 251, 0.12)",
+        primary: { main: "#ff6b85", light: "#ff9bab", dark: "#ff4d6d", contrastText: "#2a0510" },
+        secondary: { main: "#e15bec", light: "#f0a6f5", dark: "#c026d3", contrastText: "#2a0510" },
+        energy: { main: "#ffc65a", light: "#ffd98a", dark: "#f5b43c", contrastText: "#2a1a00" },
+        success: { main: "#34d17c" },
+        warning: { main: "#fbbf3c" },
+        error: { main: "#ff6b6b" },
+        info: { main: "#5b9cff" },
+        background: { default: "#160b14", paper: "#21121d" },
+        text: { primary: "#fceef3", secondary: "#cdafbd" },
+        divider: "rgba(252, 238, 243, 0.14)",
       },
     },
   },
@@ -93,10 +101,28 @@ export const theme: Theme = createTheme({
   typography: {
     fontFamily: SANS_STACK,
     fontWeightBold: 800,
-    h1: { fontSize: "2.5rem", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" },
-    h2: { fontSize: "2rem", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.015em" },
-    h3: { fontSize: "1.625rem", fontWeight: 700, lineHeight: 1.25, letterSpacing: "-0.01em" },
-    h4: { fontSize: "1.3rem", fontWeight: 700, lineHeight: 1.3 },
+    h1: {
+      fontFamily: DISPLAY_STACK,
+      fontSize: "2.5rem",
+      fontWeight: 800,
+      lineHeight: 1.1,
+      letterSpacing: "-0.02em",
+    },
+    h2: {
+      fontFamily: DISPLAY_STACK,
+      fontSize: "2rem",
+      fontWeight: 800,
+      lineHeight: 1.15,
+      letterSpacing: "-0.015em",
+    },
+    h3: {
+      fontFamily: DISPLAY_STACK,
+      fontSize: "1.625rem",
+      fontWeight: 700,
+      lineHeight: 1.25,
+      letterSpacing: "-0.01em",
+    },
+    h4: { fontFamily: DISPLAY_STACK, fontSize: "1.3rem", fontWeight: 700, lineHeight: 1.3 },
     h5: { fontSize: "1.125rem", fontWeight: 700 },
     h6: { fontSize: "1rem", fontWeight: 700, letterSpacing: "0.01em" },
     subtitle1: { fontWeight: 600 },
@@ -109,6 +135,7 @@ export const theme: Theme = createTheme({
       styleOverrides: (t) => ({
         body: {
           fontFeatureSettings: '"cv05", "ss01"',
+          fontVariantNumeric: "tabular-nums",
           WebkitFontSmoothing: "antialiased",
         },
         "*::-webkit-scrollbar": { width: 10, height: 10 },

@@ -14,7 +14,8 @@ of truth for colour, typography, shape and component defaults. Restyle the app
 
 - **Light + dark, system-matched.** `createTheme({ cssVariables: { colorSchemeSelector: "data" }, colorSchemes: { light, dark } })`. `main.tsx` mounts it with `<ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>` + `<CssBaseline/>`, so the active scheme follows the device and flips with no React re-render.
 - **No FOUC.** `index.html` has a tiny inline script that stamps `data-mui-color-scheme` on `<html>` before first paint, reading storage key `mui-mode` (defaults to `system`). Keep that key/attribute in sync with MUI's defaults.
-- **Self-hosted font.** Inter ships via `@fontsource-variable/inter` (`import "@fontsource-variable/inter/index.css"` in `main.tsx`). **Never** load Google Fonts over the network (GDPR / EU residency — see `rules/gdpr.md`). Family is `"Inter Variable"`.
+- **Self-hosted fonts.** Two faces, both via `@fontsource` (imported in `main.tsx`): **Inter** (`"Inter Variable"`) for body/UI and **Sora** (`"Sora Variable"`) for display headings (`h1`–`h4`, via `DISPLAY_STACK`). Body sets `font-variant-numeric: tabular-nums` so stat columns align. **Never** load Google Fonts over the network (GDPR / EU residency — see `rules/gdpr.md`).
+- **"Sunrise Run" palette.** Warm plum base, coral→magenta `primary`/`secondary`, gold `energy` accent. Dark is the hero scheme (`background.default #160b14`); light is `#fff4f6`. The `primary→secondary` gradient (Navbar/Auth/ClubCard) reads coral→magenta.
 - **`energy` accent.** A vibrant extra palette token (highlights, scores), declared via module augmentation in `theme.ts` and present in both schemes. Use it like any colour: `sx={{ color: "energy.main" }}`.
 
 ## Rules for code
@@ -26,6 +27,22 @@ of truth for colour, typography, shape and component defaults. Restyle the app
   `theme.palette.*`, so one rule serves both schemes. `theme.vars` is non-optional
   here because `CssThemeVariables { enabled: true }` is augmented in `theme.ts`.
 - **Custom SVG atoms** use `currentColor` so they inherit themed text colour.
+
+## Contrast linter (blocks CI)
+
+`scripts/lint/checks/colorContrast.mjs` (run via `node scripts/lint/repo-lint.mjs`,
+in the CI `standards` job + the Stop hook) mechanically prevents dark-on-dark /
+light-on-light text. It fails (exit 1) when, in **either** scheme:
+
+- a palette group's `main` clears < **4.5:1** (WCAG AA) against its `contrastText`
+  (derived the way MUI derives it for `success`/`warning`/`error`/`info`), or
+- `text.primary`/`text.secondary` clears < 4.5:1 on `background.default`/`.paper`, or
+- a component `sx` block sets both `color` and `bgcolor` to tokens that clear < 4.5:1, or
+- a component hardcodes a hex colour (use a token).
+
+So when you tune the palette, **let the linter be the oracle**: pick colours, run
+the linter, adjust `main`/`contrastText`/`text.*` until green. `contrast.mjs`
+holds the shared WCAG maths; `theme.test.ts` also asserts AA in both schemes.
 
 ## Tests
 

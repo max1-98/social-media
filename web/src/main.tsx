@@ -1,4 +1,5 @@
 import "@fontsource-variable/inter/index.css";
+import "@fontsource-variable/sora/index.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
