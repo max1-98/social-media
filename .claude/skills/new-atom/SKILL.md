@@ -26,10 +26,17 @@ Add a component to `web/src` honoring boundaries, barrels, and full typing. See
    resolves — see the `theming` skill).
 4. Re-export from the layer barrel: add `export { Name } from "./Name";` (and any
    exported types) to `web/src/components/<layer>/index.ts`.
-5. Verify: `npm run lint && npm run typecheck && npm test`. The boundaries and
-   `barrel-complete` checks must pass.
-6. If this introduces a reusable pattern, update this skill (`update-a-skill`).
+5. **If you added a page** (`web/src/pages`), make it reachable in the same change
+   (see `.claude/rules/atomic-design.md` → "Pages must be reachable"):
+   - add a `<Route>` in `web/src/App.tsx` (the `page-routed` check enforces this);
+   - add a nav entry — a `DEFAULT_NAV_ITEMS` item in the `Navbar` for a global
+     page, or a link/button from the parent page for a scoped one.
+6. Verify: `npm run lint && npm run typecheck && npm test && node
+   scripts/lint/repo-lint.mjs`. The boundaries, `barrel-complete`, and
+   `page-routed` checks must pass.
+7. If this introduces a reusable pattern, update this skill (`update-a-skill`).
 
 ## Done when
 
-Component + test exist, the barrel re-exports it, and the web bar is green.
+Component + test exist, the barrel re-exports it, any new page is routed **and**
+linked from navigation, and the web bar + repo-lint are green.

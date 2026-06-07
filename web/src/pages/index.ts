@@ -11,7 +11,6 @@ export { EditClubPage } from "./EditClubPage";
 export { EventViewPage } from "./EventViewPage";
 export { FixturesPage } from "./FixturesPage";
 export { GameTypeElosPage } from "./GameTypeElosPage";
-export { HomePage } from "./HomePage";
 export { LoginPage } from "./LoginPage";
 export { MyClubsPage } from "./MyClubsPage";
 export { MyEventsPage } from "./MyEventsPage";

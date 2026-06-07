@@ -4,6 +4,7 @@
 //   - each .claude/*/INDEX.md in sync with its directory
 //   - agents/skills carry required frontmatter
 //   - every atomic-design layer has a complete barrel (index.ts)
+//   - every page is routed in App.tsx (reachable, not dead weight)
 //   - theme + component colours clear WCAG AA contrast (no dark-on-dark text)
 // Zero dependencies; runs identically in CI, the Stop hook, and the .md PostToolUse
 // hook.
@@ -15,6 +16,7 @@ import { mdLineLimit } from "./checks/md-line-limit.mjs";
 import { indexSync } from "./checks/index-sync.mjs";
 import { frontmatter } from "./checks/frontmatter.mjs";
 import { barrelComplete } from "./checks/barrel-complete.mjs";
+import { pageRouted } from "./checks/page-routed.mjs";
 import { colorContrast } from "./checks/colorContrast.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -44,7 +46,7 @@ const files = changedMode
   : trackedFiles();
 const checks = changedMode
   ? [mdLineLimit]
-  : [mdLineLimit, indexSync, frontmatter, barrelComplete, colorContrast];
+  : [mdLineLimit, indexSync, frontmatter, barrelComplete, pageRouted, colorContrast];
 
 const ctx = { root, files };
 const violations = checks.flatMap((check) => check(ctx));
