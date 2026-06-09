@@ -325,6 +325,11 @@ export interface ClubLadderEntry {
   member_strength: number | null;
 }
 
+/** A selectable game type (name only; the name encodes the sport). */
+export interface GameTypeSummary {
+  name: string;
+}
+
 /** The stable error envelope returned by every Rust handler on failure. */
 export interface ApiError {
   error: {

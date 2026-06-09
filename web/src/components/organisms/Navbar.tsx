@@ -1,5 +1,6 @@
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import CasinoIcon from "@mui/icons-material/Casino";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupsIcon from "@mui/icons-material/Groups";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -52,6 +53,7 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { label: "All clubs", to: "/", icon: GroupsIcon },
   { label: "My clubs", to: "/my-clubs", icon: GroupsIcon },
   { label: "Discover clubs", to: "/clubs", icon: TravelExploreIcon },
+  { label: "Club rankings", to: "/club-rankings", icon: EmojiEventsIcon },
   { label: "My events", to: "/events", icon: CasinoIcon },
   { label: "Create club", to: "/createclub", icon: AddBoxIcon },
   { label: "Past games", to: "/games", icon: CasinoIcon },

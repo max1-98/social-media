@@ -3,7 +3,7 @@
  * (matchmaking creation, completion/deletion, listing per event and per user).
  */
 
-import type { CompleteGame, Game } from "../types";
+import type { CompleteGame, Game, GameTypeSummary } from "../types";
 
 import type { DetailResponse } from "./auth";
 import { getJson, postJson } from "./http";
@@ -66,4 +66,9 @@ export async function userGames(params?: UserGamesParams): Promise<CompleteGame[
   }
   const qs = query.toString();
   return getJson<CompleteGame[]>(`/game/users/games${qs === "" ? "" : `?${qs}`}`);
+}
+
+/** GET /api/game-types — all game types, for populating selectors. */
+export async function gameTypes(): Promise<GameTypeSummary[]> {
+  return getJson<GameTypeSummary[]>("/game-types");
 }

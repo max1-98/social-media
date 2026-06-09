@@ -2,6 +2,7 @@
 export { AllClubsPage } from "./AllClubsPage";
 export { ClubDetailPage } from "./ClubDetailPage";
 export { ClubEventsPage } from "./ClubEventsPage";
+export { ClubRankingsPage } from "./ClubRankingsPage";
 export { ConsentBannerContainer } from "./ConsentBannerContainer";
 export { CookiePolicy } from "./CookiePolicy";
 export { CreateClubPage } from "./CreateClubPage";
