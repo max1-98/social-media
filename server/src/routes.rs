@@ -129,7 +129,8 @@ pub fn router(state: AppState) -> Router {
         .route("/game/complete", post(games::complete_game))
         .route("/game/games/:pk1", get(games::event_incomplete_games))
         .route("/game/event/games/:pk1", get(games::event_complete_games))
-        .route("/game/users/games", get(games::user_games));
+        .route("/game/users/games", get(games::user_games))
+        .route("/game-types", get(games::list_game_types));
 
     // Club-vs-club fixtures + club ELO (Phase 9). Flat under /api like clubs.
     let fixtures = Router::new()
@@ -1402,6 +1403,27 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(body_json(detail).await["sport_type"]["name"], "tennis");
+    }
+
+    #[tokio::test]
+    async fn list_game_types_returns_seeded_types() {
+        let (app, _pool) = test_app().await;
+        let cookies = register_and_login(&app, "gtlister").await;
+
+        let res = app
+            .oneshot(get_with("/api/game-types", &cookies))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+
+        let body = body_json(res).await;
+        let names: Vec<&str> = body
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["name"].as_str().unwrap())
+            .collect();
+        assert!(names.contains(&"badminton singles"), "got {names:?}");
     }
 
     #[tokio::test]

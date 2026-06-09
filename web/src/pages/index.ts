@@ -2,6 +2,7 @@
 export { AllClubsPage } from "./AllClubsPage";
 export { ClubDetailPage } from "./ClubDetailPage";
 export { ClubEventsPage } from "./ClubEventsPage";
+export { ClubRankingsPage } from "./ClubRankingsPage";
 export { ConsentBannerContainer } from "./ConsentBannerContainer";
 export { CookiePolicy } from "./CookiePolicy";
 export { CreateClubPage } from "./CreateClubPage";
@@ -11,7 +12,6 @@ export { EditClubPage } from "./EditClubPage";
 export { EventViewPage } from "./EventViewPage";
 export { FixturesPage } from "./FixturesPage";
 export { GameTypeElosPage } from "./GameTypeElosPage";
-export { HomePage } from "./HomePage";
 export { LoginPage } from "./LoginPage";
 export { MyClubsPage } from "./MyClubsPage";
 export { MyEventsPage } from "./MyEventsPage";

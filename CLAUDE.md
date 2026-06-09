@@ -9,7 +9,8 @@ stack. Full plan: `docs/REBUILD_PLAN.md`.
 - `web/` — React + Vite + TypeScript, organised by **Atomic Design**.
 - `deploy/` — production host config (systemd, Litestream→R2, Caddy); see the
   `deploy` skill and `docs/rebuild/05-deploy.md`.
-- `scripts/lint/` — custom repo linter (md<150, index-sync, frontmatter, barrels).
+- `scripts/lint/` — custom repo linter (md<150, index-sync, frontmatter, barrels,
+  page-routed).
 - `.claude/` — config, rules, agents, skills, hooks (each dir has an `INDEX.md`).
 
 ## Run the bar

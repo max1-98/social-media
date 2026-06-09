@@ -73,6 +73,10 @@ Export adds `fixtures_created`, `fixture_confirmations`, `external_elo`. Erasure
   (organisms; the ladder reuses the `DataGrid`). Pages own all `api` calls and
   pass callbacks; `FixturesPage` (route `/club/:clubId/fixtures`) wires the
   propose form, the record-result modal, confirm, and the ladder.
+- Global ladder: `ClubRankingsPage` (route `/club-rankings`, navbar item) scopes
+  the ladder by game type. The ladder is **per game type**, so the unscoped
+  endpoint is empty — the page requires a selection from `gamesApi.gameTypes`
+  (`GET /api/game-types`).
 
 ## Done when
 

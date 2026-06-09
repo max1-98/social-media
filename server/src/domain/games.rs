@@ -1237,6 +1237,30 @@ pub async fn user_games(
     Ok(Json(out))
 }
 
+/// A selectable game type. The name is unique and already encodes the sport
+/// (e.g. `"badminton singles"`), so it doubles as the label and the leaderboard
+/// scope key.
+#[derive(Debug, Serialize)]
+pub struct GameTypeField {
+    name: String,
+}
+
+/// GET /api/game-types — every game type, ordered by name. Populates selectors
+/// such as the club-rankings game-type filter (the club ELO ladder is per type).
+pub async fn list_game_types(
+    State(app): State<AppState>,
+    _user: AuthUser,
+) -> Result<Json<Vec<GameTypeField>>, AppError> {
+    let rows = sqlx::query!(r#"SELECT name FROM game_types ORDER BY name"#)
+        .fetch_all(&app.pool)
+        .await?;
+    Ok(Json(
+        rows.into_iter()
+            .map(|r| GameTypeField { name: r.name })
+            .collect(),
+    ))
+}
+
 // ===========================================================================
 // Row -> serializer helpers + small DB helpers.
 // ===========================================================================

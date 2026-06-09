@@ -10,6 +10,7 @@ import {
   AllClubsPage,
   ClubDetailPage,
   ClubEventsPage,
+  ClubRankingsPage,
   ConsentBannerContainer,
   CookiePolicy,
   CreateClubPage,
@@ -97,6 +98,7 @@ export default function App(): ReactElement {
             <Route element={<AuthedLayout />}>
               <Route path="/" element={<AllClubsPage />} />
               <Route path="/clubs" element={<DiscoverClubsPage />} />
+              <Route path="/club-rankings" element={<ClubRankingsPage />} />
               <Route path="/my-clubs" element={<MyClubsPage />} />
               <Route path="/createclub" element={<CreateClubPage />} />
               <Route path="/club/edit/:clubId" element={<EditClubPage />} />
